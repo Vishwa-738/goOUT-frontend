@@ -1,0 +1,33 @@
+/* src/index.css */
+@import 'bootstrap/dist/css/bootstrap.min.css';
+
+:root {
+  --sidebar-width: 260px;
+  --primary-color: #0d6efd;
+}
+
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  background-color: #f8f9fa;
+}
+
+.main-wrapper {
+  transition: margin-left 0.3s ease;
+}
+.hover-white:hover {
+  color: #fff !important;
+  transition: color 0.2s ease-in-out;
+}
+/* Custom smooth hover effects matching Figma */
+.nav-link {
+  transition: all 0.2s ease-in-out;
+}
+
+.nav-link:not(.active):hover {
+  color: #14a3e4 !important;
+  background-color: #f7fafc !important;
+}
+.cursor-pointer {
+  cursor: pointer !important;
+}
