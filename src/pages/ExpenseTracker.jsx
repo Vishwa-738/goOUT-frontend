@@ -1,17 +1,17 @@
-// src/pages/Expenses.jsx
+// src/pages/ExpenseTracker.jsx
 import React, { useState } from 'react';
 
-function Expenses() {
-  // Local form input tracking states
+function ExpenseTracker() {
+  // Input form field states
   const [description, setDescription] = useState('');
   const [amount, setAmount] = useState('');
   const [category, setCategory] = useState('');
   const [paidBy, setPaidBy] = useState('');
 
-  // Local state representing the expense tracker data matrix
+  // Local mock state array utilizing String IDs to line up with MongoDB expectations[cite: 2]
   const [expenses, setExpenses] = useState([
     {
-      expenseId: "65ab3d111234567890abcdef", // String ObjectID mapping database contract
+      expenseId: "65ab3d111234567890abcdef", 
       description: 'Heritance Kandalama Hotel (3 nights)',
       category: 'Accommodation',
       paidBy: 'Raj Patel',
@@ -57,7 +57,7 @@ function Expenses() {
     }
   ]);
 
-  // Form submission handling to connect later with POST /api/v1/expenses
+  // Handle form submission to point to Methsara's backend endpoints later[cite: 2]
   const handleAddExpense = (e) => {
     e.preventDefault();
     console.log("Submitting new expense element to core network pipeline.");
@@ -67,13 +67,13 @@ function Expenses() {
   return (
     <div className="container-fluid px-0 py-2">
       
-      {/* Page Title Context */}
+      {/* Header Info */}
       <div className="mb-4">
         <h2 className="fw-bold text-dark mb-1" style={{ fontSize: '2.2rem', letterSpacing: '-0.5px' }}>Expense Tracker</h2>
         <p className="text-secondary" style={{ fontSize: '1.05rem' }}>Track and split trip expenses with your travel group</p>
       </div>
 
-      {/* Top Banner KPI Summary Cards - Matching image_a1e8c5.png */}
+      {/* Top Total Statistics Cards Dashboard Grid */}
       <div className="row g-4 mb-4">
         <div className="col-12 col-md-4">
           <div className="card border-0 text-white p-4 rounded-4 shadow-sm" style={{ backgroundColor: '#14a3e4' }}>
@@ -112,10 +112,10 @@ function Expenses() {
         </div>
       </div>
 
-      {/* Main Structural Layout Split */}
+      {/* Main Form and Presentation Layout Break split */}
       <div className="row g-4">
         
-        {/* Left Side: Add Expense Form Component */}
+        {/* Left Input Form Column block */}
         <div className="col-12 col-lg-4">
           <div className="card border-0 shadow-sm rounded-4 p-4 bg-white">
             <h4 className="fw-bold text-dark mb-4" style={{ fontSize: '1.3rem' }}>Add Expense</h4>
@@ -184,7 +184,7 @@ function Expenses() {
           </div>
         </div>
 
-        {/* Right Side: Expense Categories Progress Summary - Matching Screenshot 2026-06-20 172419.png */}
+        {/* Right Categories Bars and Details Grid Table stack */}
         <div className="col-12 col-lg-8">
           <div className="card border-0 shadow-sm rounded-4 p-4 bg-white mb-4">
             <h4 className="fw-bold text-dark mb-4" style={{ fontSize: '1.3rem' }}>Expenses by Category</h4>
@@ -232,7 +232,7 @@ function Expenses() {
             </div>
           </div>
 
-          {/* Bottom Table Ledger Component - Matching Screenshot 2026-06-20 172429.png & 172439.png */}
+          {/* Ledger Table Section */}
           <div className="card border-0 shadow-sm rounded-4 p-4 bg-white">
             <h4 className="fw-bold text-dark mb-4" style={{ fontSize: '1.3rem' }}>All Expenses</h4>
             
@@ -269,12 +269,8 @@ function Expenses() {
                       <td className="py-3 border-0 text-end fw-semibold text-success">${item.perPerson.toFixed(2)}</td>
                       <td className="py-3 border-0 text-center">
                         <div className="d-flex align-items-center justify-content-center gap-2">
-                          <button className="btn btn-link p-1 text-secondary shadow-none border-0">
-                            📝
-                          </button>
-                          <button className="btn btn-link p-1 text-danger shadow-none border-0">
-                            🗑️
-                          </button>
+                          <button type="button" className="btn btn-link p-1 text-secondary shadow-none border-0">📝</button>
+                          <button type="button" className="btn btn-link p-1 text-danger shadow-none border-0">🗑️</button>
                         </div>
                       </td>
                     </tr>
@@ -292,4 +288,4 @@ function Expenses() {
   );
 }
 
-export default Expenses;
+export default ExpenseTracker;
