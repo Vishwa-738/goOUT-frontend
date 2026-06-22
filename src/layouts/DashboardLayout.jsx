@@ -4,23 +4,25 @@ import { Outlet } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import Sidebar from '../components/Sidebar';
 
-function DashboardLayout() {
+export default function DashboardLayout() {
   return (
-    <div className="d-flex flex-column min-vh-100">
-      {/* Global Top Navigation Bar */}
+    <div className="d-flex flex-column vh-100 overflow-hidden bg-light">
+      {/* Global Application Header Mount */}
       <Navbar />
-      
-      <div className="d-flex flex-grow-1">
-        {/* Global Left Navigation Sidebar */}
+
+      {/* Main Structural Layout Divided Wrapper Box */}
+      <div className="d-flex flex-grow-1 overflow-hidden">
+        {/* Left Side Application Navigation Strip */}
         <Sidebar />
-        
-        {/* Main Fluid Content Container Area */}
-        <main className="flex-grow-1 p-4 bg-light" style={{ minWidth: 0 }}>
-          <Outlet />
+
+        {/* Dynamic Inner Component Dashboard Mounting View Panel */}
+        <main className="flex-grow-1 overflow-y-auto p-4 position-relative">
+          <div className="container-fluid g-0 animate-fade-in">
+            {/* The Outlet acts as a portal loading the active sub-routes cleanly */}
+            <Outlet />
+          </div>
         </main>
       </div>
     </div>
   );
 }
-
-export default DashboardLayout;
