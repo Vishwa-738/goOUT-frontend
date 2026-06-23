@@ -1,9 +1,11 @@
 // src/pages/Login.jsx
 import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 
 function Login() {
   const navigate = useNavigate();
+  const { login } = useAuth(); // Hooking into global auth state engine
   
   const [formData, setFormData] = useState({
     email: '',
@@ -20,13 +22,27 @@ function Login() {
     e.preventDefault();
     setError('');
 
-    if (!formData.email || !formData.password) {
+    const targetEmail = formData.email.trim();
+    const targetPassword = formData.password.trim();
+
+    if (!targetEmail || !targetPassword) {
       setError('Please fill in all fields.');
       return;
     }
 
-    console.log('Logging in with:', formData);
-    navigate('/dashboard');
+    // Integrated Mock Verification Bypass using your custom layouts
+    if (targetEmail === 'admin@goout.com' && targetPassword === 'password123') {
+      const mockToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.mockTokenEngine';
+      const mockUserData = { id: 1, name: 'Vishwa Liyanage', email: targetEmail, role: 'Frontend Lead' };
+      
+      // Save credentials into our global AuthContext state layer
+      login(mockToken, mockUserData);
+      
+      // Send the user past the router guard directly into the dashboard shell!
+      navigate('/dashboard');
+    } else {
+      setError('Invalid test credentials! Tip: Use admin@goout.com and password123');
+    }
   };
 
   return (
@@ -43,7 +59,6 @@ function Login() {
           }}
         >
           <div className="position-relative z-1">
-            {/* Compass / Location Pin SVG Placeholder */}
             <div className="bg-white text-primary rounded-circle d-inline-flex align-items-center justify-content-center mb-4 shadow" style={{ width: '80px', height: '80px' }}>
               <span className="fs-1">🧭</span>
             </div>

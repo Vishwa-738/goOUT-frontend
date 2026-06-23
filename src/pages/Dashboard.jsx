@@ -1,7 +1,14 @@
 // src/pages/Dashboard.jsx
-import React from 'react';
+import React, { useState } from 'react';
+import { useAuth } from '../context/AuthContext';
 
 function Dashboard() {
+  const { user } = useAuth(); // Connects cleanly with our central session state engine
+  const [postText, setPostText] = useState('');
+
+  // Extract the first initial of the logged-in user's name (Fallback to 'U' for User)
+  const userInitial = user?.name ? user.name.charAt(0).toUpperCase() : 'U';
+
   const travelPosts = [
     {
       id: 1,
@@ -15,8 +22,21 @@ function Dashboard() {
     }
   ];
 
+  const handlePostSubmit = (e) => {
+    e.preventDefault();
+    if (!postText.trim()) return;
+    console.log('Publishing new feed payload:', postText);
+    setPostText(''); // Flushes field clear on success
+  };
+
   return (
     <div className="container-fluid px-0">
+      {/* Top Banner: Greeting panel connecting context data pipeline metrics */}
+      <div className="mb-4">
+        <h2 className="fw-bold text-dark mb-1">Welcome Back, {user?.name || 'Explorer'}! 👋</h2>
+        <p className="text-muted small mb-0">Here is what's happening with your team itineraries and global community metrics today.</p>
+      </div>
+
       <div className="row g-4">
         
         {/* LEFT COLUMN: Main Community Feed */}
@@ -25,13 +45,16 @@ function Dashboard() {
           {/* Create Post Card */}
           <div className="card shadow-sm border-0 rounded-4 p-3 mb-4 bg-white">
             <div className="d-flex gap-3 align-items-center mb-3">
-              <div className="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center fw-bold shadow-sm" style={{ width: '42px', height: '42px', minWidth: '42px' }}>
-                V
+              {/* Dynamic user profile circle reflecting actual state avatar layers */}
+              <div className="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center fw-bold shadow-sm" style={{ width: '42px', height: '42px', minWidth: '42px', fontSize: '1.1rem' }}>
+                {userInitial}
               </div>
               <input 
                 type="text" 
                 className="form-control bg-light border-0 py-2.5 px-3 rounded-3 fs-6" 
                 placeholder="Share your travel experience..." 
+                value={postText}
+                onChange={(e) => setPostText(e.target.value)}
               />
             </div>
             <div className="d-flex justify-content-between align-items-center border-top pt-2">
@@ -39,7 +62,7 @@ function Dashboard() {
                 <button className="btn btn-light btn-sm text-secondary fw-semibold px-3 rounded-2">🖼️ Photo</button>
                 <button className="btn btn-light btn-sm text-secondary fw-semibold px-3 rounded-2">📍 Location</button>
               </div>
-              <button className="btn btn-primary btn-sm px-4 fw-semibold rounded-2">Post</button>
+              <button onClick={handlePostSubmit} className="btn btn-primary btn-sm px-4 fw-semibold rounded-2">Post</button>
             </div>
           </div>
 
@@ -48,7 +71,7 @@ function Dashboard() {
             <div key={post.id} className="card shadow-sm border-0 rounded-4 p-4 mb-4 bg-white">
               <div className="d-flex align-items-center gap-3 mb-3">
                 <div className="bg-secondary text-white rounded-circle d-flex align-items-center justify-content-center fw-bold" style={{ width: '42px', height: '42px' }}>
-                  S
+                  {post.author.charAt(0)}
                 </div>
                 <div>
                   <h6 className="fw-bold text-dark mb-0">{post.author}</h6>
@@ -122,7 +145,7 @@ function Dashboard() {
             </div>
           </div>
 
-          {/* Platform Travel Stats Widget - Updated matching image_0b9da4.png */}
+          {/* Platform Travel Stats Widget */}
           <div className="card shadow-sm border-0 rounded-4 p-3 bg-white mb-4">
             <h6 className="fw-bold text-dark mb-3" style={{ fontSize: '1.15rem' }}>Travel Stats</h6>
             <div className="d-flex flex-column gap-3">
@@ -149,7 +172,7 @@ function Dashboard() {
                 </div>
               </div>
 
-              {/* Avg Budget Element (NEW) */}
+              {/* Avg Budget Element */}
               <div className="d-flex align-items-center gap-3">
                 <div className="rounded-4 d-flex align-items-center justify-content-center text-white shadow-sm fw-bold fs-5" style={{ width: '42px', height: '42px', backgroundColor: '#a855f7', minWidth: '42px' }}>
                   $
@@ -163,7 +186,7 @@ function Dashboard() {
             </div>
           </div>
 
-          {/* Trending Destinations Widget - Updated matching image_0b9da4.png */}
+          {/* Trending Destinations Widget */}
           <div className="card shadow-sm border-0 rounded-4 p-4 bg-white">
             <h5 className="fw-bold text-dark mb-4" style={{ fontSize: '1.35rem', letterSpacing: '-0.3px' }}>Trending Destinations</h5>
             <div className="d-flex flex-column gap-4">
@@ -174,7 +197,6 @@ function Dashboard() {
               ].map((item) => (
                 <div key={item.rank} className="d-flex align-items-center justify-content-between">
                   <div className="d-flex align-items-center gap-3">
-                    {/* Rounded Square Badge */}
                     <div 
                       className="text-white d-flex align-items-center justify-content-center fw-bold rounded-3" 
                       style={{ width: '40px', height: '40px', background: item.bg, fontSize: '1.1rem' }}
@@ -186,7 +208,6 @@ function Dashboard() {
                       <small className="text-muted style-text" style={{ fontSize: '0.85rem' }}>{item.counts}</small>
                     </div>
                   </div>
-                  {/* Green Vector Trend Metric Arrow Line */}
                   <span className="text-success small fw-bold d-flex align-items-center gap-1" style={{ fontSize: '0.9rem' }}>
                     <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>
                     {item.trend}
