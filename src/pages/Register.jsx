@@ -10,7 +10,7 @@ function Register() {
     email: '',
     password: '',
     confirmPassword: '',
-    travelerType: 'Solo Traveler' // Default selection matching mockup
+    travelerType: 'Solo Traveler'
   });
   const [error, setError] = useState('');
 
@@ -34,6 +34,7 @@ function Register() {
     }
 
     console.log('Registering user data:', formData);
+    // After successful mock registration, send them to the login page
     navigate('/login');
   };
 
@@ -41,21 +42,21 @@ function Register() {
     <div className="container-fluid min-vh-100 p-0 d-flex bg-white">
       <div className="row g-0 w-100">
         
-        {/* Left Side: Branding Banner Pane */}
+        {/* Left Side: Premium GoOut Branding Pane */}
         <div 
           className="col-12 col-md-6 d-none d-md-flex flex-column align-items-center justify-content-center text-white p-5 position-relative text-center"
           style={{
-            background: `linear-gradient(135deg, rgba(2, 179, 155, 0.75), rgba(13, 110, 253, 0.75)), url('https://images.unsplash.com/photo-1586348943529-beaae6c28db9?w=800&auto=format&fit=crop&q=80')`,
+            background: `linear-gradient(135deg, rgba(14, 165, 233, 0.8), rgba(15, 23, 42, 0.9)), url('https://images.unsplash.com/photo-1586348943529-beaae6c28db9?w=800&auto=format&fit=crop&q=80')`,
             backgroundSize: 'cover',
             backgroundPosition: 'center'
           }}
         >
           <div className="position-relative z-1">
-            <div className="bg-white text-primary rounded-circle d-inline-flex align-items-center justify-content-center mb-4 shadow" style={{ width: '80px', height: '80px' }}>
-              <span className="fs-1">🧭</span>
+            <div className="bg-white rounded-circle d-inline-flex align-items-center justify-content-center mb-4 shadow" style={{ width: '80px', height: '80px' }}>
+              <span className="fs-1">🌐</span>
             </div>
-            <h1 className="display-4 fw-bold mb-2">TripLink LK</h1>
-            <p className="lead fs-5 opacity-90">Your journey begins here</p>
+            <h1 className="display-4 fw-bold mb-2" style={{ letterSpacing: '-1px' }}>GoOut</h1>
+            <p className="lead fs-5 opacity-90">Join the adventure today</p>
           </div>
         </div>
 
@@ -186,8 +187,8 @@ function Register() {
                   </div>
                 </div>
 
-                {/* Primary Button styled in Green matching mockup */}
-                <button type="submit" className="btn btn-success w-100 py-2.5 fw-semibold shadow-sm mb-2 rounded-3 border-0" style={{ backgroundColor: '#1cbd74' }}>
+                {/* Primary Button styled to match GoOut branding */}
+                <button type="submit" className="btn w-100 py-2 fw-semibold shadow-sm mb-2 rounded-3 text-white" style={{ backgroundColor: '#0EA5E9', border: 'none' }}>
                   Create Account
                 </button>
               </form>
@@ -195,7 +196,7 @@ function Register() {
 
             {/* Terms and Privacy Footer Subtext */}
             <p className="text-center text-muted small mt-4 px-3 mb-0" style={{ fontSize: '0.8rem', lineHeight: '1.4' }}>
-              By continuing, you agree to our <span className="text-primary text-decoration-none fw-semibold">Terms of Service</span> and <span className="text-primary text-decoration-none fw-semibold">Privacy Policy</span>
+              By continuing, you agree to our <span style={{ color: '#0EA5E9', fontWeight: '600', cursor: 'pointer' }}>Terms of Service</span> and <span style={{ color: '#0EA5E9', fontWeight: '600', cursor: 'pointer' }}>Privacy Policy</span>
             </p>
 
           </div>
