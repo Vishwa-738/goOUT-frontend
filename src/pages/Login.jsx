@@ -1,9 +1,11 @@
 // src/pages/Login.jsx
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext'; // IMPORT YOUR AUTH CONTEXT HERE!
 
 function Login() {
   const navigate = useNavigate();
+  const { login } = useAuth(); // GRAB THE REAL LOGIN FUNCTION!
   
   const [formData, setFormData] = useState({
     email: '',
@@ -16,7 +18,8 @@ function Login() {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = (e) => {
+  // MAKE SURE THIS IS ASYNC NOW
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
 
@@ -28,11 +31,15 @@ function Login() {
       return;
     }
 
-    // Direct Bypass to Dashboard for UI testing
-    if (targetEmail === 'admin@goout.com' && targetPassword === 'password123') {
+    // FIRE THE REAL API REQUEST!
+    const result = await login(targetEmail, targetPassword);
+    
+    if (result.success) {
+      // If the backend says OK, go to the dashboard!
       navigate('/dashboard');
     } else {
-      setError('Invalid test credentials! Tip: Use admin@goout.com and password123');
+      // If the backend rejects it, show the error message from the server
+      setError(result.message);
     }
   };
 

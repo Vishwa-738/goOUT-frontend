@@ -1,26 +1,20 @@
-// src/services/api.js
 import axios from 'axios';
 
-// Centralized Axios client initialized with the team's backend endpoint contracts
-const api = axios.create({
-  baseURL: 'http://localhost:8080/api/v1',
+// Create a configured Axios instance
+const API = axios.create({
+  // Using Vite's environment variables. 
+  // If the env variable isn't set, it safely falls back to the local backend port.
+  baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080',
   headers: {
     'Content-Type': 'application/json',
-  },
+  }
 });
 
-// Request Interceptor: Automatically injects JWT auth tokens into headers later
-api.interceptors.request.use(
-  (config) => {
-    const token = localStorage.getItem('token');
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-    return config;
-  },
-  (error) => {
-    return Promise.reject(error);
-  }
-);
+// Interceptor to automatically attach the JWT token to requests
+API.interceptors.request.use((req) => {
+  const token = localStorage.getItem('token');
+  if (token) req.headers.Authorization = `Bearer ${token}`;
+  return req;
+});
 
-export default api;
+export default API;
