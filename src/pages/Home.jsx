@@ -18,8 +18,18 @@ function Home() {
       {/* 1. Header Navigation */}
       <header className="navbar navbar-light bg-white border-bottom px-4 py-3 sticky-top">
         <div className="container-fluid d-flex justify-content-between align-items-center">
-          <Link className="navbar-brand fw-bold text-dark fs-4 d-flex align-items-center gap-2" to="/">
-            <span className="text-primary">🧭</span> TripLink LK
+          <Link className="navbar-brand text-decoration-none d-flex align-items-center gap-2" to="/">
+            <span style={{ 
+              color: '#0EA5E9', 
+              fontWeight: '900', 
+              fontSize: '24px', 
+              letterSpacing: '-1px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px'
+            }}>
+              <span style={{ fontSize: '26px' }}>🌐</span> GoOut
+            </span>
           </Link>
           <div className="d-flex gap-2">
             <button 
@@ -42,7 +52,7 @@ function Home() {
       <section 
         className="text-white text-center d-flex align-items-center justify-content-center px-3"
         style={{
-          background: `linear-gradient(rgba(13, 110, 253, 0.45), rgba(0, 40, 120, 0.8)), url('https://images.unsplash.com/photo-1544735716-392fe2489ffa?w=1600&auto=format&fit=crop&q=80')`,
+          background: `linear-gradient(rgba(14, 165, 233, 0.45), rgba(15, 23, 42, 0.85)), url('https://images.unsplash.com/photo-1544735716-392fe2489ffa?w=1600&auto=format&fit=crop&q=80')`,
           backgroundSize: 'cover',
           backgroundPosition: 'center',
           minHeight: '70vh'
@@ -138,7 +148,7 @@ function Home() {
       </section>
 
       {/* 5. CTA Bottom Section */}
-      <section className="text-white text-center py-5 px-3" style={{ background: 'linear-gradient(135deg, #02b39b, #0d6efd)' }}>
+      <section className="text-white text-center py-5 px-3" style={{ background: 'linear-gradient(135deg, #0EA5E9, #0284C7)' }}>
         <div className="py-4">
           <h2 className="fw-bold mb-3">Ready to Start Your Adventure?</h2>
           <p className="fs-5 mb-4 opacity-90">Join thousands of travelers exploring Sri Lanka together</p>
@@ -146,7 +156,7 @@ function Home() {
             className="btn btn-light text-primary fw-bold btn-lg px-5 shadow-sm rounded-3" 
             onClick={() => navigate('/login')}
           >
-            Join TripLink LK Today
+            Join GoOut Today
           </button>
         </div>
       </section>
@@ -158,7 +168,7 @@ function Home() {
             
             <div className="col-12 col-md-3">
               <h5 className="text-white fw-bold mb-3 d-flex align-items-center gap-2">
-                <span className="text-primary">🧭</span> TripLink LK
+                <span className="text-primary">🌐</span> GoOut
               </h5>
               <p className="small text-white-50">Connecting travelers across Sri Lanka</p>
             </div>
@@ -219,7 +229,7 @@ function Home() {
           <hr className="border-secondary opacity-25 my-4" />
 
           <div className="text-center small text-white-50">
-            © 2026 TripLink LK. All rights reserved.
+            © 2026 GoOut. All rights reserved.
           </div>
         </div>
       </footer>

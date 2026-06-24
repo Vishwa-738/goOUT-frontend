@@ -1,85 +1,99 @@
-// src/components/Sidebar.jsx
 import React from 'react';
-import { NavLink } from 'react-router-dom';
+import { Home, Compass, MapPin, Wallet, User, LogOut } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
-function Sidebar() {
-  const menuItems = [
-    { 
-      path: '/dashboard', 
-      label: 'Home',
-      icon: (
-        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-      )
-    },
-    { 
-      path: '/discover', 
-      label: 'Discover Trips',
-      icon: (
-        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
-      )
-    },
-    { 
-      path: '/my-trips', 
-      label: 'My Trips',
-      icon: (
-        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0z"/><circle cx="12" cy="10" r="3"/></svg>
-      )
-    },
-    { 
-      path: '/expenses', 
-      label: 'Expenses',
-      icon: (
-        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><line x1="12" y1="4" x2="12" y2="20"/></svg>
-      )
-    },
-    { 
-      path: '/profile', 
-      label: 'Profile',
-      icon: (
-        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-      )
-    }
+export default function Sidebar({ activeTab, setActiveTab }) {
+  const navigate = useNavigate();
+
+  const navItems = [
+    { id: 'home', label: 'Home', icon: Home },
+    { id: 'discover', label: 'Discover Trips', icon: Compass },
+    { id: 'my-trips', label: 'My Trips', icon: MapPin },
+    { id: 'expenses', label: 'Expenses', icon: Wallet },
+    { id: 'profile', label: 'Profile', icon: User },
   ];
 
+  const handleLogout = () => {
+    // If you build the full AuthContext later, call your auth.logout() function here first!
+    console.log("User logged out");
+    navigate('/login');
+  };
+
   return (
-    <div 
-      className="bg-white d-flex flex-column p-3" 
-      style={{ 
-        width: 'var(--sidebar-width)', 
-        minHeight: 'calc(100vh - 70px)', 
-        position: 'sticky',
-        top: '70px',
-        borderRight: '1px solid #edf2f7'
-      }}
-    >
-      <ul className="nav nav-pills flex-column mb-auto gap-2">
-        {menuItems.map((item) => (
-          <li key={item.path} className="nav-item">
-            <NavLink
-              to={item.path}
-              className={({ isActive }) => 
-                `nav-link d-flex align-items-center gap-3 py-2.5 px-4 rounded-3 text-decoration-none text-nowrap ${
-                  isActive ? 'text-white shadow-sm' : 'text-secondary bg-transparent'
-                }`
-              }
-              style={({ isActive }) => ({
-                backgroundColor: isActive ? '#14a3e4' : 'transparent',
-                fontWeight: isActive ? '600' : '500',
-                fontSize: '1rem',
-                letterSpacing: '0.2px',
-                height: '50px' // Hardcoded height forces all button boxes to remain identical
-              })}
+    <div style={{
+      width: '260px',
+      minHeight: '100vh',
+      backgroundColor: '#ffffff',
+      borderRight: '1px solid #E2E8F0',
+      display: 'flex',
+      flexDirection: 'column',
+      paddingTop: '24px',
+      paddingBottom: '24px', // Added bottom padding to hold the logout button
+      paddingLeft: '16px',
+      paddingRight: '16px',
+      boxSizing: 'border-box'
+    }}>
+      
+      {/* Top Navigation Links */}
+      <nav style={{ display: 'flex', flexDirection: 'column', gap: '8px', flex: 1 }}>
+        {navItems.map((item) => {
+          const IconComponent = item.icon;
+          const isActive = activeTab === item.id;
+
+          return (
+            <button
+              key={item.id}
+              onClick={() => setActiveTab(item.id)}
+              style={{
+                width: '100%',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '16px',
+                padding: '12px 20px',
+                borderRadius: '16px',
+                border: 'none',
+                fontSize: '15px',
+                fontWeight: '600',
+                cursor: 'pointer',
+                transition: 'all 0.2s ease',
+                textAlign: 'left',
+                backgroundColor: isActive ? '#0EA5E9' : 'transparent',
+                color: isActive ? '#FFFFFF' : '#64748B',
+                boxShadow: isActive ? '0 4px 12px rgba(14, 165, 233, 0.25)' : 'none'
+              }}
             >
-              <span className="d-flex align-items-center justify-content-center" style={{ width: '20px' }}>
-                {item.icon}
-              </span>
-              <span>{item.label}</span>
-            </NavLink>
-          </li>
-        ))}
-      </ul>
+              <IconComponent size={20} style={{ color: isActive ? '#FFFFFF' : '#94A3B8' }} />
+              {item.label}
+            </button>
+          );
+        })}
+      </nav>
+
+      {/* BOTTOM FIXED LOGOUT BUTTON */}
+      <button
+        onClick={handleLogout}
+        style={{
+          width: '100%',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '16px',
+          padding: '12px 20px',
+          borderRadius: '16px',
+          border: '1px solid #FEE2E2',
+          backgroundColor: '#FFF1F2',
+          color: '#E11D48', // Deep rose/red color to indicate an exit action
+          fontSize: '15px',
+          fontWeight: '600',
+          cursor: 'pointer',
+          transition: 'all 0.2s ease',
+          textAlign: 'left',
+          marginTop: 'auto' // This CSS property pushes the button to the very bottom of the flex container!
+        }}
+      >
+        <LogOut size={20} color="#E11D48" />
+        Log Out
+      </button>
+
     </div>
   );
 }
-
-export default Sidebar;

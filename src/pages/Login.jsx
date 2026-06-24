@@ -1,6 +1,6 @@
 // src/pages/Login.jsx
 import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 
 function Login() {
   const navigate = useNavigate();
@@ -20,34 +20,40 @@ function Login() {
     e.preventDefault();
     setError('');
 
-    if (!formData.email || !formData.password) {
+    const targetEmail = formData.email.trim();
+    const targetPassword = formData.password.trim();
+
+    if (!targetEmail || !targetPassword) {
       setError('Please fill in all fields.');
       return;
     }
 
-    console.log('Logging in with:', formData);
-    navigate('/dashboard');
+    // Direct Bypass to Dashboard for UI testing
+    if (targetEmail === 'admin@goout.com' && targetPassword === 'password123') {
+      navigate('/dashboard');
+    } else {
+      setError('Invalid test credentials! Tip: Use admin@goout.com and password123');
+    }
   };
 
   return (
     <div className="container-fluid min-vh-100 p-0 d-flex bg-white">
       <div className="row g-0 w-100">
         
-        {/* Left Side: Branding Banner Pane */}
+        {/* Left Side: Premium GoOut Branding Pane */}
         <div 
           className="col-12 col-md-6 d-none d-md-flex flex-column align-items-center justify-content-center text-white p-5 position-relative text-center"
           style={{
-            background: `linear-gradient(135deg, rgba(2, 179, 155, 0.75), rgba(13, 110, 253, 0.75)), url('https://images.unsplash.com/photo-1586348943529-beaae6c28db9?w=800&auto=format&fit=crop&q=80')`,
+            background: `linear-gradient(135deg, rgba(14, 165, 233, 0.8), rgba(15, 23, 42, 0.9)), url('https://images.unsplash.com/photo-1586348943529-beaae6c28db9?w=800&auto=format&fit=crop&q=80')`,
             backgroundSize: 'cover',
             backgroundPosition: 'center'
           }}
         >
           <div className="position-relative z-1">
-            {/* Compass / Location Pin SVG Placeholder */}
-            <div className="bg-white text-primary rounded-circle d-inline-flex align-items-center justify-content-center mb-4 shadow" style={{ width: '80px', height: '80px' }}>
-              <span className="fs-1">🧭</span>
+            <div className="bg-white rounded-circle d-inline-flex align-items-center justify-content-center mb-4 shadow" style={{ width: '80px', height: '80px' }}>
+              <span className="fs-1">🌐</span>
             </div>
-            <h1 className="display-4 fw-bold mb-2">TripLink LK</h1>
+            <h1 className="display-4 fw-bold mb-2" style={{ letterSpacing: '-1px' }}>GoOut</h1>
             <p className="lead fs-5 opacity-90">Your journey begins here</p>
           </div>
         </div>
@@ -118,11 +124,11 @@ function Login() {
                     <input type="checkbox" className="form-check-input" id="rememberMe" />
                     <label className="form-check-label text-muted" htmlFor="rememberMe">Remember me</label>
                   </div>
-                  <span className="text-primary cursor-pointer fw-semibold text-decoration-none">Forgot password?</span>
+                  <span style={{ color: '#0EA5E9', cursor: 'pointer', fontWeight: '600' }}>Forgot password?</span>
                 </div>
 
                 {/* Primary Button */}
-                <button type="submit" className="btn btn-primary w-100 py-2.5 fw-semibold shadow-sm mb-2 rounded-3">
+                <button type="submit" className="btn w-100 py-2 fw-semibold shadow-sm mb-2 rounded-3 text-white" style={{ backgroundColor: '#0EA5E9', border: 'none' }}>
                   Sign In
                 </button>
               </form>
@@ -130,7 +136,7 @@ function Login() {
 
             {/* Terms and Privacy Footer Subtext */}
             <p className="text-center text-muted small mt-4 px-3 mb-0" style={{ fontSize: '0.8rem', lineHeight: '1.4' }}>
-              By continuing, you agree to our <span className="text-primary text-decoration-none fw-semibold">Terms of Service</span> and <span className="text-primary text-decoration-none fw-semibold">Privacy Policy</span>
+              By continuing, you agree to our <span style={{ color: '#0EA5E9', fontWeight: '600', cursor: 'pointer' }}>Terms of Service</span> and <span style={{ color: '#0EA5E9', fontWeight: '600', cursor: 'pointer' }}>Privacy Policy</span>
             </p>
 
           </div>
