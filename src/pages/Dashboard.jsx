@@ -101,8 +101,19 @@ export default function Dashboard() {
                     </button>
                   </div>
                   <div style={{ padding: '8px', borderTop: '1px solid #f1f5f9' }}>
-                    <button style={{ width: '100%', display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 12px', border: 'none', backgroundColor: 'transparent', cursor: 'pointer', borderRadius: '8px', color: '#ef4444', fontSize: '14px', textAlign: 'left' }}>
-                      <LogOut size={18} color="#ef4444" /> Logout
+<button 
+  onClick={() => {
+    // 1. Clear any saved user session/auth tokens
+    localStorage.clear(); 
+    sessionStorage.clear();
+    
+    // 2. Redirect the user to the login page (adjust '/login' to your actual login route)
+    window.location.href = '/login'; 
+  }}
+  style={{ width: '100%', display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 12px', border: 'none', backgroundColor: 'transparent', cursor: 'pointer', borderRadius: '8px', color: '#ef4444', fontSize: '14px', textAlign: 'left' }}
+  onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#fef2f2'}
+  onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+>                      <LogOut size={18} color="#ef4444" /> Logout
                     </button>
                   </div>
                 </div>

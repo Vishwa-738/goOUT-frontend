@@ -49,9 +49,16 @@ function Login() {
             backgroundPosition: 'center'
           }}
         >
-          <div className="position-relative z-1">
+          {/* LOGO CONTAINER: Now clickable to return to the landing page! */}
+          <div 
+            className="position-relative z-1" 
+            onClick={() => navigate('/')} 
+            style={{ cursor: 'pointer', transition: 'transform 0.2s ease-in-out' }}
+            onMouseOver={(e) => e.currentTarget.style.transform = 'scale(1.02)'}
+            onMouseOut={(e) => e.currentTarget.style.transform = 'scale(1)'}
+          >
             <div className="bg-white rounded-circle d-inline-flex align-items-center justify-content-center mb-4 shadow" style={{ width: '80px', height: '80px' }}>
-              <span className="fs-1">🌐</span>
+              <span className="fs-1" style={{ color: '#0EA5E9' }}>🌐</span>
             </div>
             <h1 className="display-4 fw-bold mb-2" style={{ letterSpacing: '-1px' }}>GoOut</h1>
             <p className="lead fs-5 opacity-90">Your journey begins here</p>
