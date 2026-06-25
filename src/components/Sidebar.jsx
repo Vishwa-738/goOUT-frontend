@@ -1,98 +1,69 @@
+// src/components/Sidebar.jsx
 import React from 'react';
-import { Home, Compass, MapPin, Wallet, User, LogOut } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { Home, Compass, MapPin, Wallet, User } from 'lucide-react';
 
 export default function Sidebar({ activeTab, setActiveTab }) {
-  const navigate = useNavigate();
-
-  const navItems = [
-    { id: 'home', label: 'Home', icon: Home },
-    { id: 'discover', label: 'Discover Trips', icon: Compass },
-    { id: 'my-trips', label: 'My Trips', icon: MapPin },
-    { id: 'expenses', label: 'Expenses', icon: Wallet },
-    { id: 'profile', label: 'Profile', icon: User },
+  const menuItems = [
+    { id: 'home', label: 'Home', icon: <Home size={20} /> },
+    { id: 'discover', label: 'Discover Trips', icon: <Compass size={20} /> },
+    { id: 'my-trips', label: 'My Trips', icon: <MapPin size={20} /> },
+    { id: 'expenses', label: 'Expenses', icon: <Wallet size={20} /> },
+    { id: 'profile', label: 'Profile', icon: <User size={20} /> }
   ];
 
-  const handleLogout = () => {
-    // If you build the full AuthContext later, call your auth.logout() function here first!
-    console.log("User logged out");
-    navigate('/login');
-  };
-
   return (
-    <div style={{
-      width: '260px',
-      minHeight: '100vh',
-      backgroundColor: '#ffffff',
-      borderRight: '1px solid #E2E8F0',
-      display: 'flex',
-      flexDirection: 'column',
-      paddingTop: '24px',
-      paddingBottom: '24px', // Added bottom padding to hold the logout button
-      paddingLeft: '16px',
-      paddingRight: '16px',
-      boxSizing: 'border-box'
+    <div style={{ 
+      width: '260px', 
+      backgroundColor: '#ffffff', 
+      borderRight: '1px solid #f1f5f9', 
+      display: 'flex', 
+      flexDirection: 'column', 
+      padding: '32px 16px' 
     }}>
       
-      {/* Top Navigation Links */}
-      <nav style={{ display: 'flex', flexDirection: 'column', gap: '8px', flex: 1 }}>
-        {navItems.map((item) => {
-          const IconComponent = item.icon;
+      {/* Navigation Links */}
+      <nav style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '8px' }}>
+        {menuItems.map((item) => {
           const isActive = activeTab === item.id;
-
           return (
             <button
               key={item.id}
               onClick={() => setActiveTab(item.id)}
               style={{
-                width: '100%',
                 display: 'flex',
                 alignItems: 'center',
                 gap: '16px',
-                padding: '12px 20px',
-                borderRadius: '16px',
-                border: 'none',
-                fontSize: '15px',
-                fontWeight: '600',
-                cursor: 'pointer',
-                transition: 'all 0.2s ease',
-                textAlign: 'left',
+                padding: '14px 24px',
                 backgroundColor: isActive ? '#0EA5E9' : 'transparent',
-                color: isActive ? '#FFFFFF' : '#64748B',
-                boxShadow: isActive ? '0 4px 12px rgba(14, 165, 233, 0.25)' : 'none'
+                color: isActive ? '#ffffff' : '#64748b',
+                border: 'none',
+                borderRadius: '16px',
+                fontSize: '15px',
+                fontWeight: isActive ? 'bold' : '500',
+                cursor: 'pointer',
+                transition: 'all 0.2s ease-in-out',
+                textAlign: 'left',
+                width: '100%'
+              }}
+              onMouseOver={(e) => {
+                if (!isActive) {
+                  e.currentTarget.style.backgroundColor = '#f8fafc';
+                  e.currentTarget.style.color = '#0f172a';
+                }
+              }}
+              onMouseOut={(e) => {
+                if (!isActive) {
+                  e.currentTarget.style.backgroundColor = 'transparent';
+                  e.currentTarget.style.color = '#64748b';
+                }
               }}
             >
-              <IconComponent size={20} style={{ color: isActive ? '#FFFFFF' : '#94A3B8' }} />
+              {item.icon}
               {item.label}
             </button>
           );
         })}
       </nav>
-
-      {/* BOTTOM FIXED LOGOUT BUTTON */}
-      <button
-        onClick={handleLogout}
-        style={{
-          width: '100%',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '16px',
-          padding: '12px 20px',
-          borderRadius: '16px',
-          border: '1px solid #FEE2E2',
-          backgroundColor: '#FFF1F2',
-          color: '#E11D48', // Deep rose/red color to indicate an exit action
-          fontSize: '15px',
-          fontWeight: '600',
-          cursor: 'pointer',
-          transition: 'all 0.2s ease',
-          textAlign: 'left',
-          marginTop: 'auto' // This CSS property pushes the button to the very bottom of the flex container!
-        }}
-      >
-        <LogOut size={20} color="#E11D48" />
-        Log Out
-      </button>
 
     </div>
   );

@@ -1,9 +1,11 @@
 // src/pages/Login.jsx
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext'; // IMPORT YOUR AUTH CONTEXT HERE!
 
 function Login() {
   const navigate = useNavigate();
+  const { login } = useAuth(); // GRAB THE REAL LOGIN FUNCTION!
   
   const [formData, setFormData] = useState({
     email: '',
@@ -16,7 +18,8 @@ function Login() {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = (e) => {
+  // MAKE SURE THIS IS ASYNC NOW
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
 
@@ -28,11 +31,15 @@ function Login() {
       return;
     }
 
-    // Direct Bypass to Dashboard for UI testing
-    if (targetEmail === 'admin@goout.com' && targetPassword === 'password123') {
+    // FIRE THE REAL API REQUEST!
+    const result = await login(targetEmail, targetPassword);
+    
+    if (result.success) {
+      // If the backend says OK, go to the dashboard!
       navigate('/dashboard');
     } else {
-      setError('Invalid test credentials! Tip: Use admin@goout.com and password123');
+      // If the backend rejects it, show the error message from the server
+      setError(result.message);
     }
   };
 
@@ -49,9 +56,16 @@ function Login() {
             backgroundPosition: 'center'
           }}
         >
-          <div className="position-relative z-1">
+          {/* LOGO CONTAINER: Now clickable to return to the landing page! */}
+          <div 
+            className="position-relative z-1" 
+            onClick={() => navigate('/')} 
+            style={{ cursor: 'pointer', transition: 'transform 0.2s ease-in-out' }}
+            onMouseOver={(e) => e.currentTarget.style.transform = 'scale(1.02)'}
+            onMouseOut={(e) => e.currentTarget.style.transform = 'scale(1)'}
+          >
             <div className="bg-white rounded-circle d-inline-flex align-items-center justify-content-center mb-4 shadow" style={{ width: '80px', height: '80px' }}>
-              <span className="fs-1">🌐</span>
+              <span className="fs-1" style={{ color: '#0EA5E9' }}>🌐</span>
             </div>
             <h1 className="display-4 fw-bold mb-2" style={{ letterSpacing: '-1px' }}>GoOut</h1>
             <p className="lead fs-5 opacity-90">Your journey begins here</p>

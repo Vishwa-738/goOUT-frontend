@@ -1,249 +1,238 @@
+// src/pages/ChatRoom.jsx
 import React from 'react';
 import { 
-  ArrowLeft, MapPin, Smile, Paperclip, Send, AlertTriangle, 
-  Users, Shield, Coffee, Home, Navigation, Map, Phone, Sun
+  MapPin, MessageCircle, MoreHorizontal, Paperclip, Smile, Send, 
+  CloudRain, Wind, Droplets, AlertTriangle, Users, Shield, Coffee, Home 
 } from 'lucide-react';
 
-export default function ChatRoom({ onBack }) {
-  const activeMembers = [
-    { name: 'Raj Patel', role: 'Organizer', online: true, avatar: 'https://images.unsplash.com/photo-1599566150163-29194dcaad36?w=150' },
-    { name: 'Sarah Kumar', role: 'You', online: true, avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150' },
-    { name: 'Emma Wilson', role: 'typing...', online: true, avatar: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=150' },
-    { name: 'David Chen', role: 'Member', online: true, avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150' },
-    { name: 'Priya Nair', role: 'Member', online: false, avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150' },
-  ];
-
+export default function ChatRoom() {
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 40px)', fontFamily: 'system-ui, -apple-system, sans-serif', color: '#0f172a', borderRadius: '24px', overflow: 'hidden', border: '1px solid #e2e8f0', boxShadow: '0 10px 40px rgba(0,0,0,0.05)' }}>
+    <div style={{ display: 'flex', gap: '24px', height: '100%', fontFamily: 'sans-serif' }}>
       
-      {/* 🌟 CHAT HEADER */}
-      <div style={{ padding: '16px 24px', backgroundColor: '#ffffff', borderBottom: '1px solid #f1f5f9', display: 'flex', alignItems: 'center', justifyContent: 'space-between', zIndex: 10 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
-          <button onClick={onBack} style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '50%', width: '40px', height: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#475569', transition: 'all 0.2s' }}>
-            <ArrowLeft size={18} />
-          </button>
-          <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-              <h2 style={{ fontSize: '20px', fontWeight: '700', margin: 0, letterSpacing: '-0.5px' }}>Ella Adventure Trip</h2>
-              <span style={{ backgroundColor: '#eef2ff', color: '#4f46e5', fontSize: '12px', padding: '4px 10px', borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '4px', fontWeight: '600' }}>
-                <MapPin size={12} /> Ella, Sri Lanka
-              </span>
-            </div>
-            <span style={{ fontSize: '13px', color: '#10b981', display: 'flex', alignItems: 'center', gap: '6px', marginTop: '4px', fontWeight: '500' }}>
-              <div style={{ width: '8px', height: '8px', backgroundColor: '#10b981', borderRadius: '50%', boxShadow: '0 0 0 2px #d1fae5' }} /> 3 members active now
-            </span>
-          </div>
-        </div>
-      </div>
-
-      {/* 3-COLUMN MAIN LAYOUT */}
-      <div style={{ display: 'flex', flex: 1, overflow: 'hidden', backgroundColor: '#f8fafc' }}>
+      {/* ==========================================
+          LEFT COLUMN: Trip Context & Members
+          ========================================== */}
+      <div style={{ width: '280px', display: 'flex', flexDirection: 'column', gap: '24px' }}>
         
-        {/* 🌿 LEFT COLUMN: Trip Context */}
-        <div style={{ width: '280px', backgroundColor: '#ffffff', borderRight: '1px solid #f1f5f9', display: 'flex', flexDirection: 'column', padding: '24px', overflowY: 'auto' }}>
-          
-          <div style={{ height: '140px', borderRadius: '20px', overflow: 'hidden', position: 'relative', marginBottom: '24px', boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}>
-            <img src="https://images.unsplash.com/photo-1542856391-010fb87dcfed?w=400" alt="Ella" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-            <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, padding: '16px', background: 'linear-gradient(to top, rgba(15,23,42,0.9), transparent)', color: '#ffffff' }}>
-              <strong style={{ display: 'block', fontSize: '15px', fontWeight: '600' }}>Ella Adventure</strong>
-              <span style={{ fontSize: '12px', opacity: 0.9, fontWeight: '400' }}>Jul 8-14, 2026</span>
+        {/* Trip Hero Card */}
+        <div style={{ backgroundColor: '#fff', borderRadius: '16px', overflow: 'hidden', border: '1px solid #f1f5f9', boxShadow: '0 2px 4px rgba(0,0,0,0.02)' }}>
+          <div style={{ height: '120px', position: 'relative' }}>
+            <img src="https://images.unsplash.com/photo-1546708973-b339540b5162?w=600&h=300&fit=crop" alt="Ella" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            <div style={{ position: 'absolute', bottom: '0', left: '0', right: '0', background: 'linear-gradient(to top, rgba(0,0,0,0.8), transparent)', padding: '16px' }}>
+              <h3 style={{ color: '#fff', margin: '0 0 4px 0', fontSize: '16px' }}>Ella Adventure</h3>
+              <span style={{ color: '#e2e8f0', fontSize: '12px' }}>Jul 8-14, 2026</span>
             </div>
           </div>
-
-          <div style={{ display: 'flex', gap: '12px', marginBottom: '32px' }}>
-            <div style={{ flex: 1, padding: '16px', backgroundColor: '#f8fafc', borderRadius: '16px', border: '1px solid #f1f5f9' }}>
-              <span style={{ fontSize: '12px', color: '#64748b', fontWeight: '500' }}>Budget</span>
-              <strong style={{ display: 'block', color: '#4f46e5', fontSize: '16px', marginTop: '4px' }}>Rs. 18K</strong>
+          <div style={{ display: 'flex', padding: '16px', gap: '16px' }}>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>Budget</div>
+              <div style={{ fontWeight: 'bold', color: '#0EA5E9', fontSize: '14px' }}>Rs. 18K</div>
             </div>
-            <div style={{ flex: 1, padding: '16px', backgroundColor: '#f8fafc', borderRadius: '16px', border: '1px solid #f1f5f9' }}>
-              <span style={{ fontSize: '12px', color: '#64748b', fontWeight: '500' }}>Duration</span>
-              <strong style={{ display: 'block', color: '#10b981', fontSize: '16px', marginTop: '4px' }}>7 Days</strong>
-            </div>
-          </div>
-
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-            <h4 style={{ fontSize: '15px', fontWeight: '700', margin: 0, color: '#334155' }}>Squad</h4>
-            <span style={{ fontSize: '12px', color: '#4f46e5', backgroundColor: '#eef2ff', padding: '4px 10px', borderRadius: '12px', fontWeight: '600' }}>5 Total</span>
-          </div>
-          
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginBottom: '32px' }}>
-            {activeMembers.map((member, idx) => (
-              <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                <div style={{ position: 'relative' }}>
-                  <img src={member.avatar} alt="avatar" style={{ width: '40px', height: '40px', borderRadius: '50%', objectFit: 'cover', border: '2px solid #ffffff', boxShadow: '0 2px 4px rgba(0,0,0,0.05)' }} />
-                  {member.online && <div style={{ position: 'absolute', bottom: 0, right: 0, width: '12px', height: '12px', backgroundColor: '#10b981', border: '2px solid #ffffff', borderRadius: '50%' }} />}
-                </div>
-                <div>
-                  <strong style={{ fontSize: '14px', display: 'block', color: '#1e293b' }}>{member.name} {member.role === 'Organizer' && '⭐'}</strong>
-                  <span style={{ fontSize: '12px', fontWeight: '500', color: member.role === 'typing...' ? '#4f46e5' : '#94a3b8' }}>{member.role}</span>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* 💬 CENTER COLUMN: Live Chat Stream */}
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', position: 'relative' }}>
-          
-          <div style={{ flex: 1, overflowY: 'auto', padding: '24px 32px', display: 'flex', flexDirection: 'column', gap: '24px' }}>
-            
-            <div style={{ textAlign: 'center', margin: '8px 0' }}>
-              <span style={{ backgroundColor: '#ffffff', boxShadow: '0 2px 8px rgba(0,0,0,0.04)', padding: '6px 16px', borderRadius: '20px', fontSize: '12px', color: '#64748b', fontWeight: '500' }}>
-                Emma Wilson joined the trip • 9:22 AM
-              </span>
-            </div>
-
-            {/* Received Message */}
-            <div style={{ display: 'flex', gap: '12px', maxWidth: '85%' }}>
-              <img src="https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=150" alt="avatar" style={{ width: '36px', height: '36px', borderRadius: '50%', boxShadow: '0 2px 4px rgba(0,0,0,0.05)' }} />
-              <div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
-                   <span style={{ fontSize: '13px', color: '#475569', fontWeight: '600' }}>Emma Wilson</span>
-                   <span style={{ fontSize: '11px', color: '#94a3b8' }}>9:24 AM</span>
-                </div>
-                <div style={{ backgroundColor: '#ffffff', padding: '16px', borderRadius: '4px 20px 20px 20px', fontSize: '14px', lineHeight: '1.6', color: '#334155', boxShadow: '0 2px 12px rgba(0,0,0,0.04)' }}>
-                  Just joined! So excited for this. I heard the Nine Arch Bridge is magical at sunrise. Should we plan that for Day 1?
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '8px' }}>
-                  <span style={{ backgroundColor: '#ffffff', border: '1px solid #e2e8f0', fontSize: '12px', padding: '4px 10px', borderRadius: '16px', cursor: 'pointer', boxShadow: '0 1px 2px rgba(0,0,0,0.02)' }}>🔥 4</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Sent Message */}
-            <div style={{ display: 'flex', gap: '12px', maxWidth: '85%', alignSelf: 'flex-end' }}>
-              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
-                   <span style={{ fontSize: '11px', color: '#94a3b8' }}>9:28 AM</span>
-                   <span style={{ fontSize: '13px', color: '#475569', fontWeight: '600' }}>You</span>
-                </div>
-                <div style={{ background: 'linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)', color: '#ffffff', padding: '16px', borderRadius: '20px 4px 20px 20px', fontSize: '14px', lineHeight: '1.6', boxShadow: '0 4px 16px rgba(79, 70, 229, 0.2)' }}>
-                  100% yes! I looked it up — the 6:30 AM train passes through at golden hour. Perfect for photos.
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '8px' }}>
-                  <span style={{ backgroundColor: '#ffffff', border: '1px solid #e2e8f0', fontSize: '12px', padding: '4px 10px', borderRadius: '16px', cursor: 'pointer' }}>🚂 2</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Received Message */}
-            <div style={{ display: 'flex', gap: '12px', maxWidth: '85%' }}>
-              <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150" alt="avatar" style={{ width: '36px', height: '36px', borderRadius: '50%', boxShadow: '0 2px 4px rgba(0,0,0,0.05)' }} />
-              <div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
-                   <span style={{ fontSize: '13px', color: '#475569', fontWeight: '600' }}>David Chen</span>
-                   <span style={{ fontSize: '11px', color: '#94a3b8' }}>9:45 AM</span>
-                </div>
-                <div style={{ backgroundColor: '#ffffff', padding: '16px', borderRadius: '4px 20px 20px 20px', fontSize: '14px', lineHeight: '1.6', color: '#334155', boxShadow: '0 2px 12px rgba(0,0,0,0.04)' }}>
-                  I rented bikes from Green View Hostel — Rs. 1500/day. Anyone else want one? They have 3 more available.
-                </div>
-              </div>
-            </div>
-
-          </div>
-
-          {/* Typing Indicator & Input Field */}
-          <div style={{ padding: '20px 32px', backgroundColor: '#ffffff', borderTop: '1px solid #e2e8f0', zIndex: 10 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px', color: '#64748b', fontSize: '13px', fontWeight: '500' }}>
-               <img src="https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=150" alt="avatar" style={{ width: '20px', height: '20px', borderRadius: '50%' }} /> 
-               <span style={{ fontStyle: 'italic' }}>Emma is typing...</span>
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '16px', backgroundColor: '#f8fafc', padding: '8px 8px 8px 20px', borderRadius: '30px', border: '1px solid #e2e8f0', transition: 'border 0.2s', ':focus-within': { borderColor: '#4f46e5' } }}>
-              <button style={{ border: 'none', background: 'none', color: '#94a3b8', cursor: 'pointer', display: 'flex' }}><Smile size={22} /></button>
-              <input 
-                type="text" 
-                placeholder="Message the squad..." 
-                style={{ flex: 1, backgroundColor: 'transparent', border: 'none', fontSize: '15px', outline: 'none', color: '#334155' }}
-              />
-              <button style={{ border: 'none', background: 'none', color: '#94a3b8', cursor: 'pointer', display: 'flex', marginRight: '8px' }}><Paperclip size={22} /></button>
-              <button style={{ background: 'linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)', color: '#ffffff', border: 'none', borderRadius: '50%', width: '44px', height: '44px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', boxShadow: '0 4px 12px rgba(79, 70, 229, 0.3)', transition: 'transform 0.2s' }}>
-                <Send size={18} style={{ marginLeft: '2px' }}/>
-              </button>
+            <div style={{ width: '1px', backgroundColor: '#e2e8f0' }}></div>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontSize: '12px', color: '#64748b', marginBottom: '4px' }}>Duration</div>
+              <div style={{ fontWeight: 'bold', color: '#10B981', fontSize: '14px' }}>7 Days</div>
             </div>
           </div>
         </div>
 
-        {/* ⚡ RIGHT COLUMN: Live Trip Widgets */}
-        <div style={{ width: '340px', backgroundColor: '#ffffff', borderLeft: '1px solid #f1f5f9', display: 'flex', flexDirection: 'column', gap: '24px', padding: '24px', overflowY: 'auto' }}>
+        {/* Active Members */}
+        <div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+            <h4 style={{ fontWeight: 'bold', fontSize: '15px', color: '#0f172a', margin: 0 }}>Active Members</h4>
+            <span style={{ fontSize: '12px', color: '#64748b', backgroundColor: '#f1f5f9', padding: '2px 8px', borderRadius: '12px' }}>3/5</span>
+          </div>
           
-          {/* Enhanced Weather Widget */}
-          <div style={{ background: 'linear-gradient(135deg, #0ea5e9 0%, #2563eb 100%)', color: '#ffffff', padding: '24px', borderRadius: '24px', position: 'relative', overflow: 'hidden', boxShadow: '0 10px 24px rgba(14, 165, 233, 0.25)' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            {/* Member 1 */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <div style={{ position: 'relative' }}>
+                <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop" alt="Raj" style={{ width: '40px', height: '40px', borderRadius: '50%', objectFit: 'cover' }} />
+                <div style={{ position: 'absolute', bottom: '0', right: '0', width: '10px', height: '10px', backgroundColor: '#10B981', borderRadius: '50%', border: '2px solid #fff' }}></div>
+              </div>
               <div>
-                <span style={{ fontSize: '12px', fontWeight: '600', opacity: 0.9, textTransform: 'uppercase', letterSpacing: '1px' }}>Live Weather</span>
-                <h3 style={{ fontSize: '18px', fontWeight: '700', margin: '4px 0 0 0' }}>Ella, LK</h3>
-              </div>
-              <Sun size={28} color="#fde047" />
-            </div>
-            
-            <div style={{ display: 'flex', alignItems: 'flex-end', gap: '12px', margin: '20px 0' }}>
-              <h2 style={{ fontSize: '48px', fontWeight: '800', margin: 0, lineHeight: 1 }}>24°</h2>
-              <span style={{ fontSize: '15px', opacity: 0.9, marginBottom: '6px', fontWeight: '500' }}>Partly Cloudy</span>
-            </div>
-            
-            <div style={{ display: 'flex', justifyContent: 'space-between', backgroundColor: 'rgba(255,255,255,0.15)', padding: '16px', borderRadius: '16px', backdropFilter: 'blur(10px)' }}>
-              <div style={{ textAlign: 'center' }}><span style={{ fontSize: '11px', opacity: 0.8 }}>Rain</span><strong style={{ display: 'block', fontSize: '14px', marginTop: '2px' }}>35%</strong></div>
-              <div style={{ textAlign: 'center' }}><span style={{ fontSize: '11px', opacity: 0.8 }}>Wind</span><strong style={{ display: 'block', fontSize: '14px', marginTop: '2px' }}>12 km/h</strong></div>
-              <div style={{ textAlign: 'center' }}><span style={{ fontSize: '11px', opacity: 0.8 }}>Feels</span><strong style={{ display: 'block', fontSize: '14px', marginTop: '2px' }}>26°C</strong></div>
-            </div>
-          </div>
-
-          {/* Travel Updates Card */}
-          <div style={{ backgroundColor: '#ffffff', borderRadius: '20px', border: '1px solid #f1f5f9', padding: '20px', boxShadow: '0 4px 12px rgba(0,0,0,0.02)' }}>
-            <h4 style={{ fontSize: '15px', fontWeight: '700', margin: '0 0 16px 0', display: 'flex', alignItems: 'center', gap: '8px', color: '#1e293b' }}>
-              <AlertTriangle size={18} color="#f59e0b" /> Trip Alerts
-            </h4>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              <div style={{ backgroundColor: '#fffbeb', border: '1px solid #fef3c7', padding: '16px', borderRadius: '16px' }}>
-                <strong style={{ fontSize: '13px', color: '#b45309', display: 'flex', alignItems: 'center', gap: '6px' }}><Navigation size={14}/> Road Condition</strong>
-                <p style={{ fontSize: '13px', color: '#92400e', margin: '6px 0 8px 0', lineHeight: 1.5 }}>Minor construction near Rawana Falls — 20 min delay.</p>
-              </div>
-            </div>
-          </div>
-
-          {/* Price Updates */}
-          <div>
-            <h4 style={{ fontSize: '15px', fontWeight: '700', margin: '0 0 16px 0', display: 'flex', alignItems: 'center', justifyContent: 'space-between', color: '#1e293b' }}>
-              Live Expenses <span style={{ fontSize: '11px', backgroundColor: '#ecfdf5', color: '#10b981', padding: '4px 8px', borderRadius: '10px', fontWeight: '600' }}>Tracking</span>
-            </h4>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '24px' }}>
-              <div style={{ display: 'flex', gap: '16px', alignItems: 'center', backgroundColor: '#ffffff', border: '1px solid #f1f5f9', padding: '16px', borderRadius: '16px', boxShadow: '0 2px 8px rgba(0,0,0,0.02)' }}>
-                <div style={{ backgroundColor: '#fef3c7', color: '#d97706', padding: '12px', borderRadius: '12px' }}><Coffee size={20}/></div>
-                <div>
-                  <strong style={{ fontSize: '14px', display: 'block', color: '#334155' }}>Rice & Curry</strong>
-                  <span style={{ color: '#4f46e5', fontWeight: '700', fontSize: '15px' }}>Rs. 900</span>
-                </div>
+                <div style={{ fontSize: '14px', fontWeight: 'bold', color: '#0f172a' }}>Raj Patel ⭐️</div>
+                <div style={{ fontSize: '12px', color: '#64748b' }}>Organizer</div>
               </div>
             </div>
 
-            {/* Quick Action Grid */}
-            <h4 style={{ fontSize: '15px', fontWeight: '700', margin: '0 0 16px 0', color: '#1e293b' }}>Actions</h4>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-              <button style={gridBtnStyle}><Map size={18} color="#4f46e5"/> Share Location</button>
-              <button style={gridBtnStyle}><Phone size={18} color="#ef4444"/> Emergency</button>
+            {/* Member 2 (You) */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <div style={{ position: 'relative' }}>
+                <img src="https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=100&h=100&fit=crop" alt="You" style={{ width: '40px', height: '40px', borderRadius: '50%', objectFit: 'cover' }} />
+                <div style={{ position: 'absolute', bottom: '0', right: '0', width: '10px', height: '10px', backgroundColor: '#10B981', borderRadius: '50%', border: '2px solid #fff' }}></div>
+              </div>
+              <div>
+                <div style={{ fontSize: '14px', fontWeight: 'bold', color: '#0f172a' }}>Sarah Kumar</div>
+                <div style={{ fontSize: '12px', color: '#64748b' }}>You</div>
+              </div>
+            </div>
+
+             {/* Member 3 (Typing) */}
+             <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <div style={{ position: 'relative' }}>
+                <img src="https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&h=100&fit=crop" alt="Emma" style={{ width: '40px', height: '40px', borderRadius: '50%', objectFit: 'cover' }} />
+                <div style={{ position: 'absolute', bottom: '0', right: '0', width: '10px', height: '10px', backgroundColor: '#10B981', borderRadius: '50%', border: '2px solid #fff' }}></div>
+              </div>
+              <div>
+                <div style={{ fontSize: '14px', fontWeight: 'bold', color: '#0f172a' }}>Emma Wilson</div>
+                <div style={{ fontSize: '12px', color: '#0EA5E9', fontWeight: '500' }}>typing •••</div>
+              </div>
             </div>
           </div>
-
         </div>
 
       </div>
+
+      {/* ==========================================
+          CENTER COLUMN: Live Chat Feed
+          ========================================== */}
+      <div style={{ flex: 1, backgroundColor: '#fff', borderRadius: '20px', border: '1px solid #f1f5f9', boxShadow: '0 2px 4px rgba(0,0,0,0.02)', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+        
+        {/* Chat Header */}
+        <div style={{ padding: '16px 24px', borderBottom: '1px solid #f1f5f9', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <MessageCircle size={20} color="#0EA5E9" />
+            <h3 style={{ margin: 0, fontSize: '16px', fontWeight: 'bold' }}>Group Chat</h3>
+            <span style={{ fontSize: '12px', color: '#10B981', backgroundColor: '#d1fae5', padding: '2px 8px', borderRadius: '12px', marginLeft: '8px' }}>Live</span>
+          </div>
+        </div>
+
+        {/* Chat Messages Area */}
+        <div style={{ flex: 1, padding: '24px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '20px', backgroundColor: '#fafaf9' }}>
+          
+          <div style={{ textAlign: 'center', margin: '12px 0' }}>
+            <span style={{ fontSize: '12px', color: '#94a3b8', backgroundColor: '#f1f5f9', padding: '4px 12px', borderRadius: '12px' }}>Emma Wilson joined the trip • 9:22 AM</span>
+          </div>
+
+          {/* Incoming Message */}
+          <div style={{ display: 'flex', gap: '12px', maxWidth: '80%' }}>
+            <img src="https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&h=100&fit=crop" style={{ width: '36px', height: '36px', borderRadius: '50%', objectFit: 'cover' }} alt="Emma" />
+            <div>
+              <div style={{ fontSize: '13px', color: '#64748b', marginBottom: '4px', marginLeft: '4px' }}>Emma Wilson</div>
+              <div style={{ backgroundColor: '#fff', padding: '12px 16px', borderRadius: '16px', borderTopLeftRadius: '4px', border: '1px solid #f1f5f9', fontSize: '14px', color: '#334155', boxShadow: '0 1px 2px rgba(0,0,0,0.02)' }}>
+                Just joined! So excited for this. I heard the Nine Arch Bridge is magical at sunrise. Should we plan that for Day 1?
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '4px', marginLeft: '4px' }}>
+                <span style={{ fontSize: '11px', color: '#94a3b8' }}>9:24 AM</span>
+                <span style={{ backgroundColor: '#f1f5f9', padding: '2px 6px', borderRadius: '8px', fontSize: '12px' }}>👍 4</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Outgoing Message (You) */}
+          <div style={{ display: 'flex', gap: '12px', maxWidth: '80%', alignSelf: 'flex-end', flexDirection: 'row-reverse' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end' }}>
+              <div style={{ background: 'linear-gradient(135deg, #0EA5E9 0%, #0284C7 100%)', padding: '12px 16px', borderRadius: '16px', borderTopRightRadius: '4px', fontSize: '14px', color: '#fff', boxShadow: '0 2px 4px rgba(14, 165, 233, 0.2)' }}>
+                100% yes! I looked it up — the 6:30 AM train passes through at golden hour. Perfect for photos.
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '4px', marginRight: '4px' }}>
+                <span style={{ backgroundColor: '#f1f5f9', padding: '2px 6px', borderRadius: '8px', fontSize: '12px' }}>🚂 2</span>
+                <span style={{ fontSize: '11px', color: '#94a3b8' }}>9:28 AM</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Incoming Message */}
+          <div style={{ display: 'flex', gap: '12px', maxWidth: '80%' }}>
+            <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100&h=100&fit=crop" style={{ width: '36px', height: '36px', borderRadius: '50%', objectFit: 'cover' }} alt="Raj" />
+            <div>
+              <div style={{ fontSize: '13px', color: '#64748b', marginBottom: '4px', marginLeft: '4px' }}>Raj Patel</div>
+              <div style={{ backgroundColor: '#fff', padding: '12px 16px', borderRadius: '16px', borderTopLeftRadius: '4px', border: '1px solid #f1f5f9', fontSize: '14px', color: '#334155', boxShadow: '0 1px 2px rgba(0,0,0,0.02)' }}>
+                Count me in for a bike! Also heads up — the road to Rawana Falls has some construction. Plan an extra 20 minutes.
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '4px', marginLeft: '4px' }}>
+                <span style={{ fontSize: '11px', color: '#94a3b8' }}>10:02 AM</span>
+                <span style={{ backgroundColor: '#f1f5f9', padding: '2px 6px', borderRadius: '8px', fontSize: '12px' }}>🙏 2</span>
+              </div>
+            </div>
+          </div>
+
+           {/* Typing Indicator */}
+           <div style={{ display: 'flex', gap: '12px', maxWidth: '80%', alignItems: 'center' }}>
+            <img src="https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=100&h=100&fit=crop" style={{ width: '28px', height: '28px', borderRadius: '50%', objectFit: 'cover' }} alt="Emma" />
+            <div style={{ backgroundColor: '#fff', padding: '10px 16px', borderRadius: '16px', borderTopLeftRadius: '4px', border: '1px solid #f1f5f9', display: 'flex', gap: '4px' }}>
+              <div style={{ width: '6px', height: '6px', backgroundColor: '#cbd5e1', borderRadius: '50%' }}></div>
+              <div style={{ width: '6px', height: '6px', backgroundColor: '#94a3b8', borderRadius: '50%' }}></div>
+              <div style={{ width: '6px', height: '6px', backgroundColor: '#64748b', borderRadius: '50%' }}></div>
+            </div>
+          </div>
+
+        </div>
+
+        {/* Chat Input Bar */}
+        <div style={{ padding: '20px', borderTop: '1px solid #f1f5f9', backgroundColor: '#fff', display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <button style={{ background: 'transparent', border: 'none', cursor: 'pointer', display: 'flex' }}><Smile size={24} color="#94a3b8" /></button>
+          <button style={{ background: 'transparent', border: 'none', cursor: 'pointer', display: 'flex' }}><Paperclip size={24} color="#94a3b8" /></button>
+          
+          <input 
+            type="text" 
+            placeholder="Message the group..." 
+            style={{ flex: 1, padding: '12px 16px', backgroundColor: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '24px', outline: 'none', fontSize: '14px' }} 
+          />
+          
+          <button style={{ backgroundColor: '#0EA5E9', border: 'none', width: '40px', height: '40px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', boxShadow: '0 2px 4px rgba(14, 165, 233, 0.3)' }}>
+            <Send size={18} color="#fff" style={{ marginLeft: '2px' }} />
+          </button>
+        </div>
+
+      </div>
+
+      {/* ==========================================
+          RIGHT COLUMN: Utilities & Weather
+          ========================================== */}
+      <div style={{ width: '300px', display: 'flex', flexDirection: 'column', gap: '24px' }}>
+        
+        {/* Weather Card */}
+        <div style={{ background: 'linear-gradient(135deg, #0EA5E9 0%, #0284C7 100%)', borderRadius: '20px', padding: '24px', color: '#fff', boxShadow: '0 4px 12px rgba(14, 165, 233, 0.2)' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
+            <div>
+              <div style={{ fontSize: '13px', opacity: 0.9, marginBottom: '4px' }}>Live Weather</div>
+              <div style={{ fontSize: '18px', fontWeight: 'bold' }}>Ella, Sri Lanka</div>
+            </div>
+            <CloudRain size={28} color="#fff" />
+          </div>
+          
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
+            <span style={{ fontSize: '48px', fontWeight: 'bold', lineHeight: 1 }}>24°</span>
+            <span style={{ fontSize: '14px', opacity: 0.9 }}>C <br/>Partly Cloudy</span>
+          </div>
+
+          <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px solid rgba(255,255,255,0.2)', paddingTop: '16px' }}>
+            <div style={{ textAlign: 'center' }}>
+              <Droplets size={16} style={{ margin: '0 auto 4px auto', opacity: 0.8 }} />
+              <div style={{ fontSize: '11px', opacity: 0.8 }}>Rain</div>
+              <div style={{ fontSize: '13px', fontWeight: 'bold' }}>35%</div>
+            </div>
+            <div style={{ textAlign: 'center' }}>
+              <Wind size={16} style={{ margin: '0 auto 4px auto', opacity: 0.8 }} />
+              <div style={{ fontSize: '11px', opacity: 0.8 }}>Wind</div>
+              <div style={{ fontSize: '13px', fontWeight: 'bold' }}>12 km/h</div>
+            </div>
+          </div>
+        </div>
+
+        {/* Travel Updates */}
+        <div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
+            <AlertTriangle size={18} color="#0EA5E9" />
+            <h4 style={{ margin: 0, fontSize: '15px', fontWeight: 'bold' }}>Travel Updates</h4>
+          </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            <div style={{ backgroundColor: '#fff', padding: '16px', borderRadius: '16px', border: '1px solid #f1f5f9' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+                <span style={{ backgroundColor: '#fef3c7', color: '#d97706', padding: '4px', borderRadius: '6px' }}><AlertTriangle size={14} /></span>
+                <span style={{ fontSize: '13px', fontWeight: 'bold', color: '#334155' }}>Road Condition</span>
+              </div>
+              <p style={{ fontSize: '13px', color: '#64748b', margin: '0 0 8px 0', lineHeight: 1.4 }}>Minor construction near Rawana Falls — 20 min delay possible.</p>
+              <span style={{ fontSize: '11px', color: '#94a3b8' }}>1h ago</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
     </div>
   );
 }
-
-const gridBtnStyle = {
-  backgroundColor: '#f8fafc',
-  border: '1px solid #f1f5f9',
-  borderRadius: '16px',
-  padding: '16px 12px',
-  fontSize: '12px',
-  fontWeight: '600',
-  color: '#475569',
-  cursor: 'pointer',
-  display: 'flex',
-  flexDirection: 'column',
-  alignItems: 'center',
-  gap: '8px',
-  transition: 'all 0.2s',
-  ':hover': { backgroundColor: '#f1f5f9' }
-};

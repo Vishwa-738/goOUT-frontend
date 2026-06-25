@@ -1,298 +1,224 @@
+// src/pages/TripDetails.jsx
 import React, { useState } from 'react';
-import { Calendar, DollarSign, Users, ArrowLeft, Plus, MapPin, Sparkles } from 'lucide-react';
-import ChatRoom from './ChatRoom';
+import { 
+  MapPin, Calendar, DollarSign, Users, CloudRain, Wind, Droplets, 
+  MessageCircle, Cloud, Wallet 
+} from 'lucide-react';
 
-export default function TripDetails({ onBack }) {
-  const [activeSubTab, setActiveSubTab] = useState('overview');
-  const [inChat, setInChat] = useState(false);
-
-  if (inChat) {
-    return <ChatRoom onBack={() => setInChat(false)} />;
-  }
+export default function TripDetails({ setActiveTab }) {
+  const [activeSegment, setActiveSegment] = useState('overview');
 
   return (
-    <div style={{ fontFamily: 'system-ui, -apple-system, sans-serif', color: '#0F172A', backgroundColor: '#F8FAFC', minHeight: '100%', paddingBottom: '32px' }}>
+    <div style={{ maxWidth: '1100px', margin: '0 auto', fontFamily: 'sans-serif' }}>
       
-      {/* BACK NAVIGATION */}
-      <button 
-        onClick={onBack}
-        style={{
-          display: 'flex', alignItems: 'center', gap: '8px',
-          backgroundColor: 'transparent', border: 'none',
-          color: '#64748B', fontSize: '14px', fontWeight: '600',
-          cursor: 'pointer', marginBottom: '20px', transition: 'color 0.2s'
-        }}
-      >
-        <ArrowLeft size={16} /> Back to My Trips
-      </button>
-
-      {/* PREMIUM HERO BANNER */}
-      <div style={{
-        position: 'relative', width: '100%', height: '300px',
-        borderRadius: '28px', overflow: 'hidden', marginBottom: '28px',
-        backgroundImage: 'url("https://images.unsplash.com/photo-1588598126702-bc327fb2ccbe?w=1200")',
-        backgroundSize: 'cover', backgroundPosition: 'center',
-        boxShadow: '0 10px 25px -5px rgba(15, 23, 42, 0.1)'
-      }}>
-        <div style={{
-          position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
-          background: 'linear-gradient(to top, rgba(15, 23, 42, 0.85) 0%, rgba(15, 23, 42, 0.2) 60%, transparent 100%)'
-        }} />
-        <div style={{ position: 'absolute', bottom: '28px', left: '32px', color: '#FFFFFF', right: '32px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
-          <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-              <span style={{ backgroundColor: 'rgba(255, 255, 255, 0.2)', backdropFilter: 'blur(8px)', color: '#FFFFFF', fontSize: '12px', fontWeight: '600', padding: '4px 12px', borderRadius: '20px', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                <MapPin size={14} /> Cultural Triangle, Sri Lanka
-              </span>
-              <span style={{ backgroundColor: '#10B981', color: '#FFFFFF', fontSize: '12px', fontWeight: '600', padding: '4px 10px', borderRadius: '20px' }}>
-                Verified Trip
-              </span>
-            </div>
-            <h1 style={{ fontSize: '36px', fontWeight: '800', margin: '0 0 4px 0', letterSpacing: '-0.5px' }}>Sigiriya & Dambulla Expedition</h1>
-            <p style={{ margin: 0, color: '#E2E8F0', fontSize: '15px' }}>Explore ancient rock fortresses and royal cave temples</p>
+      {/* --- HERO BANNER --- */}
+      <div style={{ position: 'relative', height: '350px', borderRadius: '24px', overflow: 'hidden', marginBottom: '32px' }}>
+        <img 
+          src="https://images.unsplash.com/photo-1588598126710-53bc7f9273c0?w=1200&h=400&fit=crop" 
+          alt="Trip Hero" 
+          style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
+        />
+        <div style={{ position: 'absolute', bottom: '0', left: '0', right: '0', padding: '40px', background: 'linear-gradient(to top, rgba(0,0,0,0.8), transparent)', color: '#fff' }}>
+          <h1 style={{ margin: '0 0 8px 0', fontSize: '36px', fontWeight: 'bold' }}>Cultural Triangle Adventure</h1>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '15px', opacity: 0.9 }}>
+            <MapPin size={18} /> Sigiriya & Dambulla
           </div>
         </div>
       </div>
 
-      {/* MAIN TWO-COLUMN LAYOUT */}
-      <div style={{ display: 'flex', gap: '28px', alignItems: 'flex-start' }}>
+      <div style={{ display: 'flex', gap: '32px', alignItems: 'flex-start' }}>
         
-        {/* LEFT COLUMN - CONTENT & TABS */}
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '28px' }}>
+        {/* ==========================================
+            MAIN CONTENT AREA (Left Side)
+            ========================================== */}
+        <div style={{ flex: 1 }}>
           
-          {/* METRICS & ACTION BAR */}
-          <div style={{ backgroundColor: '#FFFFFF', borderRadius: '24px', padding: '24px', border: '1px solid #E2E8F0', boxShadow: '0 4px 12px rgba(15, 23, 42, 0.03)' }}>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '16px', marginBottom: '24px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '14px', padding: '12px', backgroundColor: '#F8FAFC', borderRadius: '16px' }}>
-                <div style={{ backgroundColor: '#E0F2FE', padding: '12px', borderRadius: '14px', color: '#0EA5E9' }}><Calendar size={22} /></div>
-                <div>
-                  <span style={{ fontSize: '12px', color: '#64748B', fontWeight: '500', display: 'block' }}>Dates</span>
-                  <strong style={{ fontSize: '14px', color: '#0F172A' }}>Jun 15 - Jun 20</strong>
-                </div>
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '14px', padding: '12px', backgroundColor: '#F8FAFC', borderRadius: '16px' }}>
-                <div style={{ backgroundColor: '#ECFDF5', padding: '12px', borderRadius: '14px', color: '#10B981' }}><DollarSign size={22} /></div>
-                <div>
-                  <span style={{ fontSize: '12px', color: '#64748B', fontWeight: '500', display: 'block' }}>Est. Budget</span>
-                  <strong style={{ fontSize: '14px', color: '#0F172A' }}>$350 - $450</strong>
-                </div>
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '14px', padding: '12px', backgroundColor: '#F8FAFC', borderRadius: '16px' }}>
-                <div style={{ backgroundColor: '#FEF3C7', padding: '12px', borderRadius: '14px', color: '#F59E0B' }}><Users size={22} /></div>
-                <div>
-                  <span style={{ fontSize: '12px', color: '#64748B', fontWeight: '500', display: 'block' }}>Group Size</span>
-                  <strong style={{ fontSize: '14px', color: '#0F172A' }}>4 / 8 Joined</strong>
-                </div>
+          {/* Top Info Cards */}
+          <div style={{ backgroundColor: '#fff', padding: '24px', borderRadius: '20px', border: '1px solid #f1f5f9', display: 'flex', gap: '24px', marginBottom: '24px', boxShadow: '0 2px 4px rgba(0,0,0,0.02)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flex: 1 }}>
+              <div style={{ backgroundColor: '#f0f9ff', padding: '12px', borderRadius: '12px', color: '#0EA5E9' }}><Calendar size={24} /></div>
+              <div>
+                <div style={{ fontSize: '13px', color: '#64748b', marginBottom: '2px' }}>Duration</div>
+                <div style={{ fontWeight: 'bold', fontSize: '15px', color: '#0f172a' }}>Jun 15 - Jun 20, 2026</div>
               </div>
             </div>
-
-            {/* BUTTONS */}
-            <div style={{ display: 'flex', gap: '16px' }}>
-              <button style={{ flex: 1, backgroundColor: '#0EA5E9', color: '#FFFFFF', border: 'none', borderRadius: '16px', padding: '14px', fontSize: '15px', fontWeight: '700', cursor: 'pointer', boxShadow: '0 4px 12px rgba(14, 165, 233, 0.25)', transition: 'opacity 0.2s' }}>
-                Request to Join Trip
-              </button>
-              <button 
-                onClick={() => setInChat(true)}
-                style={{ flex: 1, backgroundColor: '#F1F5F9', color: '#0F172A', border: '1px solid #E2E8F0', borderRadius: '16px', padding: '14px', fontSize: '15px', fontWeight: '600', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', transition: 'background 0.2s' }}
-              >
-                💬 Open Live Group Chat
-              </button>
-            </div>
-          </div>
-
-          {/* ELEGANT SUB-TAB NAVIGATION */}
-          <div style={{ display: 'flex', gap: '8px', borderBottom: '2px solid #E2E8F0', paddingBottom: '4px' }}>
-            {['overview', 'places', 'expenses', 'members'].map((tab) => (
-              <button
-                key={tab}
-                onClick={() => setActiveSubTab(tab)}
-                style={{
-                  padding: '12px 24px',
-                  borderRadius: '12px 12px 0 0',
-                  border: 'none',
-                  fontSize: '15px',
-                  fontWeight: '700',
-                  textTransform: 'capitalize',
-                  cursor: 'pointer',
-                  backgroundColor: 'transparent',
-                  color: activeSubTab === tab ? '#0EA5E9' : '#64748B',
-                  borderBottom: activeSubTab === tab ? '3px solid #0EA5E9' : '3px solid transparent',
-                  marginBottom: '-6px',
-                  transition: 'all 0.2s ease'
-                }}
-              >
-                {tab}
-              </button>
-            ))}
-          </div>
-
-          {/* TAB CONTENT CARD */}
-          <div style={{ backgroundColor: '#FFFFFF', borderRadius: '24px', padding: '28px', border: '1px solid #E2E8F0', boxShadow: '0 4px 12px rgba(15, 23, 42, 0.03)', minHeight: '280px' }}>
             
-            {activeSubTab === 'overview' && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flex: 1, borderLeft: '1px solid #f1f5f9', paddingLeft: '24px' }}>
+              <div style={{ backgroundColor: '#f0fdf4', padding: '12px', borderRadius: '12px', color: '#10B981' }}><DollarSign size={24} /></div>
               <div>
-                <h3 style={{ fontSize: '18px', fontWeight: '800', margin: '0 0 12px 0', color: '#0F172A' }}>About The Expedition</h3>
-                <p style={{ color: '#475569', fontSize: '15px', lineHeight: '1.7', margin: '0 0 24px 0' }}>
-                  Join us for an unforgettable journey through Sri Lanka's Cultural Triangle. We'll hike the majestic Lion Rock of Sigiriya at dawn, explore the beautifully preserved Dambulla Cave Temples, and experience authentic local cuisine. Curated specifically for young professionals and digital nomads seeking a balanced mix of history and adventure.
-                </p>
-                
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '28px' }}>
-                  <div style={{ backgroundColor: '#F8FAFC', padding: '18px', borderRadius: '16px', border: '1px solid #F1F5F9' }}>
-                    <h4 style={{ fontSize: '14px', fontWeight: '700', margin: '0 0 8px 0', color: '#0F172A', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      <Sparkles size={16} color="#0EA5E9"/> What's Included
-                    </h4>
-                    <ul style={{ color: '#475569', fontSize: '13px', lineHeight: '1.6', paddingLeft: '16px', margin: 0 }}>
-                      <li>Boutique villa accommodations</li>
-                      <li>Private air-conditioned van</li>
-                      <li>All UNESCO monument entry tickets</li>
-                      <li>Daily organic local breakfasts</li>
-                    </ul>
-                  </div>
-                  <div style={{ backgroundColor: '#F8FAFC', padding: '18px', borderRadius: '16px', border: '1px solid #F1F5F9' }}>
-                    <h4 style={{ fontSize: '14px', fontWeight: '700', margin: '0 0 8px 0', color: '#0F172A' }}>🎒 Essential Gear</h4>
-                    <ul style={{ color: '#475569', fontSize: '13px', lineHeight: '1.6', paddingLeft: '16px', margin: 0 }}>
-                      <li>Sturdy trail runners or hiking shoes</li>
-                      <li>Breathable linen/cotton clothing</li>
-                      <li>High SPF sunscreen & sunglasses</li>
-                      <li>Reusable insulated water flask</li>
-                    </ul>
-                  </div>
-                </div>
-
-                <hr style={{ border: 'none', borderTop: '1px solid #E2E8F0', margin: '24px 0' }} />
-                
-                <h4 style={{ fontSize: '14px', fontWeight: '700', margin: '0 0 12px 0', color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Lead Organizer</h4>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-                  <img src="https://via.placeholder.com/150/0ea5e9/ffffff?text=RP" alt="Organizer" style={{ width: '48px', height: '48px', borderRadius: '50%', objectFit: 'cover', border: '2px solid #E0F2FE' }} />
-                  <div>
-                    <strong style={{ fontSize: '15px', color: '#0F172A', display: 'block' }}>Raj Patel</strong>
-                    <span style={{ fontSize: '13px', color: '#64748B' }}>Experienced Backpacker • 18 Verified Trips</span>
-                  </div>
-                </div>
+                <div style={{ fontSize: '13px', color: '#64748b', marginBottom: '2px' }}>Budget</div>
+                <div style={{ fontWeight: 'bold', fontSize: '15px', color: '#0f172a' }}>$350 - $450</div>
               </div>
-            )}
+            </div>
 
-            {activeSubTab === 'places' && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flex: 1, borderLeft: '1px solid #f1f5f9', paddingLeft: '24px' }}>
+              <div style={{ backgroundColor: '#f5f3ff', padding: '12px', borderRadius: '12px', color: '#8b5cf6' }}><Users size={24} /></div>
               <div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-                  <h3 style={{ fontSize: '18px', fontWeight: '800', margin: 0, color: '#0F172A' }}>Key Destinations</h3>
-                  <button style={{ backgroundColor: '#0EA5E9', color: '#FFFFFF', border: 'none', padding: '8px 16px', borderRadius: '12px', fontSize: '13px', fontWeight: '700', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <Plus size={16} /> Add Suggestion
+                <div style={{ fontSize: '13px', color: '#64748b', marginBottom: '2px' }}>Members</div>
+                <div style={{ fontWeight: 'bold', fontSize: '15px', color: '#0f172a' }}>4/8</div>
+              </div>
+            </div>
+          </div>
+
+          {/* Action Buttons */}
+          <div style={{ display: 'flex', gap: '16px', marginBottom: '32px' }}>
+            <button style={{ flex: 1, backgroundColor: '#0EA5E9', color: '#fff', border: 'none', padding: '16px', borderRadius: '12px', fontWeight: 'bold', fontSize: '15px', cursor: 'pointer', boxShadow: '0 4px 6px rgba(14, 165, 233, 0.2)' }}>
+              Request to Join
+            </button>
+            <button 
+              onClick={() => setActiveTab('chat')} 
+              style={{ flex: 1, backgroundColor: '#fff', color: '#334155', border: '1px solid #e2e8f0', padding: '16px', borderRadius: '12px', fontWeight: 'bold', fontSize: '15px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', boxShadow: '0 2px 4px rgba(0,0,0,0.02)' }}
+            >
+              <MessageCircle size={20} /> Chat with Group
+            </button>
+          </div>
+
+          {/* Segmented Tabs & Content Container */}
+          <div style={{ backgroundColor: '#fff', borderRadius: '20px', border: '1px solid #f1f5f9', boxShadow: '0 2px 4px rgba(0,0,0,0.02)', overflow: 'hidden' }}>
+            
+            {/* Tab Navigation */}
+            <div style={{ display: 'flex', backgroundColor: '#f8fafc', padding: '8px', borderBottom: '1px solid #f1f5f9' }}>
+              {['Overview', 'Places', 'Expenses', 'Members'].map((tab) => {
+                const isActive = activeSegment === tab.toLowerCase();
+                return (
+                  <button 
+                    key={tab}
+                    onClick={() => setActiveSegment(tab.toLowerCase())}
+                    style={{
+                      flex: 1, padding: '12px', border: 'none', borderRadius: '12px', fontSize: '14px', fontWeight: isActive ? 'bold' : '500',
+                      backgroundColor: isActive ? '#fff' : 'transparent',
+                      color: isActive ? '#0f172a' : '#64748b',
+                      boxShadow: isActive ? '0 2px 4px rgba(0,0,0,0.05)' : 'none',
+                      cursor: 'pointer', transition: 'all 0.2s'
+                    }}
+                  >
+                    {tab}
                   </button>
+                )
+              })}
+            </div>
+
+            {/* Tab Content: OVERVIEW */}
+            {activeSegment === 'overview' && (
+              <div style={{ padding: '32px' }}>
+                
+                <h3 style={{ margin: '0 0 16px 0', fontSize: '20px', color: '#0f172a' }}>About This Trip</h3>
+                <p style={{ color: '#475569', lineHeight: '1.6', fontSize: '15px', marginBottom: '32px' }}>
+                  Join us for an unforgettable journey through Sri Lanka's Cultural Triangle! We'll explore the ancient rock fortress of Sigiriya, marvel at the cave temples of Dambulla, and immerse ourselves in the rich history of this UNESCO World Heritage Site. This trip is perfect for history buffs and adventure seekers alike.
+                </p>
+
+                <h4 style={{ margin: '0 0 12px 0', fontSize: '16px', color: '#0f172a' }}>What's Included:</h4>
+                <ul style={{ color: '#475569', lineHeight: '1.8', fontSize: '15px', paddingLeft: '20px', margin: '0 0 32px 0' }}>
+                  <li>Accommodation in comfortable guesthouses</li>
+                  <li>Transportation between destinations</li>
+                  <li>Entrance fees to all sites</li>
+                  <li>Local guide services</li>
+                  <li>Breakfast daily</li>
+                </ul>
+
+                <h4 style={{ margin: '0 0 12px 0', fontSize: '16px', color: '#0f172a' }}>What to Bring:</h4>
+                <ul style={{ color: '#475569', lineHeight: '1.8', fontSize: '15px', paddingLeft: '20px', margin: '0 0 32px 0' }}>
+                  <li>Comfortable hiking shoes</li>
+                  <li>Light, breathable clothing</li>
+                  <li>Sun protection</li>
+                  <li>Camera</li>
+                  <li>Water bottle</li>
+                </ul>
+
+                <h4 style={{ margin: '0 0 16px 0', fontSize: '16px', color: '#0f172a' }}>Trip Organizer</h4>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '16px', backgroundColor: '#f8fafc', padding: '16px', borderRadius: '16px', border: '1px solid #f1f5f9' }}>
+                  <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop" alt="Raj Patel" style={{ width: '56px', height: '56px', borderRadius: '50%', objectFit: 'cover' }} />
+                  <div>
+                    <div style={{ fontWeight: 'bold', fontSize: '16px', color: '#0f172a', marginBottom: '4px' }}>Raj Patel</div>
+                    <div style={{ fontSize: '13px', color: '#64748b' }}>Adventure enthusiast | 15+ trips organized</div>
+                  </div>
                 </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-                  <div style={{ padding: '18px', border: '1px solid #E2E8F0', borderRadius: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#F8FAFC' }}>
-                    <div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <strong style={{ fontSize: '16px', color: '#0F172A' }}>Sigiriya Lion Rock Fortress</strong>
-                        <span style={{ fontSize: '11px', backgroundColor: '#E0F2FE', color: '#0369A1', fontWeight: '600', padding: '2px 8px', borderRadius: '6px' }}>Monument</span>
-                      </div>
-                      <p style={{ margin: '4px 0 0 0', fontSize: '13px', color: '#475569' }}>5th-century citadel on a massive granite peak. 1,200 steps to the summit.</p>
-                    </div>
-                    <span style={{ color: '#10B981', fontWeight: '800', fontSize: '16px', backgroundColor: '#ECFDF5', padding: '6px 12px', borderRadius: '10px' }}>$30</span>
-                  </div>
-                  <div style={{ padding: '18px', border: '1px solid #E2E8F0', borderRadius: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#F8FAFC' }}>
-                    <div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <strong style={{ fontSize: '16px', color: '#0F172A' }}>Dambulla Royal Cave Temple</strong>
-                        <span style={{ fontSize: '11px', backgroundColor: '#FEF3C7', color: '#B45309', fontWeight: '600', padding: '2px 8px', borderRadius: '6px' }}>Heritage</span>
-                      </div>
-                      <p style={{ margin: '4px 0 0 0', fontSize: '13px', color: '#475569' }}>Complex of 5 sacred caves filled with ancient Buddhist murals and statues.</p>
-                    </div>
-                    <span style={{ color: '#10B981', fontWeight: '800', fontSize: '16px', backgroundColor: '#ECFDF5', padding: '6px 12px', borderRadius: '10px' }}>$10</span>
-                  </div>
-                </div>
+
               </div>
             )}
-
-            {activeSubTab === 'expenses' && (
-              <div style={{ textAlign: 'center', padding: '48px 16px' }}>
-                <DollarSign size={48} color="#0EA5E9" style={{ marginBottom: '16px', opacity: 0.8 }} />
-                <h4 style={{ fontSize: '18px', fontWeight: '700', color: '#0F172A', margin: '0 0 8px 0' }}>Transparent Group Ledger</h4>
-                <p style={{ color: '#64748B', fontSize: '14px', maxWidth: '360px', margin: '0 auto 20px auto' }}>All trip shared expenses, grocery splits, and fuel costs will be tracked collaboratively here.</p>
-                <button style={{ backgroundColor: '#0EA5E9', color: '#FFFFFF', border: 'none', padding: '12px 24px', borderRadius: '14px', fontSize: '14px', fontWeight: '700', cursor: 'pointer', boxShadow: '0 4px 12px rgba(14, 165, 233, 0.2)' }}>
-                  Initialize Expense Ledger
-                </button>
-              </div>
-            )}
-
-            {activeSubTab === 'members' && (
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-                {[
-                  { name: 'Raj Patel', role: 'Trip Creator', badge: 'Organizer', img: 'https://via.placeholder.com/150/0ea5e9/ffffff?text=RP' },
-                  { name: 'Sarah Kumar', role: 'Photographer', badge: 'Joined', img: 'https://via.placeholder.com/150/10b981/ffffff?text=SK' },
-                  { name: 'Emma Wilson', role: 'Medic / Doctor', badge: 'Joined', img: 'https://via.placeholder.com/150/f59e0b/ffffff?text=EW' },
-                  { name: 'David Chen', role: 'DJ & Music', badge: 'Joined', img: 'https://via.placeholder.com/150/8b5cf6/ffffff?text=DC' }
-                ].map((m, i) => (
-                  <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '14px', padding: '16px', border: '1px solid #E2E8F0', borderRadius: '16px', backgroundColor: '#F8FAFC' }}>
-                    <img src={m.img} alt={m.name} style={{ width: '44px', height: '44px', borderRadius: '50%', objectFit: 'cover' }} />
-                    <div style={{ flex: 1 }}>
-                      <strong style={{ fontSize: '15px', color: '#0F172A', display: 'block' }}>{m.name}</strong>
-                      <span style={{ fontSize: '12px', color: '#64748B' }}>{m.role}</span>
-                    </div>
-                    <span style={{ backgroundColor: m.badge === 'Organizer' ? '#E0F2FE' : '#ECFDF5', color: m.badge === 'Organizer' ? '#0369A1' : '#047857', fontSize: '11px', fontWeight: '700', padding: '4px 10px', borderRadius: '12px' }}>
-                      {m.badge}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            )}
-
           </div>
         </div>
 
-        {/* RIGHT SIDE STICKY WIDGET COLUMN */}
-        <div style={{ width: '340px', display: 'flex', flexDirection: 'column', gap: '28px' }}>
+        {/* ==========================================
+            RIGHT SIDEBAR (Weather & Actions)
+            ========================================== */}
+        <div style={{ width: '320px', display: 'flex', flexDirection: 'column', gap: '24px' }}>
           
-          {/* PREMIUM WEATHER CARD */}
-          <div style={{
-            background: 'linear-gradient(135deg, #0EA5E9 0%, #0284C7 100%)',
-            color: '#FFFFFF', padding: '26px', borderRadius: '28px',
-            boxShadow: '0 10px 20px -5px rgba(14, 165, 233, 0.3)'
-          }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-              <span style={{ fontSize: '13px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.5px', opacity: 0.9 }}>Current Conditions</span>
-              <span style={{ fontSize: '20px' }}>☀️</span>
+          {/* Weather Widget */}
+          <div style={{ background: 'linear-gradient(135deg, #0EA5E9 0%, #0284C7 100%)', borderRadius: '20px', padding: '24px', color: '#fff', boxShadow: '0 4px 12px rgba(14, 165, 233, 0.2)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
+              <div>
+                <div style={{ fontSize: '13px', opacity: 0.9, marginBottom: '4px' }}>Sigiriya, Sri Lanka</div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  <span style={{ fontSize: '48px', fontWeight: 'bold', lineHeight: 1 }}>28°</span>
+                  <Wind size={28} color="#fff" />
+                </div>
+                <div style={{ fontSize: '14px', marginTop: '8px', opacity: 0.9 }}>Partly Cloudy</div>
+              </div>
             </div>
-            <h3 style={{ fontSize: '22px', fontWeight: '800', margin: '0 0 4px 0' }}>Dambulla, LK</h3>
-            <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px', marginBottom: '20px' }}>
-              <h2 style={{ fontSize: '52px', fontWeight: '900', margin: 0, tracking: '-1px' }}>29°</h2>
-              <span style={{ fontSize: '20px', fontWeight: '700', opacity: 0.9 }}>C</span>
+            
+            <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px solid rgba(255,255,255,0.2)', borderBottom: '1px solid rgba(255,255,255,0.2)', padding: '16px 0', margin: '16px 0' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <Wind size={18} style={{ opacity: 0.8 }} />
+                <div>
+                  <div style={{ fontSize: '11px', opacity: 0.8 }}>Wind</div>
+                  <div style={{ fontSize: '13px', fontWeight: 'bold' }}>12 km/h</div>
+                </div>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <Droplets size={18} style={{ opacity: 0.8 }} />
+                <div>
+                  <div style={{ fontSize: '11px', opacity: 0.8 }}>Humidity</div>
+                  <div style={{ fontSize: '13px', fontWeight: 'bold' }}>75%</div>
+                </div>
+              </div>
             </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', backgroundColor: 'rgba(255, 255, 255, 0.15)', backdropFilter: 'blur(8px)', padding: '14px', borderRadius: '16px', fontSize: '12px', fontWeight: '600' }}>
-              <div><span style={{ opacity: 0.8, display: 'block', fontSize: '10px' }}>HUMIDITY</span>72%</div>
-              <div><span style={{ opacity: 0.8, display: 'block', fontSize: '10px' }}>WIND</span>14 km/h</div>
-              <div><span style={{ opacity: 0.8, display: 'block', fontSize: '10px' }}>FEELS LIKE</span>31°C</div>
+
+            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+              {['Mon', 'Tue', 'Wed', 'Thu', 'Fri'].map((day, i) => (
+                <div key={day} style={{ textAlign: 'center' }}>
+                  <div style={{ fontSize: '12px', opacity: 0.8, marginBottom: '6px' }}>{day}</div>
+                  <Cloud size={16} style={{ margin: '0 auto 6px auto', opacity: 0.9 }} />
+                  <div style={{ fontSize: '12px', fontWeight: 'bold' }}>27°</div>
+                </div>
+              ))}
             </div>
           </div>
+          
+          {/* Quick Actions Panel */}
+          <div style={{ backgroundColor: '#fff', padding: '24px', borderRadius: '20px', border: '1px solid #f1f5f9', boxShadow: '0 2px 4px rgba(0,0,0,0.02)' }}>
+            <h4 style={{ margin: '0 0 16px 0', fontSize: '16px', color: '#0f172a' }}>Quick Actions</h4>
+            
+            <button 
+              onClick={() => setActiveTab('chat')}
+              style={{ width: '100%', padding: '12px 16px', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '12px', borderRadius: '12px', border: '1px solid #e2e8f0', background: 'transparent', cursor: 'pointer', color: '#334155', fontSize: '14px', fontWeight: '500', transition: 'all 0.2s' }}
+              onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#f8fafc'}
+              onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+            >
+              <MessageCircle size={18} color="#64748b" /> Open Chat Room
+            </button>
+            
+            <button 
+              style={{ width: '100%', padding: '12px 16px', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '12px', borderRadius: '12px', border: '1px solid #e2e8f0', background: 'transparent', cursor: 'pointer', color: '#334155', fontSize: '14px', fontWeight: '500', transition: 'all 0.2s' }}
+              onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#f8fafc'}
+              onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+            >
+              <MapPin size={18} color="#64748b" /> Place Updates
+            </button>
+            
+            <button 
+              onClick={() => setActiveTab('expenses')}
+              style={{ width: '100%', padding: '12px 16px', display: 'flex', alignItems: 'center', gap: '12px', borderRadius: '12px', border: '1px solid #e2e8f0', background: 'transparent', cursor: 'pointer', color: '#334155', fontSize: '14px', fontWeight: '500', transition: 'all 0.2s' }}
+              onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#f8fafc'}
+              onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+            >
+              <Wallet size={18} color="#64748b" /> Track Expenses
+            </button>
 
-          {/* QUICK PORTAL PANEL */}
-          <div style={{ backgroundColor: '#FFFFFF', padding: '24px', borderRadius: '24px', border: '1px solid #E2E8F0', boxShadow: '0 4px 12px rgba(15, 23, 42, 0.03)' }}>
-            <h4 style={{ margin: '0 0 16px 0', fontSize: '14px', fontWeight: '700', color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Group Operations</h4>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-              <button onClick={() => setInChat(true)} style={sidebarBtnStyle}>
-                <span style={{ fontSize: '16px' }}>💬</span> Enter Group Chat Room
-              </button>
-              <button style={sidebarBtnStyle}>
-                <span style={{ fontSize: '16px' }}>📍</span> Live Member Map
-              </button>
-              <button style={sidebarBtnStyle}>
-                <span style={{ fontSize: '16px' }}>📁</span> Shared Booking Docs
-              </button>
-            </div>
           </div>
-
         </div>
 
       </div>
     </div>
   );
 }
-
-const sidebarBtnStyle = {
-  width: '100%', textAlign: 'left', padding: '14px 16px',
-  backgroundColor: '#F8FAFC', border: '1px solid #E2E8F0',
-  borderRadius: '14px', fontSize: '14px', fontWeight: '600',
-  color: '#0F172A', cursor: 'pointer', display: 'flex',
-  alignItems: 'center', gap: '12px', transition: 'all 0.2s'
-};
