@@ -1,11 +1,11 @@
 // src/pages/Login.jsx
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../context/AuthContext'; // IMPORT YOUR AUTH CONTEXT HERE!
 
 function Login() {
   const navigate = useNavigate();
-  const { login } = useAuth(); // Hooking into global auth state engine
+  const { login } = useAuth(); // GRAB THE REAL LOGIN FUNCTION!
   
   const [formData, setFormData] = useState({
     email: '',
@@ -18,7 +18,8 @@ function Login() {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = (e) => {
+  // MAKE SURE THIS IS ASYNC NOW
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
 
@@ -30,18 +31,15 @@ function Login() {
       return;
     }
 
-    // Integrated Mock Verification Bypass using your custom layouts
-    if (targetEmail === 'admin@goout.com' && targetPassword === 'password123') {
-      const mockToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.mockTokenEngine';
-      const mockUserData = { id: 1, name: 'Vishwa Liyanage', email: targetEmail, role: 'Frontend Lead' };
-      
-      // Save credentials into our global AuthContext state layer
-      login(mockToken, mockUserData);
-      
-      // Send the user past the router guard directly into the dashboard shell!
+    // FIRE THE REAL API REQUEST!
+    const result = await login(targetEmail, targetPassword);
+    
+    if (result.success) {
+      // If the backend says OK, go to the dashboard!
       navigate('/dashboard');
     } else {
-      setError('Invalid test credentials! Tip: Use admin@goout.com and password123');
+      // If the backend rejects it, show the error message from the server
+      setError(result.message);
     }
   };
 
@@ -49,20 +47,27 @@ function Login() {
     <div className="container-fluid min-vh-100 p-0 d-flex bg-white">
       <div className="row g-0 w-100">
         
-        {/* Left Side: Branding Banner Pane */}
+        {/* Left Side: Premium GoOut Branding Pane */}
         <div 
           className="col-12 col-md-6 d-none d-md-flex flex-column align-items-center justify-content-center text-white p-5 position-relative text-center"
           style={{
-            background: `linear-gradient(135deg, rgba(2, 179, 155, 0.75), rgba(13, 110, 253, 0.75)), url('https://images.unsplash.com/photo-1586348943529-beaae6c28db9?w=800&auto=format&fit=crop&q=80')`,
+            background: `linear-gradient(135deg, rgba(14, 165, 233, 0.8), rgba(15, 23, 42, 0.9)), url('https://images.unsplash.com/photo-1586348943529-beaae6c28db9?w=800&auto=format&fit=crop&q=80')`,
             backgroundSize: 'cover',
             backgroundPosition: 'center'
           }}
         >
-          <div className="position-relative z-1">
-            <div className="bg-white text-primary rounded-circle d-inline-flex align-items-center justify-content-center mb-4 shadow" style={{ width: '80px', height: '80px' }}>
-              <span className="fs-1">🧭</span>
+          {/* LOGO CONTAINER: Now clickable to return to the landing page! */}
+          <div 
+            className="position-relative z-1" 
+            onClick={() => navigate('/')} 
+            style={{ cursor: 'pointer', transition: 'transform 0.2s ease-in-out' }}
+            onMouseOver={(e) => e.currentTarget.style.transform = 'scale(1.02)'}
+            onMouseOut={(e) => e.currentTarget.style.transform = 'scale(1)'}
+          >
+            <div className="bg-white rounded-circle d-inline-flex align-items-center justify-content-center mb-4 shadow" style={{ width: '80px', height: '80px' }}>
+              <span className="fs-1" style={{ color: '#0EA5E9' }}>🌐</span>
             </div>
-            <h1 className="display-4 fw-bold mb-2">TripLink LK</h1>
+            <h1 className="display-4 fw-bold mb-2" style={{ letterSpacing: '-1px' }}>GoOut</h1>
             <p className="lead fs-5 opacity-90">Your journey begins here</p>
           </div>
         </div>
@@ -133,11 +138,11 @@ function Login() {
                     <input type="checkbox" className="form-check-input" id="rememberMe" />
                     <label className="form-check-label text-muted" htmlFor="rememberMe">Remember me</label>
                   </div>
-                  <span className="text-primary cursor-pointer fw-semibold text-decoration-none">Forgot password?</span>
+                  <span style={{ color: '#0EA5E9', cursor: 'pointer', fontWeight: '600' }}>Forgot password?</span>
                 </div>
 
                 {/* Primary Button */}
-                <button type="submit" className="btn btn-primary w-100 py-2.5 fw-semibold shadow-sm mb-2 rounded-3">
+                <button type="submit" className="btn w-100 py-2 fw-semibold shadow-sm mb-2 rounded-3 text-white" style={{ backgroundColor: '#0EA5E9', border: 'none' }}>
                   Sign In
                 </button>
               </form>
@@ -145,7 +150,7 @@ function Login() {
 
             {/* Terms and Privacy Footer Subtext */}
             <p className="text-center text-muted small mt-4 px-3 mb-0" style={{ fontSize: '0.8rem', lineHeight: '1.4' }}>
-              By continuing, you agree to our <span className="text-primary text-decoration-none fw-semibold">Terms of Service</span> and <span className="text-primary text-decoration-none fw-semibold">Privacy Policy</span>
+              By continuing, you agree to our <span style={{ color: '#0EA5E9', fontWeight: '600', cursor: 'pointer' }}>Terms of Service</span> and <span style={{ color: '#0EA5E9', fontWeight: '600', cursor: 'pointer' }}>Privacy Policy</span>
             </p>
 
           </div>
