@@ -1,7 +1,7 @@
 // src/pages/Register.jsx
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import api from '../services/api'; // 1. IMPORT YOUR API SERVICE
+import api from '../services/api'; 
 
 function Register() {
   const navigate = useNavigate();
@@ -20,7 +20,6 @@ function Register() {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  // 2. MAKE THIS ASYNC
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
@@ -35,16 +34,21 @@ function Register() {
       return;
     }
 
+    // 🚀 NEW: Split the single Full Name into First and Last Name
+    const nameParts = formData.fullName.trim().split(' ');
+    const firstName = nameParts[0]; // Gets the first word
+    const lastName = nameParts.slice(1).join(' '); // Gets everything else, or remains blank if they only typed one word
+
     try {
-      // 3. SEND THE REAL REQUEST TO THE BACKEND
+      // 🚀 NEW: Send exactly what Methsara's Java backend demands
       await api.post('/api/v1/auth/register', {
-        name: formData.fullName, // Make sure this matches your backend field names
+        firstName: firstName,
+        lastName: lastName,
         email: formData.email,
         password: formData.password,
         travelerType: formData.travelerType
       });
 
-      // 4. SHOW SUCCESS AND REDIRECT
       alert("Account created successfully! Please login.");
       navigate('/login');
       
@@ -56,7 +60,6 @@ function Register() {
 
   return (
     <div className="container-fluid min-vh-100 p-0 d-flex bg-white">
-      {/* ... (Keep your existing UI code from here down) ... */}
       <div className="row g-0 w-100">
         
         {/* Left Side: Premium GoOut Branding Pane */}

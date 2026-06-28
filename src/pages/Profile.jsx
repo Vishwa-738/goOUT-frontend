@@ -1,21 +1,47 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { MapPin, Calendar, Camera, X, Check, Activity as ActivityIcon } from 'lucide-react';
+import api from '../services/api'; 
 
 export default function Profile() {
   const [isEditing, setIsEditing] = useState(false);
-  
-  // NEW: State to track which bottom tab is active
   const [activeProfileTab, setActiveProfileTab] = useState('experiences');
-  
+  const [isLoading, setIsLoading] = useState(true); 
   const fileInputRef = useRef(null);
 
+  // 🚀 NEW: We need to store the actual physical file when they select it
+  const [selectedFile, setSelectedFile] = useState(null);
+
   const [profileData, setProfileData] = useState({
-    name: 'Vishwa Liyanage',
-    email: 'sarah@example.com',
-    location: 'Ja Ela, Sri Lanka',
-    bio: "Adventure enthusiast and solo traveler exploring Sri Lanka's hidden gems. Photography lover 📸",
+    name: 'Loading...', 
+    email: 'Loading...',
+    location: '',
+    bio: '',
     avatar: 'https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=400&h=400&fit=crop'
   });
+
+  useEffect(() => {
+    const fetchUserProfile = async () => {
+      try {
+        const response = await api.get('/api/v1/users/me'); 
+        const userData = response.data;
+
+        setProfileData((prev) => ({
+          ...prev,
+          name: `${userData.firstName || ''} ${userData.lastName || ''}`.trim() || userData.fullName || 'Traveler',
+          email: userData.email || prev.email,
+          location: userData.location || 'Add your location...',
+          bio: userData.bio || 'Write a short bio about your travel style...',
+          avatar: userData.avatarUrl || prev.avatar, 
+        }));
+      } catch (error) {
+        console.error("Error fetching user profile:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchUserProfile();
+  }, []);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -25,6 +51,9 @@ export default function Profile() {
   const handleImageChange = (e) => {
     const file = e.target.files[0];
     if (file) {
+      // 🚀 NEW: Save the actual file so we can upload it later
+      setSelectedFile(file); 
+      // Keep creating the fake URL so the user sees a preview instantly
       const imageUrl = URL.createObjectURL(file);
       setProfileData((prev) => ({ ...prev, avatar: imageUrl }));
     }
@@ -34,11 +63,58 @@ export default function Profile() {
     fileInputRef.current.click();
   };
 
-  const handleSave = () => {
-    setIsEditing(false);
+  const handleSave = async () => {
+    try {
+      let finalAvatarUrl = profileData.avatar;
+
+      // 🚀 STEP 1: If they selected a new picture, upload it to ImgBB first!
+      if (selectedFile) {
+        const formData = new FormData();
+        formData.append("image", selectedFile);
+        
+        // 🛑 PASTE YOUR IMGBB API KEY HERE 🛑
+        const IMGBB_API_KEY = "e339fa4d4951e3f50756427d383d12a5"; 
+        
+        const imgbbResponse = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`, {
+          method: "POST",
+          body: formData,
+        });
+        
+        const imgbbData = await imgbbResponse.json();
+        
+        if (imgbbData.success) {
+          finalAvatarUrl = imgbbData.data.url; // Get the permanent live URL!
+        } else {
+          throw new Error("Failed to upload image to CDN");
+        }
+      }
+
+      // 🚀 STEP 2: Send the exact JSON payload Methsara requested
+      const payload = {
+        bio: profileData.bio,
+        location: profileData.location,
+        avatarUrl: finalAvatarUrl
+      };
+
+      const response = await api.put('/api/v1/users/me', payload);
+
+      const updatedUser = response.data;
+      setProfileData((prev) => ({
+        ...prev,
+        location: updatedUser.location || prev.location,
+        bio: updatedUser.bio || prev.bio,
+        avatar: updatedUser.avatarUrl || prev.avatar
+      }));
+      
+      setSelectedFile(null); // Clear the stored file
+      alert("Profile updated successfully!");
+      setIsEditing(false);
+    } catch (error) {
+      console.error("Error saving profile:", error);
+      alert("Failed to save changes. Check the console for details!");
+    }
   };
 
-  // Helper function to style the tabs dynamically based on which one is active
   const getTabStyle = (tabName) => {
     const isActive = activeProfileTab === tabName;
     return {
@@ -54,6 +130,10 @@ export default function Profile() {
       transition: 'all 0.2s ease'
     };
   };
+
+  if (isLoading) {
+    return <div style={{ textAlign: 'center', padding: '50px' }}>Loading profile...</div>;
+  }
 
   // ==========================================
   // EDIT MODE VIEW
@@ -108,8 +188,10 @@ export default function Profile() {
                   name="name"
                   value={profileData.name}
                   onChange={handleChange}
-                  style={{ width: '100%', padding: '12px 16px', borderRadius: '12px', border: '1px solid #cbd5e1', outline: 'none', fontSize: '15px' }} 
+                  style={{ width: '100%', padding: '12px 16px', borderRadius: '12px', border: '1px solid #cbd5e1', outline: 'none', fontSize: '15px', backgroundColor: '#f8fafc' }} 
+                  disabled
                 />
+                <span style={{ fontSize: '12px', color: '#94a3b8', marginTop: '4px', display: 'block' }}>Name updates must go through account settings.</span>
               </div>
 
               <div>
@@ -132,6 +214,7 @@ export default function Profile() {
                   name="location"
                   value={profileData.location}
                   onChange={handleChange}
+                  placeholder="e.g. Colombo, SL"
                   style={{ width: '100%', padding: '12px 16px', borderRadius: '12px', border: '1px solid #cbd5e1', outline: 'none', fontSize: '15px' }} 
                 />
               </div>
@@ -142,6 +225,7 @@ export default function Profile() {
                   name="bio"
                   value={profileData.bio}
                   onChange={handleChange}
+                  placeholder="Avid traveler looking for my next adventure..."
                   rows="4"
                   style={{ width: '100%', padding: '12px 16px', borderRadius: '12px', border: '1px solid #cbd5e1', outline: 'none', fontSize: '15px', resize: 'none' }} 
                 />
@@ -152,7 +236,7 @@ export default function Profile() {
                   onClick={handleSave}
                   style={{ backgroundColor: '#0EA5E9', color: '#ffffff', border: 'none', borderRadius: '12px', padding: '12px 24px', fontSize: '15px', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', boxShadow: '0 4px 6px rgba(14, 165, 233, 0.2)' }}
                 >
-                  <Check size={18} /> Save Changes
+                  <Check size={18} /> {selectedFile ? "Uploading & Saving..." : "Save Changes"}
                 </button>
               </div>
             </div>

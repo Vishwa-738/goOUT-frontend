@@ -1,60 +1,104 @@
-// src/pages/MyTrips.jsx
 import React, { useState, useEffect } from 'react';
-import { Calendar, MapPin, Users, DollarSign, Plus, Eye, Edit2, UserCheck, Trash2 } from 'lucide-react';
+import { Calendar, MapPin, Users, DollarSign, Plus, Eye, Edit2, UserCheck, Trash2, Check, X } from 'lucide-react';
 import TripDetails from './TripDetails'; 
-import API from '../services/api'; // 👈 Imported your Axios API!
+import API from '../services/api'; 
 
 export default function MyTrips({ setActiveTab }) {
   const [viewingDetails, setViewingDetails] = useState(false);
-  const [trips, setTrips] = useState([]); // 👈 Replaced hardcoded array with React State!
+  const [trips, setTrips] = useState([]); 
   const [loading, setLoading] = useState(true);
 
-  // 👈 Added useEffect to fetch data from Methsara's backend automatically!
+  // --- NEW STATES FOR MANAGE REQUESTS MODAL ---
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedTripId, setSelectedTripId] = useState(null);
+  const [pendingRequests, setPendingRequests] = useState([]);
+  const [loadingRequests, setLoadingRequests] = useState(false);
+
   useEffect(() => {
     const fetchTrips = async () => {
       try {
         const response = await API.get('/api/v1/trips/my-trips'); 
-        console.log("RAW BACKEND DATA:", response.data); 
-        
-        // 🚀 THE UNIVERSAL UNWRAPPER 🚀
-        // This safely extracts your trips no matter how Java wrapped them!
         let actualTrips = [];
         
-        if (Array.isArray(response.data)) {
-          actualTrips = response.data;           // If it's a plain list
-        } else if (response.data && response.data.data) {
-          actualTrips = response.data.data;      // If wrapped in a "data" object
-        } else if (response.data && response.data.content) {
-          actualTrips = response.data.content;   // If wrapped in a Spring Boot "content" object
-        } else if (response.data && response.data.trips) {
-            actualTrips = response.data.trips;   // If wrapped in a custom "trips" object
-        }
+        if (Array.isArray(response.data)) actualTrips = response.data;
+        else if (response.data && response.data.data) actualTrips = response.data.data;
+        else if (response.data && response.data.content) actualTrips = response.data.content;
+        else if (response.data && response.data.trips) actualTrips = response.data.trips;
 
-        // Save the extracted list to React state
         setTrips(actualTrips);
-
       } catch (error) {
         console.error("Error fetching trips from database:", error);
       } finally {
         setLoading(false);
       }
     };
-
     fetchTrips();
   }, []);
+
+  const handleDelete = async (tripId) => {
+    const isConfirmed = window.confirm("Are you sure you want to delete this trip? This cannot be undone.");
+    if (!isConfirmed) return;
+    try {
+      await API.delete(`/api/v1/trips/${tripId}`);
+      setTrips((prevTrips) => prevTrips.filter((trip) => (trip.id || trip._id) !== tripId));
+      alert("Trip successfully deleted!");
+    } catch (error) {
+      console.error("Error deleting trip:", error);
+      alert("Failed to delete the trip. Check the console for details.");
+    }
+  };
+
+  // --- NEW FUNCTION: OPEN MODAL & FETCH WAITING LIST ---
+  const openManageRequests = async (tripId) => {
+    setSelectedTripId(tripId);
+    setIsModalOpen(true);
+    setLoadingRequests(true);
+
+    try {
+      // Hit Methsara's exact endpoint for the waiting room
+      const response = await API.get(`/api/v1/trips/${tripId}/requests`);
+      
+      let actualRequests = [];
+      if (Array.isArray(response.data)) actualRequests = response.data;
+      else if (response.data && response.data.data) actualRequests = response.data.data;
+      
+      setPendingRequests(actualRequests);
+    } catch (error) {
+      console.error("Error fetching requests:", error);
+      alert("Failed to load requests.");
+    } finally {
+      setLoadingRequests(false);
+    }
+  };
+
+  // --- NEW FUNCTION: ACCEPT OR REJECT REQUEST ---
+  const handleRequestAction = async (requesterId, status) => {
+    try {
+      // Send the decision to Methsara's exact PUT endpoint
+      await API.put(`/api/v1/trips/${selectedTripId}/requests/${requesterId}?status=${status}`);
+      
+      // Instantly remove that user from the waiting list UI
+      setPendingRequests((prev) => prev.filter(req => (req.id || req.userId) !== requesterId));
+      
+      alert(`User ${status.toLowerCase()} successfully!`);
+    } catch (error) {
+      console.error(`Error processing ${status} action:`, error);
+      alert("Failed to process request.");
+    }
+  };
 
   if (viewingDetails) {
     return <TripDetails setActiveTab={setActiveTab} onBack={() => setViewingDetails(false)} />;
   }
 
   const stats = [
-    { label: 'Total Trips', count: trips.length, color: '#0EA5E9' }, // 👈 Now dynamically counts real trips!
+    { label: 'Total Trips', count: trips.length, color: '#0EA5E9' }, 
     { label: 'Active Trips', count: trips.length, color: '#10B981' },
     { label: 'Members Joined', count: 0, color: '#8b5cf6' },
   ];
 
   return (
-    <div style={{ fontFamily: 'sans-serif', color: '#0f172a', maxWidth: '1100px', margin: '0 auto' }}>
+    <div style={{ fontFamily: 'sans-serif', color: '#0f172a', maxWidth: '1100px', margin: '0 auto', position: 'relative' }}>
       
       {/* HEADER SECTION */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px' }}>
@@ -85,14 +129,12 @@ export default function MyTrips({ setActiveTab }) {
         ))}
       </div>
 
-      {/* LOADING STATE */}
+      {/* TRIP CARDS LIST */}
       {loading ? (
         <p>Loading your adventures from the database...</p>
       ) : trips.length === 0 ? (
         <p>No trips found. Time to create one!</p>
       ) : (
-      
-      /* TRIP CARDS LIST */
       <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
         {trips.map((trip) => (
           <div key={trip.id || trip._id} style={{ backgroundColor: '#ffffff', borderRadius: '20px', border: '1px solid #f1f5f9', display: 'flex', overflow: 'hidden', boxShadow: '0 2px 4px rgba(0,0,0,0.02)' }}>
@@ -108,7 +150,6 @@ export default function MyTrips({ setActiveTab }) {
               <div>
                 <h2 style={{ fontSize: '20px', fontWeight: 'bold', margin: '0 0 16px 0', color: '#0f172a' }}>{trip.title}</h2>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px 24px', marginBottom: '16px' }}>
-                  {/* 👈 Mapped to Methsara's Java variables here! */}
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#64748b', fontSize: '14px' }}><MapPin size={18} color="#0EA5E9" /> {trip.destinations}</div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#64748b', fontSize: '14px' }}><Calendar size={18} color="#0EA5E9" /> {trip.startDate} - {trip.endDate}</div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#64748b', fontSize: '14px' }}><DollarSign size={18} color="#10B981" /> ${trip.minBudget}</div>
@@ -126,7 +167,19 @@ export default function MyTrips({ setActiveTab }) {
                 <button style={{ padding: '10px 16px', borderRadius: '12px', fontSize: '14px', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', backgroundColor: '#ffffff', color: '#334155', border: '1px solid #cbd5e1', transition: 'all 0.2s' }}>
                   <Edit2 size={16} /> Edit
                 </button>
-                <button style={{ padding: '10px 16px', borderRadius: '12px', fontSize: '14px', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', backgroundColor: '#fff5f5', color: '#ef4444', border: '1px solid #fecaca', marginLeft: 'auto', transition: 'all 0.2s' }}>
+                
+                {/* 🚀 NEW: MANAGE REQUESTS BUTTON 🚀 */}
+                <button 
+                  onClick={() => openManageRequests(trip.id || trip._id)}
+                  style={{ padding: '10px 16px', borderRadius: '12px', fontSize: '14px', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', backgroundColor: '#f0fdf4', color: '#16a34a', border: '1px solid #bbf7d0', transition: 'all 0.2s' }}
+                >
+                  <UserCheck size={16} /> Requests
+                </button>
+
+                <button 
+                  onClick={() => handleDelete(trip.id || trip._id)} 
+                  style={{ padding: '10px 16px', borderRadius: '12px', fontSize: '14px', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', backgroundColor: '#fff5f5', color: '#ef4444', border: '1px solid #fecaca', marginLeft: 'auto', transition: 'all 0.2s' }}
+                >
                   <Trash2 size={16} /> Delete
                 </button>
               </div>
@@ -135,6 +188,57 @@ export default function MyTrips({ setActiveTab }) {
         ))}
       </div>
       )}
+
+      {/* 🚀 NEW: THE MANAGE REQUESTS MODAL POPUP 🚀 */}
+      {isModalOpen && (
+        <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', backgroundColor: 'rgba(0, 0, 0, 0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
+          <div style={{ backgroundColor: '#fff', borderRadius: '24px', padding: '32px', width: '90%', maxWidth: '500px', boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1)' }}>
+            
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+              <h2 style={{ margin: 0, fontSize: '24px', fontWeight: 'bold', color: '#0f172a' }}>Join Requests</h2>
+              <button onClick={() => setIsModalOpen(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#64748b' }}>
+                <X size={24} />
+              </button>
+            </div>
+
+            {loadingRequests ? (
+              <p style={{ textAlign: 'center', color: '#64748b', padding: '20px 0' }}>Loading requests...</p>
+            ) : pendingRequests.length === 0 ? (
+              <div style={{ textAlign: 'center', padding: '40px 0', color: '#64748b' }}>
+                <UserCheck size={48} color="#cbd5e1" style={{ marginBottom: '16px' }} />
+                <p>No pending requests right now.</p>
+              </div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                {pendingRequests.map((req) => (
+                  <div key={req.id || req.userId} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px', border: '1px solid #e2e8f0', borderRadius: '16px', backgroundColor: '#f8fafc' }}>
+                    <div>
+                      <p style={{ margin: '0 0 4px 0', fontWeight: 'bold', color: '#0f172a' }}>{req.userName || 'Traveler'}</p>
+                      <p style={{ margin: 0, fontSize: '13px', color: '#64748b' }}>Wants to join this trip</p>
+                    </div>
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                      <button 
+                        onClick={() => handleRequestAction(req.id || req.userId, 'ACCEPTED')}
+                        style={{ padding: '8px 12px', borderRadius: '8px', border: 'none', backgroundColor: '#10B981', color: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', fontWeight: 'bold' }}
+                      >
+                        <Check size={16} /> Accept
+                      </button>
+                      <button 
+                        onClick={() => handleRequestAction(req.id || req.userId, 'REJECTED')}
+                        style={{ padding: '8px 12px', borderRadius: '8px', border: 'none', backgroundColor: '#ef4444', color: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px', fontWeight: 'bold' }}
+                      >
+                        <X size={16} /> Reject
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }

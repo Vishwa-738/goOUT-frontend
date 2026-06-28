@@ -7,8 +7,9 @@ import Sidebar from '../components/Sidebar';
 import ExpenseTracker from './ExpenseTracker';
 import Profile from './Profile';
 import MyTrips from './MyTrips'; 
-import TripDetails from './TripDetails'; // <-- NEW: Imported Trip Details
-import ChatRoom from './ChatRoom';       // <-- NEW: Imported Chat Room
+import TripDetails from './TripDetails'; 
+import ChatRoom from './ChatRoom';       
+import DashboardHome from './DashboardHome'; // 🚀 NEW: Imported the dynamic feed!
 
 export default function Dashboard() {
   const [activeTab, setActiveTab] = useState('home');
@@ -101,19 +102,17 @@ export default function Dashboard() {
                     </button>
                   </div>
                   <div style={{ padding: '8px', borderTop: '1px solid #f1f5f9' }}>
-<button 
-  onClick={() => {
-    // 1. Clear any saved user session/auth tokens
-    localStorage.clear(); 
-    sessionStorage.clear();
-    
-    // 2. Redirect the user to the login page (adjust '/login' to your actual login route)
-    window.location.href = '/login'; 
-  }}
-  style={{ width: '100%', display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 12px', border: 'none', backgroundColor: 'transparent', cursor: 'pointer', borderRadius: '8px', color: '#ef4444', fontSize: '14px', textAlign: 'left' }}
-  onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#fef2f2'}
-  onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
->                      <LogOut size={18} color="#ef4444" /> Logout
+                    <button 
+                      onClick={() => {
+                        localStorage.clear(); 
+                        sessionStorage.clear();
+                        window.location.href = '/login'; 
+                      }}
+                      style={{ width: '100%', display: 'flex', alignItems: 'center', gap: '12px', padding: '10px 12px', border: 'none', backgroundColor: 'transparent', cursor: 'pointer', borderRadius: '8px', color: '#ef4444', fontSize: '14px', textAlign: 'left' }}
+                      onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#fef2f2'}
+                      onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                    >                      
+                      <LogOut size={18} color="#ef4444" /> Logout
                     </button>
                   </div>
                 </div>
@@ -125,33 +124,8 @@ export default function Dashboard() {
         {/* INNER CONTENT SCROLL AREA */}
         <div style={{ padding: '32px', flex: 1, overflowY: 'auto' }}>
           
-          {/* HOME TAB */}
-          {activeTab === 'home' && (
-            <div style={{ display: 'flex', gap: '24px', alignItems: 'flex-start' }}>
-              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '24px' }}>
-                <div style={{ backgroundColor: '#ffffff', padding: '16px', borderRadius: '16px', border: '1px solid #f1f5f9' }}>
-                  <input type="text" placeholder="Share your travel experience..." style={{ width: '100%', border: 'none', outline: 'none', fontSize: '14px' }}/>
-                </div>
-                <div style={{ backgroundColor: '#ffffff', borderRadius: '16px', border: '1px solid #f1f5f9', padding: '24px' }}>
-                  <h4 style={{ margin: '0 0 4px 0', fontSize: '16px', fontWeight: 'bold' }}>Sarah Kumar</h4>
-                  <span style={{ fontSize: '12px', color: '#94a3b8' }}>2 hours ago • Ella, Sri Lanka</span>
-                  <p style={{ marginTop: '12px', fontSize: '14px', color: '#334155', lineHeight: '1.5' }}>
-                    Just witnessed the most breathtaking sunrise at Ella Rock! The hike was challenging but absolutely worth it. 🌄
-                  </p>
-                  <div style={{ marginTop: '16px', borderRadius: '16px', overflow: 'hidden', maxHeight: '400px' }}>
-                    <img src="https://images.unsplash.com/photo-1542856391-010fb87dcfed?w=800" alt="Ella" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                  </div>
-                </div>
-              </div>
-              <div style={{ width: '320px', display: 'flex', flexDirection: 'column', gap: '24px' }}>
-                <div style={{ backgroundColor: '#00A3E1', color: '#ffffff', padding: '24px', borderRadius: '24px' }}>
-                  <span style={{ fontSize: '14px', opacity: 0.9 }}>Colombo, Sri Lanka</span>
-                  <h2 style={{ fontSize: '42px', fontWeight: 'bold', margin: '4px 0' }}>28°C</h2>
-                  <p style={{ fontSize: '13px', margin: 0 }}>Partly Cloudy</p>
-                </div>
-              </div>
-            </div>
-          )}
+          {/* HOME TAB - 🚀 Now rendering the dynamic component! */}
+          {activeTab === 'home' && <DashboardHome />}
 
           {/* DISCOVER TRIPS */}
           {activeTab === 'discover' && <Discover setActiveTab={setActiveTab} />}
@@ -162,16 +136,17 @@ export default function Dashboard() {
           {/* LIVE CHAT ROOM */}
           {activeTab === 'chat' && <ChatRoom />}
 
-        {/* MY TRIPS */}
-{activeTab === 'my-trips' && <MyTrips setActiveTab={setActiveTab} />}
+          {/* MY TRIPS */}
+          {activeTab === 'my-trips' && <MyTrips setActiveTab={setActiveTab} />}
 
           {/* EXPENSES */}
           {activeTab === 'expenses' && <ExpenseTracker />}
 
           {/* PROFILE */}
           {activeTab === 'profile' && <Profile />}
+          
           {/* CREATE NEW TRIP VIEW */}
-{activeTab === 'create-trip' && <CreateTrip setActiveTab={setActiveTab} />}
+          {activeTab === 'create-trip' && <CreateTrip setActiveTab={setActiveTab} />}
         </div>
       </div>
     </div>
