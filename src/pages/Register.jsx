@@ -2,6 +2,10 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../services/api'; 
+import logo from '../assets/logo.svg';
+import loginBg from '../assets/login-bg.png';
+// 🚀 THE FIX: Import your new right-side background image!
+import loginBackdrop from '../assets/login backdrop.svg'; // Adjust to .jpg if needed
 
 function Register() {
   const navigate = useNavigate();
@@ -34,13 +38,11 @@ function Register() {
       return;
     }
 
-    // 🚀 NEW: Split the single Full Name into First and Last Name
     const nameParts = formData.fullName.trim().split(' ');
-    const firstName = nameParts[0]; // Gets the first word
-    const lastName = nameParts.slice(1).join(' '); // Gets everything else, or remains blank if they only typed one word
+    const firstName = nameParts[0]; 
+    const lastName = nameParts.slice(1).join(' '); 
 
     try {
-      // 🚀 NEW: Send exactly what Methsara's Java backend demands
       await api.post('/api/v1/auth/register', {
         firstName: firstName,
         lastName: lastName,
@@ -60,35 +62,66 @@ function Register() {
 
   return (
     <div className="container-fluid min-vh-100 p-0 d-flex bg-white">
+      <style>
+        {`
+          .glass-input::placeholder {
+            color: rgba(255, 255, 255, 0.7) !important;
+          }
+          .glass-input:focus {
+            background-color: transparent !important;
+            color: white !important;
+            box-shadow: none !important;
+            outline: none !important;
+          }
+        `}
+      </style>
+
       <div className="row g-0 w-100">
         
         {/* Left Side: Premium GoOut Branding Pane */}
         <div 
           className="col-12 col-md-6 d-none d-md-flex flex-column align-items-center justify-content-center text-white p-5 position-relative text-center"
           style={{
-            background: `linear-gradient(135deg, rgba(14, 165, 233, 0.8), rgba(15, 23, 42, 0.9)), url('https://images.unsplash.com/photo-1586348943529-beaae6c28db9?w=800&auto=format&fit=crop&q=80')`,
+            background: `url(${loginBg})`,
             backgroundSize: 'cover',
             backgroundPosition: 'center'
           }}
         >
-          <div className="position-relative z-1">
-            <div className="bg-white rounded-circle d-inline-flex align-items-center justify-content-center mb-4 shadow" style={{ width: '80px', height: '80px' }}>
-              <span className="fs-1">🌐</span>
-            </div>
-            <h1 className="display-4 fw-bold mb-2" style={{ letterSpacing: '-1px' }}>GoOut</h1>
-            <p className="lead fs-5 opacity-90">Join the adventure today</p>
+          <div 
+            className="position-relative z-1" 
+            onClick={() => navigate('/')} 
+            style={{ cursor: 'pointer', transition: 'transform 0.2s ease-in-out' }}
+            onMouseOver={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
+            onMouseOut={(e) => e.currentTarget.style.transform = 'scale(1)'}
+          >
+            <img 
+              src={logo} 
+              alt="GoOut Logo" 
+              style={{ width: '600px', height: 'auto', objectFit: 'contain' }} 
+            />
           </div>
         </div>
 
-        {/* Right Side: Form Content Pane */}
-        <div className="col-12 col-md-6 d-flex align-items-center justify-content-center p-4 p-sm-5 bg-light">
+        {/* 🚀 THE FIX: Right Side - Applied the new login backdrop image with a dark overlay */}
+        <div 
+          className="col-12 col-md-6 d-flex align-items-center justify-content-center p-4 p-sm-5 position-relative"
+          style={{ 
+            background: `linear-gradient(rgba(6, 95, 70, 0.7), rgba(15, 23, 42, 0.8)), url('${loginBackdrop}')`,
+            backgroundSize: 'cover',
+            backgroundPosition: 'center'
+          }} 
+        >
           <div className="w-100" style={{ maxWidth: '420px' }}>
             
-            <div className="card shadow-sm border-0 rounded-4 p-4 bg-white">
-              <div className="bg-light p-1 rounded-3 d-flex mb-4">
+            <div 
+              className="card shadow-lg border-0 rounded-4 p-4"
+              style={{ background: 'linear-gradient(135deg, #17B0B2 0%, #8ADD63 100%)' }}
+            >
+              
+              <div className="p-1 rounded-3 d-flex mb-4" style={{ backgroundColor: 'rgba(0,0,0,0.15)' }}>
                 <button 
                   type="button" 
-                  className="btn btn-light text-muted flex-grow-1 py-2 fw-semibold rounded-2 border-0 small"
+                  className="btn text-white flex-grow-1 py-2 fw-semibold rounded-2 border-0 small"
                   onClick={() => navigate('/login')}
                 >
                   Login
@@ -106,42 +139,47 @@ function Register() {
 
               <form onSubmit={handleSubmit}>
                 <div className="mb-3">
-                  <label className="form-label small fw-bold text-dark mb-1">Full Name</label>
-                  <div className="input-group">
-                    <span className="input-group-text bg-light border-end-0 text-muted">👤</span>
-                    <input type="text" name="fullName" className="form-control bg-light border-start-0 ps-0" placeholder="Enter your full name" value={formData.fullName} onChange={handleChange} />
+                  <label className="form-label small fw-bold text-white mb-1">Full Name</label>
+                  <div className="d-flex align-items-center rounded-3 px-3 py-2" style={{ background: 'rgba(255, 255, 255, 0.15)', backdropFilter: 'blur(12px)', border: '1px solid rgba(255, 255, 255, 0.25)' }}>
+                    <span className="me-2" style={{ opacity: 0.8 }}>👤</span>
+                    <input type="text" name="fullName" className="form-control border-0 p-0 shadow-none text-white bg-transparent glass-input" placeholder="Enter your full name" value={formData.fullName} onChange={handleChange} />
                   </div>
                 </div>
 
                 <div className="mb-3">
-                  <label className="form-label small fw-bold text-dark mb-1">Email</label>
-                  <div className="input-group">
-                    <span className="input-group-text bg-light border-end-0 text-muted">✉️</span>
-                    <input type="email" name="email" className="form-control bg-light border-start-0 ps-0" placeholder="Enter your email" value={formData.email} onChange={handleChange} />
+                  <label className="form-label small fw-bold text-white mb-1">Email</label>
+                  <div className="d-flex align-items-center rounded-3 px-3 py-2" style={{ background: 'rgba(255, 255, 255, 0.15)', backdropFilter: 'blur(12px)', border: '1px solid rgba(255, 255, 255, 0.25)' }}>
+                    <span className="me-2" style={{ opacity: 0.8 }}>✉️</span>
+                    <input type="email" name="email" className="form-control border-0 p-0 shadow-none text-white bg-transparent glass-input" placeholder="Enter your email" value={formData.email} onChange={handleChange} />
                   </div>
                 </div>
 
                 <div className="mb-3">
-                  <label className="form-label small fw-bold text-dark mb-1">Password</label>
-                  <div className="input-group">
-                    <span className="input-group-text bg-light border-end-0 text-muted">🔒</span>
-                    <input type="password" name="password" className="form-control bg-light border-start-0 ps-0" placeholder="Create a password" value={formData.password} onChange={handleChange} />
+                  <label className="form-label small fw-bold text-white mb-1">Password</label>
+                  <div className="d-flex align-items-center rounded-3 px-3 py-2" style={{ background: 'rgba(255, 255, 255, 0.15)', backdropFilter: 'blur(12px)', border: '1px solid rgba(255, 255, 255, 0.25)' }}>
+                    <span className="me-2" style={{ opacity: 0.8 }}>🔒</span>
+                    <input type="password" name="password" className="form-control border-0 p-0 shadow-none text-white bg-transparent glass-input" placeholder="Create a password" value={formData.password} onChange={handleChange} />
                   </div>
                 </div>
 
                 <div className="mb-3">
-                  <label className="form-label small fw-bold text-dark mb-1">Confirm Password</label>
-                  <div className="input-group">
-                    <span className="input-group-text bg-light border-end-0 text-muted">🔒</span>
-                    <input type="password" name="confirmPassword" className="form-control bg-light border-start-0 ps-0" placeholder="Confirm your password" value={formData.confirmPassword} onChange={handleChange} />
+                  <label className="form-label small fw-bold text-white mb-1">Confirm Password</label>
+                  <div className="d-flex align-items-center rounded-3 px-3 py-2" style={{ background: 'rgba(255, 255, 255, 0.15)', backdropFilter: 'blur(12px)', border: '1px solid rgba(255, 255, 255, 0.25)' }}>
+                    <span className="me-2" style={{ opacity: 0.8 }}>🔒</span>
+                    <input type="password" name="confirmPassword" className="form-control border-0 p-0 shadow-none text-white bg-transparent glass-input" placeholder="Confirm your password" value={formData.confirmPassword} onChange={handleChange} />
                   </div>
                 </div>
 
-                <button type="submit" className="btn w-100 py-2 fw-semibold shadow-sm mb-2 rounded-3 text-white" style={{ backgroundColor: '#0EA5E9', border: 'none' }}>
+                <button type="submit" className="btn w-100 py-2 fw-bold shadow-sm mb-2 rounded-3 text-dark mt-3" style={{ backgroundColor: '#ffffff', border: 'none' }}>
                   Create Account
                 </button>
               </form>
             </div>
+            
+            <p className="text-center text-white small mt-4 px-3 mb-0 opacity-75" style={{ fontSize: '0.8rem', lineHeight: '1.4' }}>
+              By continuing, you agree to our <span style={{ color: '#ffffff', fontWeight: 'bold', cursor: 'pointer' }}>Terms of Service</span> and <span style={{ color: '#ffffff', fontWeight: 'bold', cursor: 'pointer' }}>Privacy Policy</span>
+            </p>
+
           </div>
         </div>
       </div>

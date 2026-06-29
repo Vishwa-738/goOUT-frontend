@@ -7,8 +7,6 @@ export default function Profile() {
   const [activeProfileTab, setActiveProfileTab] = useState('experiences');
   const [isLoading, setIsLoading] = useState(true); 
   const fileInputRef = useRef(null);
-
-  // 🚀 NEW: We need to store the actual physical file when they select it
   const [selectedFile, setSelectedFile] = useState(null);
 
   const [profileData, setProfileData] = useState({
@@ -51,9 +49,7 @@ export default function Profile() {
   const handleImageChange = (e) => {
     const file = e.target.files[0];
     if (file) {
-      // 🚀 NEW: Save the actual file so we can upload it later
       setSelectedFile(file); 
-      // Keep creating the fake URL so the user sees a preview instantly
       const imageUrl = URL.createObjectURL(file);
       setProfileData((prev) => ({ ...prev, avatar: imageUrl }));
     }
@@ -63,16 +59,16 @@ export default function Profile() {
     fileInputRef.current.click();
   };
 
+  // 🚀 UPDATED SAVE FUNCTION
   const handleSave = async () => {
     try {
       let finalAvatarUrl = profileData.avatar;
 
-      // 🚀 STEP 1: If they selected a new picture, upload it to ImgBB first!
+      // STEP 1: Upload to ImgBB
       if (selectedFile) {
         const formData = new FormData();
         formData.append("image", selectedFile);
         
-        // 🛑 PASTE YOUR IMGBB API KEY HERE 🛑
         const IMGBB_API_KEY = "e339fa4d4951e3f50756427d383d12a5"; 
         
         const imgbbResponse = await fetch(`https://api.imgbb.com/1/upload?key=${IMGBB_API_KEY}`, {
@@ -83,13 +79,13 @@ export default function Profile() {
         const imgbbData = await imgbbResponse.json();
         
         if (imgbbData.success) {
-          finalAvatarUrl = imgbbData.data.url; // Get the permanent live URL!
+          finalAvatarUrl = imgbbData.data.url; 
         } else {
           throw new Error("Failed to upload image to CDN");
         }
       }
 
-      // 🚀 STEP 2: Send the exact JSON payload Methsara requested
+      // STEP 2: Send payload to backend
       const payload = {
         bio: profileData.bio,
         location: profileData.location,
@@ -97,18 +93,34 @@ export default function Profile() {
       };
 
       const response = await api.put('/api/v1/users/me', payload);
-
       const updatedUser = response.data;
+      
+      const newAvatarToUse = updatedUser.avatarUrl || finalAvatarUrl;
+
       setProfileData((prev) => ({
         ...prev,
         location: updatedUser.location || prev.location,
         bio: updatedUser.bio || prev.bio,
-        avatar: updatedUser.avatarUrl || prev.avatar
+        avatar: newAvatarToUse
       }));
+
+      // 🚀 STEP 3: UPDATE LOCAL STORAGE SO DASHBOARD TOP BAR CAN SEE IT!
+      const userString = localStorage.getItem('user');
+      if (userString) {
+        const localUser = JSON.parse(userString);
+        localUser.profilePic = newAvatarToUse; // Update the exact variable the Dashboard looks for
+        localUser.avatarUrl = newAvatarToUse;
+        localStorage.setItem('user', JSON.stringify(localUser));
+      }
       
-      setSelectedFile(null); // Clear the stored file
-      alert("Profile updated successfully!");
+      setSelectedFile(null); 
       setIsEditing(false);
+      
+      alert("Profile updated successfully!");
+      
+      // 🚀 STEP 4: FORCE REFRESH TO INSTANTLY UPDATE THE TOP BAR
+      window.location.reload();
+      
     } catch (error) {
       console.error("Error saving profile:", error);
       alert("Failed to save changes. Check the console for details!");
@@ -135,9 +147,6 @@ export default function Profile() {
     return <div style={{ textAlign: 'center', padding: '50px' }}>Loading profile...</div>;
   }
 
-  // ==========================================
-  // EDIT MODE VIEW
-  // ==========================================
   if (isEditing) {
     return (
       <div style={{ maxWidth: '900px', margin: '0 auto', fontFamily: 'sans-serif', color: '#0f172a' }}>
@@ -154,7 +163,6 @@ export default function Profile() {
           </div>
 
           <div style={{ display: 'flex', gap: '40px' }}>
-            {/* Left: Profile Picture Edit */}
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px' }}>
               <div style={{ position: 'relative', width: '150px', height: '150px' }}>
                 <img 
@@ -179,7 +187,6 @@ export default function Profile() {
               <span style={{ fontSize: '13px', color: '#64748b', fontWeight: '500' }}>Change Photo</span>
             </div>
 
-            {/* Right: Form Fields */}
             <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '20px' }}>
               <div>
                 <label style={{ display: 'block', fontSize: '14px', fontWeight: 'bold', color: '#334155', marginBottom: '8px' }}>Full Name</label>
@@ -247,13 +254,9 @@ export default function Profile() {
     );
   }
 
-  // ==========================================
-  // STANDARD VIEW MODE
-  // ==========================================
   return (
     <div style={{ maxWidth: '900px', margin: '0 auto', fontFamily: 'sans-serif', color: '#0f172a' }}>
       
-      {/* Top Profile Card */}
       <div style={{ backgroundColor: '#ffffff', borderRadius: '24px', padding: '40px', boxShadow: '0 4px 6px rgba(0,0,0,0.02)', border: '1px solid #f1f5f9', position: 'relative' }}>
         
         <button 
@@ -310,19 +313,15 @@ export default function Profile() {
         </div>
       </div>
 
-      {/* TABS SECTION */}
       <div style={{ backgroundColor: '#ffffff', borderRadius: '24px', marginTop: '24px', padding: '24px', border: '1px solid #f1f5f9' }}>
         
-        {/* Tab Buttons */}
         <div style={{ display: 'flex', backgroundColor: '#f8fafc', padding: '8px', borderRadius: '16px', marginBottom: '24px' }}>
           <button onClick={() => setActiveProfileTab('my-trips')} style={getTabStyle('my-trips')}>My Trips</button>
           <button onClick={() => setActiveProfileTab('experiences')} style={getTabStyle('experiences')}>Experiences</button>
           <button onClick={() => setActiveProfileTab('activity')} style={getTabStyle('activity')}>Activity</button>
         </div>
         
-        {/* Tab Content */}
         <div>
-          {/* Content for 'Experiences' */}
           {activeProfileTab === 'experiences' && (
             <div>
               <p style={{ color: '#334155', lineHeight: '1.6', marginBottom: '16px' }}>Just witnessed the most breathtaking sunrise at Ella Rock! The hike was challenging but absolutely worth it.</p>
@@ -332,7 +331,6 @@ export default function Profile() {
             </div>
           )}
 
-          {/* Content for 'My Trips' */}
           {activeProfileTab === 'my-trips' && (
             <div style={{ textAlign: 'center', padding: '60px 20px', color: '#64748b' }}>
               <MapPin size={48} color="#cbd5e1" style={{ margin: '0 auto 16px' }} />
@@ -341,7 +339,6 @@ export default function Profile() {
             </div>
           )}
 
-          {/* Content for 'Activity' */}
           {activeProfileTab === 'activity' && (
             <div style={{ textAlign: 'center', padding: '60px 20px', color: '#64748b' }}>
               <ActivityIcon size={48} color="#cbd5e1" style={{ margin: '0 auto 16px' }} />
