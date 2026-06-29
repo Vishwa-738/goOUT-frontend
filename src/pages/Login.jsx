@@ -2,6 +2,8 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext'; // IMPORT YOUR AUTH CONTEXT HERE!
+import logo from '../assets/logo.svg';
+import loginBg from '../assets/login-bg.png';
 
 function Login() {
   const navigate = useNavigate();
@@ -51,25 +53,25 @@ function Login() {
         <div 
           className="col-12 col-md-6 d-none d-md-flex flex-column align-items-center justify-content-center text-white p-5 position-relative text-center"
           style={{
-            background: `linear-gradient(135deg, rgba(14, 165, 233, 0.8), rgba(15, 23, 42, 0.9)), url('https://images.unsplash.com/photo-1586348943529-beaae6c28db9?w=800&auto=format&fit=crop&q=80')`,
-            backgroundSize: 'cover',
-            backgroundPosition: 'center'
-          }}
+  background: `url(${loginBg})`,
+  backgroundSize: 'cover',
+  backgroundPosition: 'center'
+}}
         >
           {/* LOGO CONTAINER: Now clickable to return to the landing page! */}
-          <div 
-            className="position-relative z-1" 
-            onClick={() => navigate('/')} 
-            style={{ cursor: 'pointer', transition: 'transform 0.2s ease-in-out' }}
-            onMouseOver={(e) => e.currentTarget.style.transform = 'scale(1.02)'}
-            onMouseOut={(e) => e.currentTarget.style.transform = 'scale(1)'}
-          >
-            <div className="bg-white rounded-circle d-inline-flex align-items-center justify-content-center mb-4 shadow" style={{ width: '80px', height: '80px' }}>
-              <span className="fs-1" style={{ color: '#0EA5E9' }}>🌐</span>
-            </div>
-            <h1 className="display-4 fw-bold mb-2" style={{ letterSpacing: '-1px' }}>GoOut</h1>
-            <p className="lead fs-5 opacity-90">Your journey begins here</p>
-          </div>
+<div 
+  className="position-relative z-1" 
+  onClick={() => navigate('/')} 
+  style={{ cursor: 'pointer', transition: 'transform 0.2s ease-in-out' }}
+  onMouseOver={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
+  onMouseOut={(e) => e.currentTarget.style.transform = 'scale(1)'}
+>
+  <img 
+    src={logo} 
+    alt="GoOut Logo" 
+    style={{ width: '600px', height: 'auto', objectFit: 'contain' }} 
+  />
+</div>
         </div>
 
         {/* Right Side: Form Content Pane */}

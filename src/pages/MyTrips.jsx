@@ -1,14 +1,14 @@
+// src/pages/MyTrips.jsx
 import React, { useState, useEffect } from 'react';
 import { Calendar, MapPin, Users, DollarSign, Plus, Eye, Edit2, UserCheck, Trash2, Check, X } from 'lucide-react';
 import TripDetails from './TripDetails'; 
 import API from '../services/api'; 
 
 export default function MyTrips({ setActiveTab }) {
-  const [viewingDetails, setViewingDetails] = useState(false);
+  const [viewingTripId, setViewingTripId] = useState(null); 
   const [trips, setTrips] = useState([]); 
   const [loading, setLoading] = useState(true);
 
-  // --- NEW STATES FOR MANAGE REQUESTS MODAL ---
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedTripId, setSelectedTripId] = useState(null);
   const [pendingRequests, setPendingRequests] = useState([]);
@@ -48,20 +48,16 @@ export default function MyTrips({ setActiveTab }) {
     }
   };
 
-  // --- NEW FUNCTION: OPEN MODAL & FETCH WAITING LIST ---
   const openManageRequests = async (tripId) => {
     setSelectedTripId(tripId);
     setIsModalOpen(true);
     setLoadingRequests(true);
 
     try {
-      // Hit Methsara's exact endpoint for the waiting room
       const response = await API.get(`/api/v1/trips/${tripId}/requests`);
-      
       let actualRequests = [];
       if (Array.isArray(response.data)) actualRequests = response.data;
       else if (response.data && response.data.data) actualRequests = response.data.data;
-      
       setPendingRequests(actualRequests);
     } catch (error) {
       console.error("Error fetching requests:", error);
@@ -71,15 +67,10 @@ export default function MyTrips({ setActiveTab }) {
     }
   };
 
-  // --- NEW FUNCTION: ACCEPT OR REJECT REQUEST ---
   const handleRequestAction = async (requesterId, status) => {
     try {
-      // Send the decision to Methsara's exact PUT endpoint
       await API.put(`/api/v1/trips/${selectedTripId}/requests/${requesterId}?status=${status}`);
-      
-      // Instantly remove that user from the waiting list UI
       setPendingRequests((prev) => prev.filter(req => (req.id || req.userId) !== requesterId));
-      
       alert(`User ${status.toLowerCase()} successfully!`);
     } catch (error) {
       console.error(`Error processing ${status} action:`, error);
@@ -87,15 +78,91 @@ export default function MyTrips({ setActiveTab }) {
     }
   };
 
-  if (viewingDetails) {
-    return <TripDetails setActiveTab={setActiveTab} onBack={() => setViewingDetails(false)} />;
+  if (viewingTripId) {
+    return <TripDetails setActiveTab={setActiveTab} tripId={viewingTripId} onBack={() => setViewingTripId(null)} />;
   }
 
+  // 🚀 AUTOMATICALLY CATEGORIZE TRIPS based on the backend's explicit flag!
+  const organizedTrips = trips.filter(trip => trip.isOrganizer === true);
+  const joinedTrips = trips.filter(trip => trip.isOrganizer === false);
+
+  // 🚀 DYNAMIC STATS BASED ON CATEGORIES
   const stats = [
     { label: 'Total Trips', count: trips.length, color: '#0EA5E9' }, 
-    { label: 'Active Trips', count: trips.length, color: '#10B981' },
-    { label: 'Members Joined', count: 0, color: '#8b5cf6' },
+    { label: 'Organizing', count: organizedTrips.length, color: '#10B981' },
+    { label: 'Joined', count: joinedTrips.length, color: '#8b5cf6' },
   ];
+
+  // 🚀 REUSABLE RENDER FUNCTION TO KEEP CODE CLEAN
+  const renderTripCards = (tripList) => {
+    if (tripList.length === 0) {
+      return <p style={{ color: '#64748b', fontStyle: 'italic' }}>No trips in this category yet.</p>;
+    }
+    
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+        {tripList.map((trip) => {
+          // The backend explicitly tells us if the user is the admin
+          const isAdmin = trip.isOrganizer === true;
+
+          return (
+            <div key={trip.id || trip._id} style={{ backgroundColor: '#ffffff', borderRadius: '20px', border: '1px solid #f1f5f9', display: 'flex', overflow: 'hidden', boxShadow: '0 2px 4px rgba(0,0,0,0.02)' }}>
+              
+              <div style={{ width: '300px', height: '220px', position: 'relative', flexShrink: 0 }}>
+                <img src={'https://images.unsplash.com/photo-1546708973-b339540b5162?w=600'} alt={trip.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                <span style={{ position: 'absolute', top: '16px', left: '16px', backgroundColor: isAdmin ? '#10B981' : '#8b5cf6', color: '#ffffff', padding: '6px 16px', borderRadius: '20px', fontSize: '12px', fontWeight: 'bold', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
+                  {isAdmin ? 'Admin' : 'Member'}
+                </span>
+              </div>
+
+              <div style={{ flex: 1, padding: '24px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                <div>
+                  <h2 style={{ fontSize: '20px', fontWeight: 'bold', margin: '0 0 16px 0', color: '#0f172a' }}>{trip.title}</h2>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px 24px', marginBottom: '16px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#64748b', fontSize: '14px' }}><MapPin size={18} color="#0EA5E9" /> {trip.destinations}</div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#64748b', fontSize: '14px' }}><Calendar size={18} color="#0EA5E9" /> {trip.startDate} - {trip.endDate}</div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#64748b', fontSize: '14px' }}><DollarSign size={18} color="#10B981" /> ${trip.minBudget}</div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#64748b', fontSize: '14px' }}><Users size={18} color="#0EA5E9" /> Max: {trip.maxParticipants}</div>
+                  </div>
+                </div>
+
+                <div style={{ display: 'flex', gap: '12px' }}>
+                  <button 
+                    onClick={() => setViewingTripId(trip.id || trip._id)}
+                    style={{ padding: '10px 16px', borderRadius: '12px', fontSize: '14px', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', border: 'none', backgroundColor: '#0EA5E9', color: '#ffffff', transition: 'all 0.2s' }}
+                  >
+                    <Eye size={16} /> View Details
+                  </button>
+
+                  {isAdmin && (
+                    <>
+                      <button style={{ padding: '10px 16px', borderRadius: '12px', fontSize: '14px', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', backgroundColor: '#ffffff', color: '#334155', border: '1px solid #cbd5e1', transition: 'all 0.2s' }}>
+                        <Edit2 size={16} /> Edit
+                      </button>
+                      
+                      <button 
+                        onClick={() => openManageRequests(trip.id || trip._id)}
+                        style={{ padding: '10px 16px', borderRadius: '12px', fontSize: '14px', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', backgroundColor: '#f0fdf4', color: '#16a34a', border: '1px solid #bbf7d0', transition: 'all 0.2s' }}
+                      >
+                        <UserCheck size={16} /> Requests
+                      </button>
+
+                      <button 
+                        onClick={() => handleDelete(trip.id || trip._id)} 
+                        style={{ padding: '10px 16px', borderRadius: '12px', fontSize: '14px', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', backgroundColor: '#fff5f5', color: '#ef4444', border: '1px solid #fecaca', marginLeft: 'auto', transition: 'all 0.2s' }}
+                      >
+                        <Trash2 size={16} /> Delete
+                      </button>
+                    </>
+                  )}
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    );
+  };
 
   return (
     <div style={{ fontFamily: 'sans-serif', color: '#0f172a', maxWidth: '1100px', margin: '0 auto', position: 'relative' }}>
@@ -115,7 +182,7 @@ export default function MyTrips({ setActiveTab }) {
       </div>
 
       {/* METRICS STATS ROW */}
-      <div style={{ display: 'flex', gap: '24px', marginBottom: '32px' }}>
+      <div style={{ display: 'flex', gap: '24px', marginBottom: '40px' }}>
         {stats.map((stat, idx) => (
           <div key={idx} style={{ flex: 1, backgroundColor: '#ffffff', borderRadius: '20px', padding: '24px', display: 'flex', alignItems: 'center', gap: '20px', border: '1px solid #f1f5f9', boxShadow: '0 2px 4px rgba(0,0,0,0.02)' }}>
             <div style={{ width: '56px', height: '56px', borderRadius: '16px', backgroundColor: stat.color, color: '#ffffff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '24px', fontWeight: 'bold' }}>
@@ -129,67 +196,32 @@ export default function MyTrips({ setActiveTab }) {
         ))}
       </div>
 
-      {/* TRIP CARDS LIST */}
+      {/* TRIP LISTS */}
       {loading ? (
         <p>Loading your adventures from the database...</p>
-      ) : trips.length === 0 ? (
-        <p>No trips found. Time to create one!</p>
       ) : (
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-        {trips.map((trip) => (
-          <div key={trip.id || trip._id} style={{ backgroundColor: '#ffffff', borderRadius: '20px', border: '1px solid #f1f5f9', display: 'flex', overflow: 'hidden', boxShadow: '0 2px 4px rgba(0,0,0,0.02)' }}>
-            
-            <div style={{ width: '300px', height: '220px', position: 'relative', flexShrink: 0 }}>
-              <img src={'https://images.unsplash.com/photo-1546708973-b339540b5162?w=600'} alt={trip.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-              <span style={{ position: 'absolute', top: '16px', left: '16px', backgroundColor: '#10B981', color: '#ffffff', padding: '6px 16px', borderRadius: '20px', fontSize: '12px', fontWeight: 'bold', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
-                Active
-              </span>
+        <>
+          {/* SECTION 1: Trips I'm Organizing */}
+          <div style={{ marginBottom: '48px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
+              <div style={{ width: '4px', height: '24px', backgroundColor: '#10B981', borderRadius: '4px' }}></div>
+              <h2 style={{ fontSize: '22px', fontWeight: 'bold', color: '#0f172a', margin: 0 }}>Trips I'm Organizing</h2>
             </div>
-
-            <div style={{ flex: 1, padding: '24px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
-              <div>
-                <h2 style={{ fontSize: '20px', fontWeight: 'bold', margin: '0 0 16px 0', color: '#0f172a' }}>{trip.title}</h2>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px 24px', marginBottom: '16px' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#64748b', fontSize: '14px' }}><MapPin size={18} color="#0EA5E9" /> {trip.destinations}</div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#64748b', fontSize: '14px' }}><Calendar size={18} color="#0EA5E9" /> {trip.startDate} - {trip.endDate}</div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#64748b', fontSize: '14px' }}><DollarSign size={18} color="#10B981" /> ${trip.minBudget}</div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#64748b', fontSize: '14px' }}><Users size={18} color="#0EA5E9" /> Max: {trip.maxParticipants}</div>
-                </div>
-              </div>
-
-              <div style={{ display: 'flex', gap: '12px' }}>
-                <button 
-                  onClick={() => setViewingDetails(true)}
-                  style={{ padding: '10px 16px', borderRadius: '12px', fontSize: '14px', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', border: 'none', backgroundColor: '#0EA5E9', color: '#ffffff', transition: 'all 0.2s' }}
-                >
-                  <Eye size={16} /> View Details
-                </button>
-                <button style={{ padding: '10px 16px', borderRadius: '12px', fontSize: '14px', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', backgroundColor: '#ffffff', color: '#334155', border: '1px solid #cbd5e1', transition: 'all 0.2s' }}>
-                  <Edit2 size={16} /> Edit
-                </button>
-                
-                {/* 🚀 NEW: MANAGE REQUESTS BUTTON 🚀 */}
-                <button 
-                  onClick={() => openManageRequests(trip.id || trip._id)}
-                  style={{ padding: '10px 16px', borderRadius: '12px', fontSize: '14px', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', backgroundColor: '#f0fdf4', color: '#16a34a', border: '1px solid #bbf7d0', transition: 'all 0.2s' }}
-                >
-                  <UserCheck size={16} /> Requests
-                </button>
-
-                <button 
-                  onClick={() => handleDelete(trip.id || trip._id)} 
-                  style={{ padding: '10px 16px', borderRadius: '12px', fontSize: '14px', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', backgroundColor: '#fff5f5', color: '#ef4444', border: '1px solid #fecaca', marginLeft: 'auto', transition: 'all 0.2s' }}
-                >
-                  <Trash2 size={16} /> Delete
-                </button>
-              </div>
-            </div>
+            {renderTripCards(organizedTrips)}
           </div>
-        ))}
-      </div>
+
+          {/* SECTION 2: Trips I've Joined */}
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
+              <div style={{ width: '4px', height: '24px', backgroundColor: '#8b5cf6', borderRadius: '4px' }}></div>
+              <h2 style={{ fontSize: '22px', fontWeight: 'bold', color: '#0f172a', margin: 0 }}>Trips I've Joined</h2>
+            </div>
+            {renderTripCards(joinedTrips)}
+          </div>
+        </>
       )}
 
-      {/* 🚀 NEW: THE MANAGE REQUESTS MODAL POPUP 🚀 */}
+      {/* MODAL */}
       {isModalOpen && (
         <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', backgroundColor: 'rgba(0, 0, 0, 0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
           <div style={{ backgroundColor: '#fff', borderRadius: '24px', padding: '32px', width: '90%', maxWidth: '500px', boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1)' }}>
@@ -234,11 +266,9 @@ export default function MyTrips({ setActiveTab }) {
                 ))}
               </div>
             )}
-
           </div>
         </div>
       )}
-
     </div>
   );
 }

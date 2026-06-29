@@ -32,16 +32,16 @@ export default function CreateTrip() {
         endDate: tripData.endDate,
         minBudget: parseFloat(tripData.budget) || 0, 
         maxBudget: parseFloat(tripData.budget) || 0, 
-        maxParticipants: parseInt(tripData.capacity, 10) || 0 
+        maxParticipants: parseInt(tripData.capacity, 10) || 0,
+        isPublic: true,     // 🚀 ADD THIS: Stops the 'isPublic' crash
+        isOrganizer: true   // 🚀 ADD THIS: Satisfies the new organizer logic
       };
 
       const response = await API.post('/api/v1/trips', formattedPayload); 
       console.log("Trip successfully saved to database!", response.data);
       
-      // 1. ADD THE EXACT ALERT YOU REQUESTED!
       alert("successfully created trip");
       
-      // 2. NAVIGATE TO THE DASHBOARD (This keeps your sidebar alive!)
       navigate('/dashboard'); 
       
     } catch (error) {
