@@ -4,12 +4,16 @@ import { useNavigate } from 'react-router-dom';
 import api from '../services/api'; 
 import logo from '../assets/logo.svg';
 import loginBg from '../assets/login-bg.png';
-// 🚀 THE FIX: Import your new right-side background image!
-import loginBackdrop from '../assets/login backdrop.svg'; // Adjust to .jpg if needed
+import loginBackdrop from '../assets/login backdrop.svg'; 
 
 function Register() {
   const navigate = useNavigate();
   
+  // 🚀 NEW: State to track which step of the registration we are on
+  const [step, setStep] = useState(1); // 1 = Details form, 2 = OTP form
+  const [otp, setOtp] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+
   const [formData, setFormData] = useState({
     fullName: '',
     email: '',
@@ -24,7 +28,8 @@ function Register() {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = async (e) => {
+  // --- STEP 1: Submit Details & Request OTP ---
+  const handleRegisterSubmit = async (e) => {
     e.preventDefault();
     setError('');
 
@@ -40,9 +45,11 @@ function Register() {
 
     const nameParts = formData.fullName.trim().split(' ');
     const firstName = nameParts[0]; 
-    const lastName = nameParts.slice(1).join(' '); 
+    const lastName = nameParts.slice(1).join(' ') || ''; 
 
+    setIsLoading(true);
     try {
+      // Send data to backend to trigger the creation of the unverified user and send the email
       await api.post('/api/v1/auth/register', {
         firstName: firstName,
         lastName: lastName,
@@ -51,12 +58,37 @@ function Register() {
         travelerType: formData.travelerType
       });
 
-      alert("Account created successfully! Please login.");
+      // 🚀 THE FIX: Instead of navigating, switch to the OTP UI!
+      setStep(2); 
+    } catch (err) {
+      console.error(err);
+      setError(err.response?.data?.message || 'Registration failed. Try again.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // --- STEP 2: Verify the OTP ---
+  const handleOtpSubmit = async (e) => {
+    e.preventDefault();
+    setError('');
+    setIsLoading(true);
+    
+    try {
+      // Send the code back to the server to verify the email
+      await api.post('/api/v1/auth/verify', { 
+        email: formData.email, 
+        otp: otp 
+      });
+      
+      alert("Email verified successfully! Welcome to GoOUT. Please login.");
       navigate('/login');
       
     } catch (err) {
       console.error(err);
-      setError(err.response?.data?.message || 'Registration failed. Try again.');
+      setError(err.response?.data?.message || 'Invalid verification code. Please check your email.');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -102,7 +134,7 @@ function Register() {
           </div>
         </div>
 
-        {/* 🚀 THE FIX: Right Side - Applied the new login backdrop image with a dark overlay */}
+        {/* Right Side: Registration / OTP Form */}
         <div 
           className="col-12 col-md-6 d-flex align-items-center justify-content-center p-4 p-sm-5 position-relative"
           style={{ 
@@ -115,21 +147,24 @@ function Register() {
             
             <div 
               className="card shadow-lg border-0 rounded-4 p-4"
-              style={{ background: 'linear-gradient(135deg, #17B0B2 0%, #8ADD63 100%)' }}
+              style={{ background: 'linear-gradient(135deg, #17B0B2 0%, #8ADD63 100%)', transition: 'all 0.3s ease' }}
             >
               
-              <div className="p-1 rounded-3 d-flex mb-4" style={{ backgroundColor: 'rgba(0,0,0,0.15)' }}>
-                <button 
-                  type="button" 
-                  className="btn text-white flex-grow-1 py-2 fw-semibold rounded-2 border-0 small"
-                  onClick={() => navigate('/login')}
-                >
-                  Login
-                </button>
-                <button type="button" className="btn btn-white bg-white shadow-sm flex-grow-1 py-2 fw-semibold rounded-2 text-dark small">
-                  Register
-                </button>
-              </div>
+              {/* Only show the Login/Register toggle tabs if we are on Step 1 */}
+              {step === 1 && (
+                <div className="p-1 rounded-3 d-flex mb-4" style={{ backgroundColor: 'rgba(0,0,0,0.15)' }}>
+                  <button 
+                    type="button" 
+                    className="btn text-white flex-grow-1 py-2 fw-semibold rounded-2 border-0 small"
+                    onClick={() => navigate('/login')}
+                  >
+                    Login
+                  </button>
+                  <button type="button" className="btn btn-white bg-white shadow-sm flex-grow-1 py-2 fw-semibold rounded-2 text-dark small">
+                    Register
+                  </button>
+                </div>
+              )}
 
               {error && (
                 <div className="alert alert-danger py-2 text-center small border-0 mb-3" role="alert">
@@ -137,43 +172,81 @@ function Register() {
                 </div>
               )}
 
-              <form onSubmit={handleSubmit}>
-                <div className="mb-3">
-                  <label className="form-label small fw-bold text-white mb-1">Full Name</label>
-                  <div className="d-flex align-items-center rounded-3 px-3 py-2" style={{ background: 'rgba(255, 255, 255, 0.15)', backdropFilter: 'blur(12px)', border: '1px solid rgba(255, 255, 255, 0.25)' }}>
-                    <span className="me-2" style={{ opacity: 0.8 }}>👤</span>
-                    <input type="text" name="fullName" className="form-control border-0 p-0 shadow-none text-white bg-transparent glass-input" placeholder="Enter your full name" value={formData.fullName} onChange={handleChange} />
+              {/* Dynamic Form Rendering Based on Step */}
+              {step === 1 ? (
+                /* --- STEP 1: REGISTRATION DETAILS --- */
+                <form onSubmit={handleRegisterSubmit}>
+                  <div className="mb-3">
+                    <label className="form-label small fw-bold text-white mb-1">Full Name</label>
+                    <div className="d-flex align-items-center rounded-3 px-3 py-2" style={{ background: 'rgba(255, 255, 255, 0.15)', backdropFilter: 'blur(12px)', border: '1px solid rgba(255, 255, 255, 0.25)' }}>
+                      <input type="text" name="fullName" className="form-control border-0 p-0 shadow-none text-white bg-transparent glass-input" placeholder="Enter your full name" value={formData.fullName} onChange={handleChange} disabled={isLoading} />
+                    </div>
                   </div>
-                </div>
 
-                <div className="mb-3">
-                  <label className="form-label small fw-bold text-white mb-1">Email</label>
-                  <div className="d-flex align-items-center rounded-3 px-3 py-2" style={{ background: 'rgba(255, 255, 255, 0.15)', backdropFilter: 'blur(12px)', border: '1px solid rgba(255, 255, 255, 0.25)' }}>
-                    <span className="me-2" style={{ opacity: 0.8 }}>✉️</span>
-                    <input type="email" name="email" className="form-control border-0 p-0 shadow-none text-white bg-transparent glass-input" placeholder="Enter your email" value={formData.email} onChange={handleChange} />
+                  <div className="mb-3">
+                    <label className="form-label small fw-bold text-white mb-1">Email</label>
+                    <div className="d-flex align-items-center rounded-3 px-3 py-2" style={{ background: 'rgba(255, 255, 255, 0.15)', backdropFilter: 'blur(12px)', border: '1px solid rgba(255, 255, 255, 0.25)' }}>
+                      <input type="email" name="email" className="form-control border-0 p-0 shadow-none text-white bg-transparent glass-input" placeholder="Enter your email" value={formData.email} onChange={handleChange} disabled={isLoading} />
+                    </div>
                   </div>
-                </div>
 
-                <div className="mb-3">
-                  <label className="form-label small fw-bold text-white mb-1">Password</label>
-                  <div className="d-flex align-items-center rounded-3 px-3 py-2" style={{ background: 'rgba(255, 255, 255, 0.15)', backdropFilter: 'blur(12px)', border: '1px solid rgba(255, 255, 255, 0.25)' }}>
-                    <span className="me-2" style={{ opacity: 0.8 }}>🔒</span>
-                    <input type="password" name="password" className="form-control border-0 p-0 shadow-none text-white bg-transparent glass-input" placeholder="Create a password" value={formData.password} onChange={handleChange} />
+                  <div className="mb-3">
+                    <label className="form-label small fw-bold text-white mb-1">Password</label>
+                    <div className="d-flex align-items-center rounded-3 px-3 py-2" style={{ background: 'rgba(255, 255, 255, 0.15)', backdropFilter: 'blur(12px)', border: '1px solid rgba(255, 255, 255, 0.25)' }}>
+                      <input type="password" name="password" className="form-control border-0 p-0 shadow-none text-white bg-transparent glass-input" placeholder="Create a password" value={formData.password} onChange={handleChange} disabled={isLoading} />
+                    </div>
                   </div>
-                </div>
 
-                <div className="mb-3">
-                  <label className="form-label small fw-bold text-white mb-1">Confirm Password</label>
-                  <div className="d-flex align-items-center rounded-3 px-3 py-2" style={{ background: 'rgba(255, 255, 255, 0.15)', backdropFilter: 'blur(12px)', border: '1px solid rgba(255, 255, 255, 0.25)' }}>
-                    <span className="me-2" style={{ opacity: 0.8 }}>🔒</span>
-                    <input type="password" name="confirmPassword" className="form-control border-0 p-0 shadow-none text-white bg-transparent glass-input" placeholder="Confirm your password" value={formData.confirmPassword} onChange={handleChange} />
+                  <div className="mb-3">
+                    <label className="form-label small fw-bold text-white mb-1">Confirm Password</label>
+                    <div className="d-flex align-items-center rounded-3 px-3 py-2" style={{ background: 'rgba(255, 255, 255, 0.15)', backdropFilter: 'blur(12px)', border: '1px solid rgba(255, 255, 255, 0.25)' }}>
+                      <input type="password" name="confirmPassword" className="form-control border-0 p-0 shadow-none text-white bg-transparent glass-input" placeholder="Confirm your password" value={formData.confirmPassword} onChange={handleChange} disabled={isLoading} />
+                    </div>
                   </div>
-                </div>
 
-                <button type="submit" className="btn w-100 py-2 fw-bold shadow-sm mb-2 rounded-3 text-dark mt-3" style={{ backgroundColor: '#ffffff', border: 'none' }}>
-                  Create Account
-                </button>
-              </form>
+                  <button type="submit" disabled={isLoading} className="btn w-100 py-2 fw-bold shadow-sm mb-2 rounded-3 text-dark mt-3" style={{ backgroundColor: '#ffffff', border: 'none' }}>
+                    {isLoading ? 'Creating Account...' : 'Create Account'}
+                  </button>
+                </form>
+              ) : (
+                /* --- STEP 2: OTP VERIFICATION --- */
+                <form onSubmit={handleOtpSubmit} className="py-3">
+                  <div className="text-center text-white mb-4">
+                    <div style={{ fontSize: '40px', marginBottom: '10px' }}>📬</div>
+                    <h4 className="fw-bold mb-2">Check your email</h4>
+                    <p className="small mb-0" style={{ opacity: 0.9, lineHeight: '1.5' }}>
+                      We sent a 6-digit verification code to<br/>
+                      <strong style={{ fontSize: '15px' }}>{formData.email}</strong>
+                    </p>
+                  </div>
+
+                  <div className="mb-4">
+                    <div className="d-flex align-items-center rounded-3 px-3 py-3" style={{ background: 'rgba(255, 255, 255, 0.15)', backdropFilter: 'blur(12px)', border: '1px solid rgba(255, 255, 255, 0.25)' }}>
+                      <input 
+                        type="text" 
+                        className="form-control border-0 p-0 shadow-none text-white bg-transparent glass-input text-center fw-bold" 
+                        placeholder="------" 
+                        maxLength="6"
+                        value={otp} 
+                        onChange={(e) => setOtp(e.target.value)} 
+                        disabled={isLoading}
+                        style={{ fontSize: '24px', letterSpacing: '12px' }}
+                      />
+                    </div>
+                  </div>
+
+                  <button type="submit" disabled={isLoading || otp.length < 6} className="btn w-100 py-3 fw-bold shadow-sm mb-4 rounded-3 text-dark" style={{ backgroundColor: '#ffffff', border: 'none', fontSize: '16px' }}>
+                    {isLoading ? 'Verifying...' : 'Verify Email'}
+                  </button>
+
+                  <div className="text-center">
+                     <button type="button" onClick={() => setStep(1)} className="btn btn-link text-white small p-0 text-decoration-none" style={{ opacity: 0.8 }}>
+                       ← Wrong email address? Go back
+                     </button>
+                  </div>
+                </form>
+              )}
+
             </div>
             
             <p className="text-center text-white small mt-4 px-3 mb-0 opacity-75" style={{ fontSize: '0.8rem', lineHeight: '1.4' }}>

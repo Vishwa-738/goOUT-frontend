@@ -124,7 +124,7 @@ function Login() {
                 <div className="mb-3">
                   <label className="form-label small fw-bold text-white mb-1">Email</label>
                   <div className="d-flex align-items-center rounded-3 px-3 py-2" style={{ background: 'rgba(255, 255, 255, 0.15)', backdropFilter: 'blur(12px)', border: '1px solid rgba(255, 255, 255, 0.25)' }}>
-                    <span className="me-2" style={{ opacity: 0.8 }}>✉️</span>
+                    
                     <input
                       type="email"
                       name="email"
@@ -139,7 +139,7 @@ function Login() {
                 <div className="mb-3">
                   <label className="form-label small fw-bold text-white mb-1">Password</label>
                   <div className="d-flex align-items-center rounded-3 px-3 py-2" style={{ background: 'rgba(255, 255, 255, 0.15)', backdropFilter: 'blur(12px)', border: '1px solid rgba(255, 255, 255, 0.25)' }}>
-                    <span className="me-2" style={{ opacity: 0.8 }}>🔒</span>
+                  
                     <input
                       type="password"
                       name="password"

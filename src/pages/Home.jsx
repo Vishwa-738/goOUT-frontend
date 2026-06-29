@@ -109,7 +109,6 @@ function Home() {
           
           <div className="col-12 col-md-3">
             <div className="card h-100 border-0 p-4 shadow-sm bg-light-subtle rounded-4">
-              <div className="fs-1 text-primary mb-2">👥</div>
               <h5 className="fw-bold mb-2">Find Travel Groups</h5>
               <p className="text-muted small mb-0">Connect with like-minded travelers and join groups exploring Sri Lanka together.</p>
             </div>
@@ -117,7 +116,6 @@ function Home() {
 
           <div className="col-12 col-md-3">
             <div className="card h-100 border-0 p-4 shadow-sm bg-light-subtle rounded-4">
-              <div className="fs-1 text-primary mb-2">📍</div>
               <h5 className="fw-bold mb-2">Share Experiences</h5>
               <p className="text-muted small mb-0">Post your travel stories, photos, and tips with the community.</p>
             </div>
@@ -125,7 +123,6 @@ function Home() {
 
           <div className="col-12 col-md-3">
             <div className="card h-100 border-0 p-4 shadow-sm bg-light-subtle rounded-4">
-              <div className="fs-1 text-primary mb-2">📈</div>
               <h5 className="fw-bold mb-2">Live Travel Updates</h5>
               <p className="text-muted small mb-0">Get real-time weather, place recommendations, and travel alerts.</p>
             </div>
@@ -133,7 +130,6 @@ function Home() {
 
           <div className="col-12 col-md-3">
             <div className="card h-100 border-0 p-4 shadow-sm bg-light-subtle rounded-4">
-              <div className="fs-1 text-primary mb-2">👛</div>
               <h5 className="fw-bold mb-2">Budget Tracking</h5>
               <p className="text-muted small mb-0">Track shared expenses and split costs seamlessly with your travel group.</p>
             </div>

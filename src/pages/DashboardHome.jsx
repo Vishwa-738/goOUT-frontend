@@ -1,6 +1,6 @@
 // src/pages/DashboardHome.jsx
 import React, { useState, useEffect, useRef } from 'react';
-import { Image as ImageIcon, Send, MapPin, MoreHorizontal, Heart, MessageCircle, Sun, CheckCircle } from 'lucide-react';
+import { Image as ImageIcon, Send, MapPin, MoreHorizontal, Heart, MessageCircle, Sun } from 'lucide-react';
 import api from '../services/api';
 
 export default function DashboardHome() {
@@ -8,26 +8,12 @@ export default function DashboardHome() {
   const [selectedImage, setSelectedImage] = useState(null);
   const [isUploading, setIsUploading] = useState(false);
   
-  // 🚀 NEW: The Tab State (upcoming vs finished)
   const [feedTab, setFeedTab] = useState('upcoming'); 
   
-  // 🚀 NEW: Updated Posts state with a dummy active trip for testing the logic
-  const [posts, setPosts] = useState([
-    {
-      id: 'mock-1',
-      author: { name: 'Vishwa Liyanage', avatarUrl: 'https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=150&h=150&fit=crop' },
-      createdAt: new Date().toISOString(),
-      location: 'Ella, LK',
-      content: 'Excited for our upcoming hike to Ella Rock next week! Who is bringing the snacks?',
-      imageUrl: null,
-      status: 'UPCOMING', // The new backend field
-      isAdmin: true, // Mocking that the current user created this trip
-      likeCount: 5,
-      isLikedByCurrentUser: false
-    }
-  ]);
+  // Start with an empty array so it loads fresh from the database
+  const [posts, setPosts] = useState([]);
   
-  const [isLoadingFeed, setIsLoadingFeed] = useState(false); // Set to false for this mock test
+  const [isLoadingFeed, setIsLoadingFeed] = useState(true); 
   
   const [weather, setWeather] = useState({ 
     temp: '--', condition: 'Loading...', city: 'Locating...', humidity: '--', wind: '--', feelsLike: '--'
@@ -35,30 +21,44 @@ export default function DashboardHome() {
   const [locationCoords, setLocationCoords] = useState(null);
   const fileInputRef = useRef(null);
 
-  // Filter the posts based on the active tab
   const displayedPosts = posts.filter(post => 
     feedTab === 'upcoming' ? post.status === 'UPCOMING' : post.status === 'COMPLETED'
   );
 
+  // 🚀 THE FIX: Active fetch function to get real feed data
   const fetchPosts = async () => {
-    // When backend is ready, uncomment this!
-    /*
+    setIsLoadingFeed(true);
     try {
-      const response = await api.get('/api/v1/posts');
-      setPosts(response.data);
+      // NOTE: Ensure your backend uses this endpoint for feed posts!
+      const response = await api.get('/api/v1/posts'); 
+      let livePosts = [];
+      if (Array.isArray(response.data)) livePosts = response.data;
+      else if (response.data && response.data.data) livePosts = response.data.data;
+      
+      setPosts(livePosts);
     } catch (error) {
       console.error("Error fetching feed:", error);
     } finally {
       setIsLoadingFeed(false);
     }
-    */
   };
 
   useEffect(() => {
+    // 1. Fetch initial feed on page load
     fetchPosts();
+
+    // 2. 🚀 THE FIX: Listen for "End Trip" broadcasts from MyTrips.jsx
+    const handleTripUpdate = () => {
+      console.log("Trip status changed in MyTrips, refreshing feed...");
+      fetchPosts(); 
+    };
+
+    window.addEventListener('trip-status-changed', handleTripUpdate);
+    
+    // Cleanup listener to prevent memory leaks
+    return () => window.removeEventListener('trip-status-changed', handleTripUpdate);
   }, []);
 
-  // Weather Logic (Kept exactly the same)
   const fetchWeatherData = async (lat, lon) => {
     try {
       const geoRes = await fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lon}&localityLanguage=en`);
@@ -107,36 +107,14 @@ export default function DashboardHome() {
     return () => clearInterval(weatherTimer);
   }, [locationCoords]);
 
-  // 🚀 NEW: The Admin "End Trip" Logic
-  const handleEndTrip = async (postId) => {
-    const isConfirmed = window.confirm("Are you sure you want to end this trip? It will be moved to Finished Memories.");
-    if (!isConfirmed) return;
 
-    // 1. Instantly update the UI so it feels lightning fast
-    setPosts(currentPosts => 
-      currentPosts.map(post => 
-        post.id === postId ? { ...post, status: 'COMPLETED' } : post
-      )
-    );
-
-    // 2. Send the request to Spring Boot in the background
-    try {
-      await api.put(`/api/v1/posts/${postId}/complete`);
-      console.log("Backend updated successfully!");
-    } catch (error) {
-      console.error("Failed to end trip on backend:", error);
-      // Optional: If backend fails, revert the UI state here
-    }
-  };
-
-  // Remaining Handlers
   const handleImageSelect = (e) => {
     const file = e.target.files[0];
     if (file) setSelectedImage(file);
   };
 
-  const handlePostSubmit = async () => { /* Submit logic kept the same */ };
-  const handleLikeToggle = async (postId, currentLikeState) => { /* Like logic kept the same */ };
+  const handlePostSubmit = async () => { /* Submit logic */ };
+  const handleLikeToggle = async (postId, currentLikeState) => { /* Like logic */ };
 
   const formatTime = (dateString) => {
     if (!dateString) return 'Just now';
@@ -146,10 +124,8 @@ export default function DashboardHome() {
   return (
     <div style={{ maxWidth: '1040px', margin: '0 auto', display: 'flex', gap: '40px', alignItems: 'flex-start', width: '100%' }}>
       
-      {/* LEFT COLUMN */}
       <div style={{ flex: 1, maxWidth: '680px', width: '100%', display: 'flex', flexDirection: 'column', gap: '24px' }}>
         
-        {/* Create Post Input Area */}
         <div style={{ backgroundColor: '#ffffff', borderRadius: '16px', padding: '20px', boxShadow: '0 2px 4px rgba(0,0,0,0.02)', border: '1px solid #f1f5f9' }}>
           <textarea 
             placeholder="Share an update or plan a new trip..." 
@@ -174,7 +150,6 @@ export default function DashboardHome() {
           </div>
         </div>
 
-        {/* 🚀 NEW: The Feed Category Toggle */}
         <div className="d-flex rounded-3 p-1 shadow-sm" style={{ backgroundColor: '#f1f5f9' }}>
           <button 
             onClick={() => setFeedTab('upcoming')}
@@ -192,7 +167,6 @@ export default function DashboardHome() {
           </button>
         </div>
 
-        {/* The Posts List */}
         {isLoadingFeed ? (
           <div style={{ textAlign: 'center', padding: '40px', color: '#64748b' }}>Loading feed...</div>
         ) : displayedPosts.length === 0 ? (
@@ -223,17 +197,6 @@ export default function DashboardHome() {
                     </div>
                   </div>
                 </div>
-
-                {/* 🚀 NEW: Admin "End Trip" Button */}
-                {post.status === 'UPCOMING' && post.isAdmin && (
-                   <button 
-                     onClick={() => handleEndTrip(post.id)}
-                     className="btn btn-sm btn-outline-danger fw-bold d-flex align-items-center gap-1"
-                     style={{ borderRadius: '8px' }}
-                   >
-                     <CheckCircle size={14} /> End Trip
-                   </button>
-                )}
               </div>
 
               {post.content && (
@@ -242,7 +205,6 @@ export default function DashboardHome() {
                 </p>
               )}
 
-              {/* Action Bar */}
               <div style={{ display: 'flex', gap: '24px', marginTop: '16px', paddingTop: '16px', borderTop: '1px solid #f1f5f9' }}>
                 <button 
                   style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'none', border: 'none', cursor: 'pointer', color: '#64748b', fontWeight: '500', fontSize: '14px' }}
@@ -261,7 +223,6 @@ export default function DashboardHome() {
         )}
       </div>
 
-      {/* WEATHER WIDGET (Kept exact same) */}
       <div style={{ width: '320px', flexShrink: 0, display: 'flex', flexDirection: 'column', gap: '24px' }}>
         <div style={{ background: 'linear-gradient(135deg, #17B0B2 0%, #0EA5E9 100%)', color: '#ffffff', padding: '24px', borderRadius: '24px', position: 'relative' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>

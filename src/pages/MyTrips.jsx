@@ -1,6 +1,6 @@
 // src/pages/MyTrips.jsx
 import React, { useState, useEffect } from 'react';
-import { Calendar, MapPin, Users, DollarSign, Plus, Eye, Edit2, UserCheck, Trash2, Check, X } from 'lucide-react';
+import { Calendar, MapPin, Users, DollarSign, Plus, Eye, Edit2, UserCheck, Trash2, Check, X, CheckCircle } from 'lucide-react';
 import TripDetails from './TripDetails'; 
 import API from '../services/api'; 
 
@@ -48,6 +48,30 @@ export default function MyTrips({ setActiveTab }) {
     }
   };
 
+  const handleEndTrip = async (tripId) => {
+    const isConfirmed = window.confirm("Are you sure you want to end this trip? It will be marked as finished.");
+    if (!isConfirmed) return;
+
+    // Instantly update UI locally in the MyTrips list
+    setTrips(currentTrips => 
+      currentTrips.map(trip => 
+        (trip.id || trip._id) === tripId ? { ...trip, status: 'COMPLETED' } : trip
+      )
+    );
+
+    try {
+      await API.patch(`/api/v1/trips/${tripId}/complete`);
+      alert("Trip successfully ended!");
+      
+      // 🚀 THE FIX: Broadcast event so DashboardHome can refresh its feed
+      window.dispatchEvent(new CustomEvent('trip-status-changed'));
+      
+    } catch (error) {
+      console.error("Failed to end trip on backend:", error);
+      alert("Failed to update the trip on the server. Please try again.");
+    }
+  };
+
   const openManageRequests = async (tripId) => {
     setSelectedTripId(tripId);
     setIsModalOpen(true);
@@ -82,18 +106,15 @@ export default function MyTrips({ setActiveTab }) {
     return <TripDetails setActiveTab={setActiveTab} tripId={viewingTripId} onBack={() => setViewingTripId(null)} />;
   }
 
-  // 🚀 AUTOMATICALLY CATEGORIZE TRIPS based on the backend's explicit flag!
   const organizedTrips = trips.filter(trip => trip.isOrganizer === true);
   const joinedTrips = trips.filter(trip => trip.isOrganizer === false);
 
-  // 🚀 DYNAMIC STATS BASED ON CATEGORIES
   const stats = [
     { label: 'Total Trips', count: trips.length, color: '#0EA5E9' }, 
     { label: 'Organizing', count: organizedTrips.length, color: '#10B981' },
     { label: 'Joined', count: joinedTrips.length, color: '#8b5cf6' },
   ];
 
-  // 🚀 REUSABLE RENDER FUNCTION TO KEEP CODE CLEAN
   const renderTripCards = (tripList) => {
     if (tripList.length === 0) {
       return <p style={{ color: '#64748b', fontStyle: 'italic' }}>No trips in this category yet.</p>;
@@ -102,7 +123,6 @@ export default function MyTrips({ setActiveTab }) {
     return (
       <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
         {tripList.map((trip) => {
-          // The backend explicitly tells us if the user is the admin
           const isAdmin = trip.isOrganizer === true;
 
           return (
@@ -126,7 +146,7 @@ export default function MyTrips({ setActiveTab }) {
                   </div>
                 </div>
 
-                <div style={{ display: 'flex', gap: '12px' }}>
+                <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
                   <button 
                     onClick={() => setViewingTripId(trip.id || trip._id)}
                     style={{ padding: '10px 16px', borderRadius: '12px', fontSize: '14px', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', border: 'none', backgroundColor: '#0EA5E9', color: '#ffffff', transition: 'all 0.2s' }}
@@ -146,6 +166,15 @@ export default function MyTrips({ setActiveTab }) {
                       >
                         <UserCheck size={16} /> Requests
                       </button>
+
+                      {trip.status !== 'COMPLETED' && (
+                        <button 
+                          onClick={() => handleEndTrip(trip.id || trip._id)}
+                          style={{ padding: '10px 16px', borderRadius: '12px', fontSize: '14px', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', backgroundColor: '#fff7ed', color: '#ea580c', border: '1px solid #ffedd5', transition: 'all 0.2s' }}
+                        >
+                          <CheckCircle size={16} /> End Trip
+                        </button>
+                      )}
 
                       <button 
                         onClick={() => handleDelete(trip.id || trip._id)} 
@@ -201,7 +230,6 @@ export default function MyTrips({ setActiveTab }) {
         <p>Loading your adventures from the database...</p>
       ) : (
         <>
-          {/* SECTION 1: Trips I'm Organizing */}
           <div style={{ marginBottom: '48px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
               <div style={{ width: '4px', height: '24px', backgroundColor: '#10B981', borderRadius: '4px' }}></div>
@@ -210,7 +238,6 @@ export default function MyTrips({ setActiveTab }) {
             {renderTripCards(organizedTrips)}
           </div>
 
-          {/* SECTION 2: Trips I've Joined */}
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
               <div style={{ width: '4px', height: '24px', backgroundColor: '#8b5cf6', borderRadius: '4px' }}></div>
