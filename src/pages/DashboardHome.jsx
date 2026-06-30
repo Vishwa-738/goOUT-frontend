@@ -185,29 +185,7 @@ export default function DashboardHome() {
       
       <div style={{ flex: 1, maxWidth: '680px', width: '100%', display: 'flex', flexDirection: 'column', gap: '24px' }}>
         
-        <div style={{ backgroundColor: '#ffffff', borderRadius: '16px', padding: '20px', boxShadow: '0 2px 4px rgba(0,0,0,0.02)', border: '1px solid #f1f5f9' }}>
-          <textarea 
-            placeholder="Share an update or plan a new trip..." 
-            value={newPostText}
-            onChange={(e) => setNewPostText(e.target.value)}
-            style={{ width: '100%', border: 'none', outline: 'none', resize: 'none', minHeight: '60px', fontSize: '15px', color: '#334155', marginBottom: '12px' }}
-          />
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid #f1f5f9', paddingTop: '12px' }}>
-            <div>
-              <input type="file" accept="image/*" ref={fileInputRef} onChange={handleImageSelect} style={{ display: 'none' }} />
-              <button onClick={() => fileInputRef.current.click()} style={{ background: 'none', border: 'none', color: '#17B0B2', display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', fontWeight: 'bold', fontSize: '14px' }}>
-                <ImageIcon size={18} /> Add Photo
-              </button>
-            </div>
-            <button 
-              onClick={handlePostSubmit}
-              disabled={isUploading || (!newPostText.trim() && !selectedImage)}
-              style={{ background: 'linear-gradient(135deg, #17B0B2 0%, #8ADD63 100%)', color: '#fff', border: 'none', borderRadius: '8px', padding: '8px 20px', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '6px', cursor: isUploading ? 'not-allowed' : 'pointer' }}
-            >
-              {isUploading ? 'Posting...' : <><Send size={16} /> Post</>}
-            </button>
-          </div>
-        </div>
+       
 
         <div className="d-flex rounded-3 p-1 shadow-sm" style={{ backgroundColor: '#f1f5f9' }}>
           <button 
