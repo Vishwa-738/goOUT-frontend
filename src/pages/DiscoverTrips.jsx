@@ -71,41 +71,7 @@ export default function DiscoverTrips({ setActiveTab }) {
         <p style={{ color: '#64748b', fontSize: '16px', margin: 0 }}>Find the perfect travel group and explore Sri Lanka together</p>
       </div>
 
-      {/* Filter Bar (Kept exactly as your design) */}
-      <div style={{ backgroundColor: '#fff', padding: '24px', borderRadius: '16px', display: 'flex', gap: '16px', alignItems: 'flex-end', flexWrap: 'wrap', boxShadow: '0 2px 8px rgba(0,0,0,0.04)', marginBottom: '32px' }}>
-        <div style={{ flex: 1, minWidth: '200px' }}>
-          <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', color: '#475569', marginBottom: '8px' }}>Destination</label>
-          <select style={{ width: '100%', padding: '12px 16px', borderRadius: '24px', border: '1px solid #e2e8f0', backgroundColor: '#f8fafc', outline: 'none', color: '#475569', appearance: 'none' }}>
-            <option>Any destination</option>
-            <option>Ella</option>
-            <option>Mirissa</option>
-            <option>Sigiriya</option>
-          </select>
-        </div>
-        
-        <div style={{ flex: 1, minWidth: '200px' }}>
-          <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', color: '#475569', marginBottom: '8px' }}>Budget Range</label>
-          <select style={{ width: '100%', padding: '12px 16px', borderRadius: '24px', border: '1px solid #e2e8f0', backgroundColor: '#f8fafc', outline: 'none', color: '#475569', appearance: 'none' }}>
-            <option>Any budget</option>
-            <option>Under $300</option>
-            <option>$300 - $600</option>
-          </select>
-        </div>
-
-        <div style={{ flex: 1, minWidth: '150px' }}>
-          <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', color: '#475569', marginBottom: '8px' }}>Start Date</label>
-          <input type="date" style={{ width: '100%', padding: '11px 16px', borderRadius: '24px', border: '1px solid #e2e8f0', backgroundColor: '#f8fafc', outline: 'none', color: '#475569' }} />
-        </div>
-
-        <div style={{ flex: 1, minWidth: '150px' }}>
-          <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', color: '#475569', marginBottom: '8px' }}>End Date</label>
-          <input type="date" style={{ width: '100%', padding: '11px 16px', borderRadius: '24px', border: '1px solid #e2e8f0', backgroundColor: '#f8fafc', outline: 'none', color: '#475569' }} />
-        </div>
-
-        <button style={{ backgroundColor: '#0EA5E9', color: '#fff', border: 'none', borderRadius: '24px', padding: '12px 24px', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', height: '44px' }}>
-          <Search size={18} /> Search Trips
-        </button>
-      </div>
+      
 
       {/* CTA Banner */}
       <div style={{ backgroundColor: '#10B981', borderRadius: '16px', padding: '24px 32px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px', flexWrap: 'wrap', gap: '16px' }}>
