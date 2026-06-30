@@ -14,7 +14,8 @@ export default function CreateTrip() {
     endDate: '',
     budget: '',
     capacity: '',
-    description: ''
+    description: '',
+    imageUrl: '' // 🚀 NEW: Added state for the custom image
   });
 
   const handleChange = (e) => {
@@ -34,19 +35,18 @@ export default function CreateTrip() {
         minBudget: parseFloat(tripData.budget) || 0, 
         maxBudget: parseFloat(tripData.budget) || 0, 
         maxParticipants: parseInt(tripData.capacity, 10) || 0,
+        imageUrl: tripData.imageUrl, // 🚀 NEW: Send the custom image to the backend
         isPublic: true,     
         isOrganizer: true,
-        status: 'UPCOMING'  // 🚀 THE FIX: Explicitly tell the backend this is upcoming!
+        status: 'UPCOMING'
       };
 
       const response = await API.post('/api/v1/trips', formattedPayload); 
       console.log("Trip successfully saved to database!", response.data);
       
-      // 🚀 THE TRIGGER: Tell the Dashboard to refresh!
       window.dispatchEvent(new CustomEvent('trip-created'));
       
-      alert("successfully created trip");
-      
+      alert("Successfully created trip");
       navigate('/dashboard'); 
       
     } catch (error) {
@@ -95,6 +95,22 @@ export default function CreateTrip() {
                 />
               </div>
             </div>
+
+            {/* 🚀 NEW: Cover Image Input */}
+            <div>
+              <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: '500', color: '#475569' }}>Cover Image URL (Optional)</label>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px 16px', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
+                <ImageIcon size={18} color="#94a3b8" />
+                <input 
+                  type="url" 
+                  name="imageUrl"
+                  placeholder="Paste an image link here..." 
+                  onChange={handleChange}
+                  style={{ border: 'none', outline: 'none', width: '100%', backgroundColor: 'transparent' }} 
+                />
+              </div>
+            </div>
+
           </div>
         </div>
 
