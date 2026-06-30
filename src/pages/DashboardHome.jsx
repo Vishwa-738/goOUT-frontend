@@ -1,6 +1,6 @@
 // src/pages/DashboardHome.jsx
 import React, { useState, useEffect, useRef } from 'react';
-import { Image as ImageIcon, Send, MapPin, MoreHorizontal, Heart, MessageCircle, Sun } from 'lucide-react';
+import { Image as ImageIcon, Send, MapPin, Heart, MessageCircle, Sun } from 'lucide-react';
 import api from '../services/api';
 
 export default function DashboardHome() {
@@ -9,10 +9,7 @@ export default function DashboardHome() {
   const [isUploading, setIsUploading] = useState(false);
   
   const [feedTab, setFeedTab] = useState('upcoming'); 
-  
-  // Start with an empty array so it loads fresh from the database
   const [posts, setPosts] = useState([]);
-  
   const [isLoadingFeed, setIsLoadingFeed] = useState(true); 
   
   const [weather, setWeather] = useState({ 
@@ -25,17 +22,44 @@ export default function DashboardHome() {
     feedTab === 'upcoming' ? post.status === 'UPCOMING' : post.status === 'COMPLETED'
   );
 
-  // 🚀 THE FIX: Active fetch function to get real feed data
   const fetchPosts = async () => {
     setIsLoadingFeed(true);
     try {
-      // NOTE: Ensure your backend uses this endpoint for feed posts!
-      const response = await api.get('/api/v1/posts'); 
-      let livePosts = [];
-      if (Array.isArray(response.data)) livePosts = response.data;
-      else if (response.data && response.data.data) livePosts = response.data.data;
+      // 🚀 THE FIX 1: Pull the actual user from local storage
+      const userString = localStorage.getItem('user');
+      const currentUser = userString ? JSON.parse(userString) : null;
       
-      setPosts(livePosts);
+      // Construct the name safely based on what the backend provides
+      const userName = currentUser 
+        ? `${currentUser.firstName || ''} ${currentUser.lastName || ''}`.trim() || currentUser.fullName || 'Traveler' 
+        : 'Traveler';
+        
+      // Grab the profile picture (fallback to default if they haven't set one)
+      const userAvatar = currentUser?.profilePic || currentUser?.avatarUrl || 'https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=150&h=150&fit=crop';
+
+      const response = await api.get('/api/v1/trips/my-trips'); 
+      
+      let rawTrips = [];
+      if (Array.isArray(response.data)) rawTrips = response.data;
+      else if (response.data && response.data.data) rawTrips = response.data.data;
+      else if (response.data && response.data.content) rawTrips = response.data.content;
+      
+      const mappedPosts = rawTrips.map(trip => ({
+        id: trip.id || trip._id,
+        author: { 
+          name: userName,       // Inject dynamic name
+          avatarUrl: userAvatar // Inject dynamic avatar
+        },
+        createdAt: trip.endDate || new Date().toISOString(), 
+        location: trip.destinations || 'Unknown Location',
+        content: `Just completed an amazing trip: ${trip.title}! 🌍✈️`,
+        imageUrl: trip.imageUrl || 'https://images.unsplash.com/photo-1546708973-b339540b5162?w=600',
+        status: trip.status || 'UPCOMING', 
+        likeCount: Math.floor(Math.random() * 25) + 5, 
+        isLikedByCurrentUser: false
+      }));
+
+      setPosts(mappedPosts);
     } catch (error) {
       console.error("Error fetching feed:", error);
     } finally {
@@ -44,18 +68,13 @@ export default function DashboardHome() {
   };
 
   useEffect(() => {
-    // 1. Fetch initial feed on page load
     fetchPosts();
 
-    // 2. 🚀 THE FIX: Listen for "End Trip" broadcasts from MyTrips.jsx
     const handleTripUpdate = () => {
-      console.log("Trip status changed in MyTrips, refreshing feed...");
       fetchPosts(); 
     };
 
     window.addEventListener('trip-status-changed', handleTripUpdate);
-    
-    // Cleanup listener to prevent memory leaks
     return () => window.removeEventListener('trip-status-changed', handleTripUpdate);
   }, []);
 
@@ -205,15 +224,26 @@ export default function DashboardHome() {
                 </p>
               )}
 
-              <div style={{ display: 'flex', gap: '24px', marginTop: '16px', paddingTop: '16px', borderTop: '1px solid #f1f5f9' }}>
+              {post.imageUrl && (
+                <div style={{ marginTop: '16px', borderRadius: '12px', overflow: 'hidden', border: '1px solid #f1f5f9' }}>
+                  <img 
+                    src={post.imageUrl} 
+                    alt="Trip memory" 
+                    style={{ width: '100%', maxHeight: '350px', objectFit: 'cover', display: 'block' }} 
+                  />
+                </div>
+              )}
+
+              {/* 🚀 THE FIX 2: Facebook-style interaction bar */}
+              <div style={{ display: 'flex', gap: '32px', marginTop: '16px', paddingTop: '16px', borderTop: '1px solid #f1f5f9' }}>
                 <button 
-                  style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'none', border: 'none', cursor: 'pointer', color: '#64748b', fontWeight: '500', fontSize: '14px' }}
+                  style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'none', border: 'none', cursor: 'pointer', color: '#65676B', fontWeight: '600', fontSize: '15px', transition: 'color 0.2s' }}
                 >
-                  <Heart size={20} />
+                  <Heart size={20} strokeWidth={2} />
                   {post.likeCount || 0} Likes
                 </button>
-                <button style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'none', border: 'none', cursor: 'pointer', color: '#64748b', fontWeight: '500', fontSize: '14px' }}>
-                  <MessageCircle size={20} />
+                <button style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'none', border: 'none', cursor: 'pointer', color: '#65676B', fontWeight: '600', fontSize: '15px', transition: 'color 0.2s' }}>
+                  <MessageCircle size={20} strokeWidth={2} />
                   Comment
                 </button>
               </div>
