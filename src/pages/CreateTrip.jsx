@@ -1,3 +1,4 @@
+// src/pages/CreateTrip.jsx
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import API from '../services/api';
@@ -33,12 +34,16 @@ export default function CreateTrip() {
         minBudget: parseFloat(tripData.budget) || 0, 
         maxBudget: parseFloat(tripData.budget) || 0, 
         maxParticipants: parseInt(tripData.capacity, 10) || 0,
-        isPublic: true,     // 🚀 ADD THIS: Stops the 'isPublic' crash
-        isOrganizer: true   // 🚀 ADD THIS: Satisfies the new organizer logic
+        isPublic: true,     
+        isOrganizer: true,
+        status: 'UPCOMING'  // 🚀 THE FIX: Explicitly tell the backend this is upcoming!
       };
 
       const response = await API.post('/api/v1/trips', formattedPayload); 
       console.log("Trip successfully saved to database!", response.data);
+      
+      // 🚀 THE TRIGGER: Tell the Dashboard to refresh!
+      window.dispatchEvent(new CustomEvent('trip-created'));
       
       alert("successfully created trip");
       

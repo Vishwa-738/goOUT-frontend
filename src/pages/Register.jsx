@@ -76,13 +76,27 @@ function Register() {
     
     try {
       // Send the code back to the server to verify the email
-      await api.post('/api/v1/auth/verify', { 
+      const response = await api.post('/api/v1/auth/verify', { 
         email: formData.email, 
         otp: otp 
       });
       
-      alert("Email verified successfully! Welcome to GoOUT. Please login.");
-      navigate('/login');
+      // 🚀 THE UPGRADE: Grab the JWT token from Methsara's response
+      const token = response.data.token || response.data.jwt; 
+      const user = response.data.user; // If he returns the user object too
+      
+      if (token) {
+        // Save auth data and auto-login!
+        localStorage.setItem('token', token);
+        if (user) localStorage.setItem('user', JSON.stringify(user));
+        
+        alert("Email verified! Welcome to GoOUT. 🌍");
+        navigate('/dashboard'); // Skip the login page entirely!
+      } else {
+        // Fallback just in case
+        alert("Email verified successfully! Please login.");
+        navigate('/login');
+      }
       
     } catch (err) {
       console.error(err);

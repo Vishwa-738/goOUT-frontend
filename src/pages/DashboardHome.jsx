@@ -25,40 +25,82 @@ export default function DashboardHome() {
   const fetchPosts = async () => {
     setIsLoadingFeed(true);
     try {
-      // 🚀 THE FIX 1: Pull the actual user from local storage
       const userString = localStorage.getItem('user');
       const currentUser = userString ? JSON.parse(userString) : null;
       
-      // Construct the name safely based on what the backend provides
       const userName = currentUser 
         ? `${currentUser.firstName || ''} ${currentUser.lastName || ''}`.trim() || currentUser.fullName || 'Traveler' 
         : 'Traveler';
         
-      // Grab the profile picture (fallback to default if they haven't set one)
       const userAvatar = currentUser?.profilePic || currentUser?.avatarUrl || 'https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=150&h=150&fit=crop';
 
-      const response = await api.get('/api/v1/trips/my-trips'); 
+      const [postsResponse, tripsResponse] = await Promise.all([
+        api.get('/api/v1/posts').catch(() => ({ data: [] })),
+        api.get('/api/v1/trips').catch(() => ({ data: [] })) 
+      ]);
       
-      let rawTrips = [];
-      if (Array.isArray(response.data)) rawTrips = response.data;
-      else if (response.data && response.data.data) rawTrips = response.data.data;
-      else if (response.data && response.data.content) rawTrips = response.data.content;
-      
-      const mappedPosts = rawTrips.map(trip => ({
-        id: trip.id || trip._id,
-        author: { 
-          name: userName,       // Inject dynamic name
-          avatarUrl: userAvatar // Inject dynamic avatar
-        },
-        createdAt: trip.endDate || new Date().toISOString(), 
-        location: trip.destinations || 'Unknown Location',
-        content: `Just completed an amazing trip: ${trip.title}! 🌍✈️`,
-        imageUrl: trip.imageUrl || 'https://images.unsplash.com/photo-1546708973-b339540b5162?w=600',
-        status: trip.status || 'UPCOMING', 
-        likeCount: Math.floor(Math.random() * 25) + 5, 
-        isLikedByCurrentUser: false
-      }));
+      const extractData = (res) => {
+        if (Array.isArray(res.data)) return res.data;
+        if (res.data && res.data.data) return res.data.data;
+        if (res.data && res.data.content) return res.data.content;
+        return [];
+      };
 
+      const rawPosts = extractData(postsResponse);
+      const rawTrips = extractData(tripsResponse);
+
+      const activeTrips = rawTrips.filter(trip => trip.status !== 'COMPLETED');
+      const combinedData = [...rawPosts, ...activeTrips];
+      
+      const mappedPosts = combinedData.map(item => {
+        const postContent = item.content || (item.title ? `Planning a new adventure: ${item.title}! 🌍✈️` : '');
+        
+        let calculatedStatus = item.status;
+        if (!calculatedStatus) {
+          if (postContent.includes("Just completed")) {
+            calculatedStatus = 'COMPLETED';
+          } else {
+            calculatedStatus = 'UPCOMING';
+          }
+        }
+
+        let actualAuthorName = 'Traveler'; 
+        if (item.author?.name) actualAuthorName = item.author.name;
+        else if (item.user?.firstName || item.user?.lastName) actualAuthorName = `${item.user?.firstName || ''} ${item.user?.lastName || ''}`.trim();
+        else if (item.user?.fullName) actualAuthorName = item.user.fullName;
+        else if (item.organizer?.firstName || item.organizer?.lastName) actualAuthorName = `${item.organizer?.firstName || ''} ${item.organizer?.lastName || ''}`.trim();
+        else if (item.organizerName) actualAuthorName = item.organizerName;
+        else if (item.creatorName) actualAuthorName = item.creatorName;
+
+        // 🚀 THE FIX: The Ultimate Avatar Net for Trips & Posts
+       // 🚀 THE FINAL FIX: Now correctly points to item.organizer.avatarUrl
+        let actualAvatar = 'https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=150&h=150&fit=crop'; 
+        
+        if (item.author?.avatarUrl) actualAvatar = item.author.avatarUrl;
+        else if (item.organizer?.avatarUrl) actualAvatar = item.organizer.avatarUrl; // 🚀 Catches the nested avatar
+        else if (item.user?.avatarUrl) actualAvatar = item.user.avatarUrl;
+        else if (item.author?.profilePic) actualAvatar = item.author.profilePic;
+        else if (item.organizer?.profilePic) actualAvatar = item.organizer.profilePic;
+        else if (item.user?.profilePic) actualAvatar = item.user.profilePic;
+        else if (item.organizerAvatar) actualAvatar = item.organizerAvatar; // Legacy fallback
+        else if (item.creatorAvatar) actualAvatar = item.creatorAvatar;     // Legacy fallback
+        return {
+          id: item.id || item._id,
+          author: { 
+            name: actualAuthorName,       
+            avatarUrl: actualAvatar 
+          },
+          createdAt: item.createdAt || item.endDate || new Date().toISOString(), 
+          location: item.location || item.destinations || 'Unknown Location',
+          content: postContent,
+          imageUrl: item.imageUrl || 'https://images.unsplash.com/photo-1546708973-b339540b5162?w=600',
+          status: calculatedStatus, 
+          likeCount: item.likeCount || Math.floor(Math.random() * 25) + 5, 
+          isLikedByCurrentUser: item.isLikedByCurrentUser || false
+        };
+      });
+
+      mappedPosts.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
       setPosts(mappedPosts);
     } catch (error) {
       console.error("Error fetching feed:", error);
@@ -69,13 +111,15 @@ export default function DashboardHome() {
 
   useEffect(() => {
     fetchPosts();
+    const handleFeedUpdate = () => fetchPosts(); 
 
-    const handleTripUpdate = () => {
-      fetchPosts(); 
+    window.addEventListener('trip-status-changed', handleFeedUpdate);
+    window.addEventListener('trip-created', handleFeedUpdate);
+    
+    return () => {
+      window.removeEventListener('trip-status-changed', handleFeedUpdate);
+      window.removeEventListener('trip-created', handleFeedUpdate);
     };
-
-    window.addEventListener('trip-status-changed', handleTripUpdate);
-    return () => window.removeEventListener('trip-status-changed', handleTripUpdate);
   }, []);
 
   const fetchWeatherData = async (lat, lon) => {
@@ -120,12 +164,9 @@ export default function DashboardHome() {
 
   useEffect(() => {
     if (!locationCoords) return;
-    const weatherTimer = setInterval(() => {
-      fetchWeatherData(locationCoords.lat, locationCoords.lon);
-    }, 600000);
+    const weatherTimer = setInterval(() => fetchWeatherData(locationCoords.lat, locationCoords.lon), 600000);
     return () => clearInterval(weatherTimer);
   }, [locationCoords]);
-
 
   const handleImageSelect = (e) => {
     const file = e.target.files[0];
@@ -133,7 +174,6 @@ export default function DashboardHome() {
   };
 
   const handlePostSubmit = async () => { /* Submit logic */ };
-  const handleLikeToggle = async (postId, currentLikeState) => { /* Like logic */ };
 
   const formatTime = (dateString) => {
     if (!dateString) return 'Just now';
@@ -234,7 +274,6 @@ export default function DashboardHome() {
                 </div>
               )}
 
-              {/* 🚀 THE FIX 2: Facebook-style interaction bar */}
               <div style={{ display: 'flex', gap: '32px', marginTop: '16px', paddingTop: '16px', borderTop: '1px solid #f1f5f9' }}>
                 <button 
                   style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'none', border: 'none', cursor: 'pointer', color: '#65676B', fontWeight: '600', fontSize: '15px', transition: 'color 0.2s' }}
