@@ -1,83 +1,77 @@
-// src/pages/DiscoverTrips.jsx
-import React from 'react';
-import { MapPin, Calendar, DollarSign, User, Search } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { MapPin, Calendar, DollarSign, User, Search, CheckCircle } from 'lucide-react';
+import API from '../services/api'; // Make sure this path points to your Axios interceptor!
 
 export default function DiscoverTrips({ setActiveTab }) {
-  // Mock data matching your Figma design perfectly
-  const trips = [
-    { 
-      id: 1, 
-      title: 'Cultural Triangle Adventure', 
-      location: 'Sigiriya & Dambulla', 
-      dates: 'Jun 15 - Jun 20, 2026', 
-      budget: '$350 - $450', 
-      organizer: 'Raj Patel', 
-      joined: '4/8', 
-      image: 'https://images.unsplash.com/photo-1588598126710-53bc7f9273c0?w=600&h=400&fit=crop' 
-    },
-    { 
-      id: 2, 
-      title: 'Ella Hiking Expedition', 
-      location: 'Ella & Badulla', 
-      dates: 'Jun 18 - Jun 22, 2026', 
-      budget: '$250 - $350', 
-      organizer: 'Sarah Kumar', 
-      joined: '6/10', 
-      image: 'https://images.unsplash.com/photo-1546708973-b339540b5162?w=600&h=400&fit=crop' 
-    },
-    { 
-      id: 3, 
-      title: 'Whale Watching & Beach Bliss', 
-      location: 'Mirissa & Weligama', 
-      dates: 'Jun 10 - Jun 15, 2026', 
-      budget: '$400 - $500', 
-      organizer: 'Emma Wilson', 
-      joined: '3/6', 
-      image: 'https://images.unsplash.com/photo-1544735716-392fe2489ffa?w=600&h=400&fit=crop' 
-    },
-    { 
-      id: 4, 
-      title: 'Temple City Exploration', 
-      location: 'Kandy', 
-      dates: 'Jun 12 - Jun 16, 2026', 
-      budget: '$200 - $300', 
-      organizer: 'David Chen', 
-      joined: '5/8', 
-      image: 'https://images.unsplash.com/photo-1620619896489-32207de630dc?w=600&h=400&fit=crop' 
-    },
-    { 
-      id: 5, 
-      title: 'Coastal Fort Adventure', 
-      location: 'Galle', 
-      dates: 'Jun 20 - Jun 24, 2026', 
-      budget: '$300 - $400', 
-      organizer: 'Lisa Anderson', 
-      joined: '2/6', 
-      image: 'https://images.unsplash.com/photo-1578637387939-43c525550085?w=600&h=400&fit=crop' 
-    },
-    { 
-      id: 6, 
-      title: 'Wildlife Safari Experience', 
-      location: 'Yala National Park', 
-      dates: 'Jun 25 - Jun 28, 2026', 
-      budget: '$500 - $650', 
-      organizer: 'Michael Brooks', 
-      joined: '4/8', 
-      image: 'https://images.unsplash.com/photo-1614027164847-1b28cfe1df60?w=600&h=400&fit=crop' 
+  const [trips, setTrips] = useState([]);
+  const [loading, setLoading] = useState(true);
+  
+  // These states handle the button loading and success UI
+  const [requestingIds, setRequestingIds] = useState({}); 
+  const [requestedIds, setRequestedIds] = useState([]);
+
+ // 1. Fetch real trips from the backend
+  useEffect(() => {
+    const fetchDiscoverTrips = async () => {
+      try {
+        // 👈 UPDATE THIS LINE RIGHT HERE!
+        const response = await API.get('/api/v1/trips/public'); 
+        
+        // Universal Unwrapper
+        // ... rest of the code
+        
+        // Universal Unwrapper
+        let actualTrips = [];
+        if (Array.isArray(response.data)) actualTrips = response.data;
+        else if (response.data && response.data.data) actualTrips = response.data.data;
+        else if (response.data && response.data.content) actualTrips = response.data.content;
+        
+        setTrips(actualTrips);
+      } catch (error) {
+        console.error("Error fetching discover trips:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchDiscoverTrips();
+  }, []);
+
+  // 2. Handle the Request to Join button
+  const handleJoinRequest = async (tripId) => {
+    try {
+      // Show loading spinner just for this specific button
+      setRequestingIds(prev => ({ ...prev, [tripId]: true }));
+      
+      // Hit Methsara's new endpoint
+      await API.post(`/api/v1/trips/${tripId}/join`);
+      
+      // Mark as successfully requested so the button turns green
+      setRequestedIds(prev => [...prev, tripId]);
+      alert("Request sent successfully! Waiting for the admin to approve.");
+      
+    } catch (error) {
+      console.error("Error sending join request:", error);
+      alert("Failed to send request. You might have already requested to join this trip!");
+    } finally {
+      setRequestingIds(prev => ({ ...prev, [tripId]: false }));
     }
-  ];
+  };
+
+  if (loading) {
+    return <div style={{ padding: '32px', textAlign: 'center', marginTop: '50px' }}>Loading discovering trips...</div>;
+  }
 
   return (
     <div style={{ padding: '32px', fontFamily: 'sans-serif', maxWidth: '1200px', margin: '0 auto' }}>
       
       {/* Header */}
       <div style={{ marginBottom: '32px' }}>
-        
         <h1 style={{ fontSize: '32px', fontWeight: 'bold', color: '#0f172a', margin: '0 0 8px 0' }}>Discover Trips</h1>
         <p style={{ color: '#64748b', fontSize: '16px', margin: 0 }}>Find the perfect travel group and explore Sri Lanka together</p>
       </div>
 
-      {/* Filter Bar */}
+      {/* Filter Bar (Kept exactly as your design) */}
       <div style={{ backgroundColor: '#fff', padding: '24px', borderRadius: '16px', display: 'flex', gap: '16px', alignItems: 'flex-end', flexWrap: 'wrap', boxShadow: '0 2px 8px rgba(0,0,0,0.04)', marginBottom: '32px' }}>
         <div style={{ flex: 1, minWidth: '200px' }}>
           <label style={{ display: 'block', fontSize: '13px', fontWeight: '600', color: '#475569', marginBottom: '8px' }}>Destination</label>
@@ -119,60 +113,84 @@ export default function DiscoverTrips({ setActiveTab }) {
           <h3 style={{ color: '#fff', fontSize: '20px', fontWeight: 'bold', margin: '0 0 8px 0' }}>Can't find the perfect trip?</h3>
           <p style={{ color: '#d1fae5', margin: 0, fontSize: '15px' }}>Create your own and invite others to join your adventure</p>
         </div>
-        {/* Change the button inside the CTA Banner to this: */}
-<button 
-  onClick={() => setActiveTab('create-trip')}
-  style={{ backgroundColor: '#fff', color: '#10B981', border: 'none', padding: '12px 24px', borderRadius: '24px', fontWeight: 'bold', cursor: 'pointer' }}
->
-  Create New Trip
-</button>
+        <button 
+          onClick={() => setActiveTab('create-trip')}
+          style={{ backgroundColor: '#fff', color: '#10B981', border: 'none', padding: '12px 24px', borderRadius: '24px', fontWeight: 'bold', cursor: 'pointer' }}
+        >
+          Create New Trip
+        </button>
       </div>
 
-      {/* Trips Grid */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '24px' }}>
-        {trips.map(trip => (
-          <div key={trip.id} style={{ backgroundColor: '#fff', borderRadius: '16px', overflow: 'hidden', boxShadow: '0 4px 12px rgba(0,0,0,0.05)', border: '1px solid #f1f5f9' }}>
-            
-            {/* Image & Badge */}
-            <div style={{ position: 'relative', height: '200px' }}>
-              <img src={trip.image} alt={trip.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-              <div style={{ position: 'absolute', top: '16px', right: '16px', backgroundColor: 'rgba(255,255,255,0.95)', color: '#0EA5E9', padding: '6px 12px', borderRadius: '20px', fontSize: '13px', fontWeight: 'bold', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
-                {trip.joined} joined
+      {/* Dynamic Trips Grid */}
+      {trips.length === 0 ? (
+        <p style={{ textAlign: 'center', color: '#64748b' }}>No public trips available right now. Be the first to create one!</p>
+      ) : (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '24px' }}>
+          {trips.map(trip => {
+            const tripId = trip.id || trip._id;
+            const isRequested = requestedIds.includes(tripId);
+            const isRequesting = requestingIds[tripId];
+
+            return (
+              <div key={tripId} style={{ backgroundColor: '#fff', borderRadius: '16px', overflow: 'hidden', boxShadow: '0 4px 12px rgba(0,0,0,0.05)', border: '1px solid #f1f5f9' }}>
+                
+                {/* Image & Badge */}
+                <div style={{ position: 'relative', height: '200px' }}>
+                  {/* Fallback image if backend doesn't have one */}
+                  <img src={trip.image || 'https://images.unsplash.com/photo-1588598126710-53bc7f9273c0?w=600&h=400&fit=crop'} alt={trip.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  <div style={{ position: 'absolute', top: '16px', right: '16px', backgroundColor: 'rgba(255,255,255,0.95)', color: '#0EA5E9', padding: '6px 12px', borderRadius: '20px', fontSize: '13px', fontWeight: 'bold', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
+                    {trip.currentParticipants || 0}/{trip.maxParticipants || 0} joined
+                  </div>
+                </div>
+
+                {/* Card Content */}
+                <div style={{ padding: '24px' }}>
+                  <h3 style={{ fontSize: '18px', fontWeight: 'bold', color: '#0f172a', margin: '0 0 16px 0' }}>{trip.title}</h3>
+                  
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '24px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#64748b', fontSize: '14px' }}>
+                      <MapPin size={16} color="#0EA5E9" /> {trip.destinations || trip.location || 'N/A'}
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#64748b', fontSize: '14px' }}>
+                      <Calendar size={16} color="#0EA5E9" /> {trip.startDate} to {trip.endDate}
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#64748b', fontSize: '14px' }}>
+                      <DollarSign size={16} color="#10B981" /> ${trip.minBudget} - ${trip.maxBudget}
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#64748b', fontSize: '14px' }}>
+                      <User size={16} color="#0EA5E9" /> Organized by Admin
+                    </div>
+                  </div>
+
+                  {/* Dynamic Request Button */}
+                  <button 
+                    onClick={() => handleJoinRequest(tripId)}
+                    disabled={isRequested || isRequesting}
+                    style={{ 
+                      width: '100%', 
+                      backgroundColor: isRequested ? '#10B981' : '#0EA5E9', 
+                      color: '#fff', 
+                      border: 'none', 
+                      padding: '12px', 
+                      borderRadius: '12px', 
+                      fontWeight: 'bold', 
+                      cursor: (isRequested || isRequesting) ? 'not-allowed' : 'pointer', 
+                      fontSize: '15px',
+                      display: 'flex',
+                      justifyContent: 'center',
+                      alignItems: 'center',
+                      gap: '8px',
+                      opacity: isRequesting ? 0.7 : 1
+                    }}
+                  >
+                    {isRequesting ? 'Sending Request...' : isRequested ? <><CheckCircle size={18} /> Request Pending</> : 'Request to Join'}
+                  </button>
+                </div>
               </div>
-            </div>
-
-            {/* Card Content */}
-            <div style={{ padding: '24px' }}>
-              <h3 style={{ fontSize: '18px', fontWeight: 'bold', color: '#0f172a', margin: '0 0 16px 0' }}>{trip.title}</h3>
-              
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '24px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#64748b', fontSize: '14px' }}>
-                  <MapPin size={16} color="#0EA5E9" /> {trip.location}
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#64748b', fontSize: '14px' }}>
-                  <Calendar size={16} color="#0EA5E9" /> {trip.dates}
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#64748b', fontSize: '14px' }}>
-                  <DollarSign size={16} color="#10B981" /> {trip.budget}
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#64748b', fontSize: '14px' }}>
-                  <User size={16} color="#0EA5E9" /> Organized by {trip.organizer}
-                </div>
-              </div>
-
-              {/* Updated Button to trigger routing */}
-              <button 
-                onClick={() => setActiveTab('trip-details')}
-                style={{ width: '100%', backgroundColor: '#0EA5E9', color: '#fff', border: 'none', padding: '12px', borderRadius: '12px', fontWeight: 'bold', cursor: 'pointer', fontSize: '15px' }}
-              >
-                View Details
-              </button>
-            </div>
-
-          </div>
-        ))}
-      </div>
-
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }

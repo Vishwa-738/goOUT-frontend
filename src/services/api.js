@@ -4,17 +4,25 @@ import axios from 'axios';
 const API = axios.create({
   // Using Vite's environment variables. 
   // If the env variable isn't set, it safely falls back to the local backend port.
-  baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080',
+  // Force it to use the live backend instead of localhost!
+  baseURL: 'https://another-freezing-glimmer.ngrok-free.dev',
   headers: {
     'Content-Type': 'application/json',
   }
 });
 
 // Interceptor to automatically attach the JWT token to requests
-API.interceptors.request.use((req) => {
+API.interceptors.request.use((config) => {
   const token = localStorage.getItem('token');
-  if (token) req.headers.Authorization = `Bearer ${token}`;
-  return req;
+  
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  
+  // 🚀 The exact line Methsara provided to bypass the Ngrok warning block!
+  config.headers['ngrok-skip-browser-warning'] = 'true';
+  
+  return config;
 });
 
 export default API;
