@@ -297,20 +297,7 @@ export default function Profile() {
           </div>
         </div>
 
-        <div style={{ display: 'flex', gap: '16px', marginTop: '40px' }}>
-          {[
-            { label: 'Trips Created', count: '12', icon: <MapPin size={24} color="#0EA5E9" /> },
-            { label: 'Trips Joined', count: '28', icon: <Check size={24} color="#0EA5E9" /> },
-            { label: 'Posts Shared', count: '45', icon: <Camera size={24} color="#0EA5E9" /> },
-            { label: 'Total Likes', count: '2.4K', icon: <Check size={24} color="#0EA5E9" /> }
-          ].map((stat, idx) => (
-            <div key={idx} style={{ flex: 1, backgroundColor: '#f8fafc', borderRadius: '16px', padding: '24px', textAlign: 'center' }}>
-              <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '12px' }}>{stat.icon}</div>
-              <h3 style={{ margin: '0 0 4px 0', fontSize: '24px', fontWeight: 'bold', color: '#0f172a' }}>{stat.count}</h3>
-              <p style={{ margin: 0, color: '#64748b', fontSize: '13px' }}>{stat.label}</p>
-            </div>
-          ))}
-        </div>
+        
       </div>
 
       <div style={{ backgroundColor: '#ffffff', borderRadius: '24px', marginTop: '24px', padding: '24px', border: '1px solid #f1f5f9' }}>
