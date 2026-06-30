@@ -297,7 +297,7 @@ export default function Profile() {
           </div>
         </div>
 
-        
+         
       </div>
 
       <div style={{ backgroundColor: '#ffffff', borderRadius: '24px', marginTop: '24px', padding: '24px', border: '1px solid #f1f5f9' }}>
