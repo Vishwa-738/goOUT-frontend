@@ -1,0 +1,303 @@
+// src/pages/DashboardHome.jsx
+import React, { useState, useEffect, useRef } from 'react';
+import { Image as ImageIcon, Send, MapPin, Heart, MessageCircle, Sun } from 'lucide-react';
+import api from '../services/api';
+
+export default function DashboardHome() {
+  const [newPostText, setNewPostText] = useState('');
+  const [selectedImage, setSelectedImage] = useState(null);
+  const [isUploading, setIsUploading] = useState(false);
+  
+  const [feedTab, setFeedTab] = useState('upcoming'); 
+  const [posts, setPosts] = useState([]);
+  const [isLoadingFeed, setIsLoadingFeed] = useState(true); 
+  
+  const [weather, setWeather] = useState({ 
+    temp: '--', condition: 'Loading...', city: 'Locating...', humidity: '--', wind: '--', feelsLike: '--'
+  });
+  const [locationCoords, setLocationCoords] = useState(null);
+  const fileInputRef = useRef(null);
+
+  const displayedPosts = posts.filter(post => 
+    feedTab === 'upcoming' ? post.status === 'UPCOMING' : post.status === 'COMPLETED'
+  );
+
+  const fetchPosts = async () => {
+    setIsLoadingFeed(true);
+    try {
+      const userString = localStorage.getItem('user');
+      const currentUser = userString ? JSON.parse(userString) : null;
+      
+      const userName = currentUser 
+        ? `${currentUser.firstName || ''} ${currentUser.lastName || ''}`.trim() || currentUser.fullName || 'Traveler' 
+        : 'Traveler';
+        
+      const userAvatar = currentUser?.profilePic || currentUser?.avatarUrl || 'https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=150&h=150&fit=crop';
+
+      const [postsResponse, tripsResponse] = await Promise.all([
+        api.get('/api/v1/posts').catch(() => ({ data: [] })),
+        api.get('/api/v1/trips').catch(() => ({ data: [] })) 
+      ]);
+      
+      const extractData = (res) => {
+        if (Array.isArray(res.data)) return res.data;
+        if (res.data && res.data.data) return res.data.data;
+        if (res.data && res.data.content) return res.data.content;
+        return [];
+      };
+
+      const rawPosts = extractData(postsResponse);
+      const rawTrips = extractData(tripsResponse);
+
+      const activeTrips = rawTrips.filter(trip => trip.status !== 'COMPLETED');
+      const combinedData = [...rawPosts, ...activeTrips];
+      
+      const mappedPosts = combinedData.map(item => {
+        const postContent = item.content || (item.title ? `Planning a new adventure: ${item.title}! 🌍✈️` : '');
+        
+        let calculatedStatus = item.status;
+        if (!calculatedStatus) {
+          if (postContent.includes("Just completed")) {
+            calculatedStatus = 'COMPLETED';
+          } else {
+            calculatedStatus = 'UPCOMING';
+          }
+        }
+
+        let actualAuthorName = 'Traveler'; 
+        if (item.author?.name) actualAuthorName = item.author.name;
+        else if (item.user?.firstName || item.user?.lastName) actualAuthorName = `${item.user?.firstName || ''} ${item.user?.lastName || ''}`.trim();
+        else if (item.user?.fullName) actualAuthorName = item.user.fullName;
+        else if (item.organizer?.firstName || item.organizer?.lastName) actualAuthorName = `${item.organizer?.firstName || ''} ${item.organizer?.lastName || ''}`.trim();
+        else if (item.organizerName) actualAuthorName = item.organizerName;
+        else if (item.creatorName) actualAuthorName = item.creatorName;
+
+        // 🚀 THE FIX: The Ultimate Avatar Net for Trips & Posts
+       // 🚀 THE FINAL FIX: Now correctly points to item.organizer.avatarUrl
+        let actualAvatar = 'https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=150&h=150&fit=crop'; 
+        
+        if (item.author?.avatarUrl) actualAvatar = item.author.avatarUrl;
+        else if (item.organizer?.avatarUrl) actualAvatar = item.organizer.avatarUrl; // 🚀 Catches the nested avatar
+        else if (item.user?.avatarUrl) actualAvatar = item.user.avatarUrl;
+        else if (item.author?.profilePic) actualAvatar = item.author.profilePic;
+        else if (item.organizer?.profilePic) actualAvatar = item.organizer.profilePic;
+        else if (item.user?.profilePic) actualAvatar = item.user.profilePic;
+        else if (item.organizerAvatar) actualAvatar = item.organizerAvatar; // Legacy fallback
+        else if (item.creatorAvatar) actualAvatar = item.creatorAvatar;     // Legacy fallback
+        return {
+          id: item.id || item._id,
+          author: { 
+            name: actualAuthorName,       
+            avatarUrl: actualAvatar 
+          },
+          createdAt: item.createdAt || item.endDate || new Date().toISOString(), 
+          location: item.location || item.destinations || 'Unknown Location',
+          content: postContent,
+          imageUrl: item.imageUrl || 'https://images.unsplash.com/photo-1546708973-b339540b5162?w=600',
+          status: calculatedStatus, 
+          likeCount: item.likeCount || Math.floor(Math.random() * 25) + 5, 
+          isLikedByCurrentUser: item.isLikedByCurrentUser || false
+        };
+      });
+
+      mappedPosts.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+      setPosts(mappedPosts);
+    } catch (error) {
+      console.error("Error fetching feed:", error);
+    } finally {
+      setIsLoadingFeed(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchPosts();
+    const handleFeedUpdate = () => fetchPosts(); 
+
+    window.addEventListener('trip-status-changed', handleFeedUpdate);
+    window.addEventListener('trip-created', handleFeedUpdate);
+    
+    return () => {
+      window.removeEventListener('trip-status-changed', handleFeedUpdate);
+      window.removeEventListener('trip-created', handleFeedUpdate);
+    };
+  }, []);
+
+  const fetchWeatherData = async (lat, lon) => {
+    try {
+      const geoRes = await fetch(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lon}&localityLanguage=en`);
+      const geoData = await geoRes.json();
+      const city = geoData.city || geoData.locality || "Unknown Location";
+      const countryCode = geoData.countryCode || "LK";
+
+      const weatherRes = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,apparent_temperature,wind_speed_10m,weather_code`);
+      const weatherData = await weatherRes.json();
+      const current = weatherData.current;
+
+      setWeather({ 
+        temp: Math.round(current.temperature_2m), feelsLike: Math.round(current.apparent_temperature),
+        humidity: current.relative_humidity_2m, wind: Math.round(current.wind_speed_10m), city: `${city}, ${countryCode}`
+      });
+    } catch (error) {
+      console.error("Failed to fetch advanced weather:", error);
+      setWeather(prev => ({ ...prev, city: 'Offline', temp: '??' })); 
+    }
+  };
+
+  useEffect(() => {
+    if ("geolocation" in navigator) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const lat = position.coords.latitude; const lon = position.coords.longitude;
+          setLocationCoords({ lat, lon });
+          fetchWeatherData(lat, lon);
+        },
+        () => {
+          setLocationCoords({ lat: 6.9271, lon: 79.8612 });
+          fetchWeatherData(6.9271, 79.8612);
+        }
+      );
+    } else {
+      setLocationCoords({ lat: 6.9271, lon: 79.8612 });
+      fetchWeatherData(6.9271, 79.8612);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!locationCoords) return;
+    const weatherTimer = setInterval(() => fetchWeatherData(locationCoords.lat, locationCoords.lon), 600000);
+    return () => clearInterval(weatherTimer);
+  }, [locationCoords]);
+
+  const handleImageSelect = (e) => {
+    const file = e.target.files[0];
+    if (file) setSelectedImage(file);
+  };
+
+  const handlePostSubmit = async () => { /* Submit logic */ };
+
+  const formatTime = (dateString) => {
+    if (!dateString) return 'Just now';
+    return new Date(dateString).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+  };
+
+  return (
+    <div style={{ maxWidth: '1040px', margin: '0 auto', display: 'flex', gap: '40px', alignItems: 'flex-start', width: '100%' }}>
+      
+      <div style={{ flex: 1, maxWidth: '680px', width: '100%', display: 'flex', flexDirection: 'column', gap: '24px' }}>
+        
+       
+
+        <div className="d-flex rounded-3 p-1 shadow-sm" style={{ backgroundColor: '#f1f5f9' }}>
+          <button 
+            onClick={() => setFeedTab('upcoming')}
+            className={`btn flex-grow-1 fw-bold border-0 py-2 ${feedTab === 'upcoming' ? 'bg-white shadow-sm' : 'bg-transparent text-muted'}`}
+            style={{ color: feedTab === 'upcoming' ? '#17B0B2' : '' }}
+          >
+            Upcoming Adventures
+          </button>
+          <button 
+            onClick={() => setFeedTab('completed')}
+            className={`btn flex-grow-1 fw-bold border-0 py-2 ${feedTab === 'completed' ? 'bg-white shadow-sm' : 'bg-transparent text-muted'}`}
+            style={{ color: feedTab === 'completed' ? '#17B0B2' : '' }}
+          >
+            Finished Memories
+          </button>
+        </div>
+
+        {isLoadingFeed ? (
+          <div style={{ textAlign: 'center', padding: '40px', color: '#64748b' }}>Loading feed...</div>
+        ) : displayedPosts.length === 0 ? (
+          <div style={{ textAlign: 'center', padding: '40px', color: '#64748b' }}>
+            {feedTab === 'upcoming' ? 'No upcoming trips planned yet. Start an adventure above!' : 'No memories to show yet.'}
+          </div>
+        ) : (
+          displayedPosts.map(post => (
+            <div key={post.id} style={{ backgroundColor: '#ffffff', borderRadius: '16px', padding: '24px', boxShadow: '0 2px 4px rgba(0,0,0,0.02)', border: '1px solid #f1f5f9' }}>
+              
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
+                <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                  <img 
+                    src={post.author?.avatarUrl} 
+                    alt={post.author?.name} 
+                    style={{ width: '48px', height: '48px', borderRadius: '50%', objectFit: 'cover' }} 
+                  />
+                  <div>
+                    <h4 style={{ margin: 0, fontSize: '16px', fontWeight: 'bold', color: '#0f172a' }}>{post.author?.name}</h4>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', color: '#64748b', marginTop: '2px' }}>
+                      <span>{formatTime(post.createdAt)}</span>
+                      {post.location && (
+                        <>
+                          <span>•</span>
+                          <span style={{ display: 'flex', alignItems: 'center', gap: '2px' }}><MapPin size={12} /> {post.location}</span>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {post.content && (
+                <p style={{ color: '#334155', fontSize: '15px', lineHeight: '1.6', marginBottom: '0', whiteSpace: 'pre-wrap' }}>
+                  {post.content}
+                </p>
+              )}
+
+              {post.imageUrl && (
+                <div style={{ marginTop: '16px', borderRadius: '12px', overflow: 'hidden', border: '1px solid #f1f5f9' }}>
+                  <img 
+                    src={post.imageUrl} 
+                    alt="Trip memory" 
+                    style={{ width: '100%', maxHeight: '350px', objectFit: 'cover', display: 'block' }} 
+                  />
+                </div>
+              )}
+
+              <div style={{ display: 'flex', gap: '32px', marginTop: '16px', paddingTop: '16px', borderTop: '1px solid #f1f5f9' }}>
+                <button 
+                  style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'none', border: 'none', cursor: 'pointer', color: '#65676B', fontWeight: '600', fontSize: '15px', transition: 'color 0.2s' }}
+                >
+                  <Heart size={20} strokeWidth={2} />
+                  {post.likeCount || 0} Likes
+                </button>
+                <button style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'none', border: 'none', cursor: 'pointer', color: '#65676B', fontWeight: '600', fontSize: '15px', transition: 'color 0.2s' }}>
+                  <MessageCircle size={20} strokeWidth={2} />
+                  Comment
+                </button>
+              </div>
+
+            </div>
+          ))
+        )}
+      </div>
+
+      <div style={{ width: '320px', flexShrink: 0, display: 'flex', flexDirection: 'column', gap: '24px' }}>
+        <div style={{ background: 'linear-gradient(135deg, #17B0B2 0%, #0EA5E9 100%)', color: '#ffffff', padding: '24px', borderRadius: '24px', position: 'relative' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+            <span style={{ fontSize: '12px', fontWeight: 'bold', letterSpacing: '1px', textTransform: 'uppercase' }}>Current Conditions</span>
+            <Sun size={24} color="#FBBF24" fill="#FBBF24" />
+          </div>
+          <h3 style={{ fontSize: '26px', fontWeight: 'bold', margin: '0 0 12px 0' }}>{weather.city}</h3>
+          <div style={{ display: 'flex', alignItems: 'flex-start', marginBottom: '24px' }}>
+            <h2 style={{ fontSize: '64px', fontWeight: 'bold', margin: 0, lineHeight: 1 }}>{weather.temp}°</h2>
+            <span style={{ fontSize: '24px', fontWeight: 'bold', marginTop: '8px' }}>C</span>
+          </div>
+          <div style={{ backgroundColor: 'rgba(255, 255, 255, 0.15)', borderRadius: '16px', padding: '16px', display: 'flex', justifyContent: 'space-between' }}>
+            <div>
+              <div style={{ fontSize: '11px', fontWeight: 'bold', opacity: 0.8, marginBottom: '4px' }}>HUMIDITY</div>
+              <div style={{ fontSize: '15px', fontWeight: 'bold' }}>{weather.humidity}%</div>
+            </div>
+            <div>
+              <div style={{ fontSize: '11px', fontWeight: 'bold', opacity: 0.8, marginBottom: '4px' }}>WIND</div>
+              <div style={{ fontSize: '15px', fontWeight: 'bold' }}>{weather.wind} km/h</div>
+            </div>
+            <div>
+              <div style={{ fontSize: '11px', fontWeight: 'bold', opacity: 0.8, marginBottom: '4px' }}>FEELS LIKE</div>
+              <div style={{ fontSize: '15px', fontWeight: 'bold' }}>{weather.feelsLike}°C</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  );
+}

@@ -95,6 +95,8 @@ export default function ChatRoom() {
             <MessageCircle size={20} color="#0EA5E9" />
             <h3 style={{ margin: 0, fontSize: '16px', fontWeight: 'bold' }}>Group Chat</h3>
             <span style={{ fontSize: '12px', color: '#10B981', backgroundColor: '#d1fae5', padding: '2px 8px', borderRadius: '12px', marginLeft: '8px' }}>Live</span>
+            {/* 🚀 NEW PREVIEW BADGE */}
+            <span style={{ fontSize: '12px', color: '#64748b', backgroundColor: '#f1f5f9', padding: '2px 8px', borderRadius: '12px', marginLeft: '4px' }}>Preview</span>
           </div>
         </div>
 
@@ -160,18 +162,19 @@ export default function ChatRoom() {
 
         </div>
 
-        {/* Chat Input Bar */}
-        <div style={{ padding: '20px', borderTop: '1px solid #f1f5f9', backgroundColor: '#fff', display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <button style={{ background: 'transparent', border: 'none', cursor: 'pointer', display: 'flex' }}><Smile size={24} color="#94a3b8" /></button>
-          <button style={{ background: 'transparent', border: 'none', cursor: 'pointer', display: 'flex' }}><Paperclip size={24} color="#94a3b8" /></button>
+        {/* 🚀 NEW: Disabled Chat Input Bar */}
+        <div style={{ padding: '20px', borderTop: '1px solid #f1f5f9', backgroundColor: '#fff', display: 'flex', alignItems: 'center', gap: '12px', opacity: 0.7 }}>
+          <button disabled style={{ background: 'transparent', border: 'none', cursor: 'not-allowed', display: 'flex' }}><Smile size={24} color="#94a3b8" /></button>
+          <button disabled style={{ background: 'transparent', border: 'none', cursor: 'not-allowed', display: 'flex' }}><Paperclip size={24} color="#94a3b8" /></button>
           
           <input 
             type="text" 
-            placeholder="Message the group..." 
-            style={{ flex: 1, padding: '12px 16px', backgroundColor: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '24px', outline: 'none', fontSize: '14px' }} 
+            disabled 
+            placeholder="🚀 Live Group Chat is launching in Version 2.0!" 
+            style={{ flex: 1, padding: '12px 16px', backgroundColor: '#f1f5f9', border: '1px solid #e2e8f0', borderRadius: '24px', outline: 'none', fontSize: '14px', cursor: 'not-allowed' }} 
           />
           
-          <button style={{ backgroundColor: '#0EA5E9', border: 'none', width: '40px', height: '40px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', boxShadow: '0 2px 4px rgba(14, 165, 233, 0.3)' }}>
+          <button disabled style={{ backgroundColor: '#94a3b8', border: 'none', width: '40px', height: '40px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'not-allowed' }}>
             <Send size={18} color="#fff" style={{ marginLeft: '2px' }} />
           </button>
         </div>

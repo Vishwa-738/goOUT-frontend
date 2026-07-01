@@ -1,27 +1,59 @@
 // src/pages/TripDetails.jsx
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   MapPin, Calendar, DollarSign, Users, CloudRain, Wind, Droplets, 
-  MessageCircle, Cloud, Wallet 
+  MessageCircle, Cloud, Wallet, CheckCircle, Shield 
 } from 'lucide-react';
+import api from '../services/api'; 
 
-export default function TripDetails({ setActiveTab }) {
+export default function TripDetails({ setActiveTab, tripId }) {
   const [activeSegment, setActiveSegment] = useState('overview');
+  const [tripData, setTripData] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    if (!tripId) return;
+
+    const fetchTripDetails = async () => {
+      setIsLoading(true);
+      try {
+        const response = await api.get(`/api/v1/trips/${tripId}`); 
+        console.log("🔥 Backend JSON Data:", response.data);
+        setTripData(response.data);
+      } catch (error) {
+        console.error("Error fetching trip details:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchTripDetails();
+  }, [tripId]);
+
+  if (isLoading) {
+    return <div style={{ textAlign: 'center', padding: '50px', color: '#64748b' }}>Loading your adventure...</div>;
+  }
+
+  if (!tripData) {
+    return <div style={{ textAlign: 'center', padding: '50px', color: '#ef4444' }}>Trip not found.</div>;
+  }
 
   return (
     <div style={{ maxWidth: '1100px', margin: '0 auto', fontFamily: 'sans-serif' }}>
       
       {/* --- HERO BANNER --- */}
-      <div style={{ position: 'relative', height: '350px', borderRadius: '24px', overflow: 'hidden', marginBottom: '32px' }}>
+      <div style={{ position: 'relative', height: '350px', borderRadius: '24px', overflow: 'hidden', marginBottom: '32px', backgroundColor: '#e2e8f0' }}>
         <img 
-          src="https://images.unsplash.com/photo-1588598126710-53bc7f9273c0?w=1200&h=400&fit=crop" 
+          src={tripData.coverImageUrl || "https://images.unsplash.com/photo-1544735716-392fe2489ffa?w=1200&h=400&fit=crop"} 
           alt="Trip Hero" 
           style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
         />
         <div style={{ position: 'absolute', bottom: '0', left: '0', right: '0', padding: '40px', background: 'linear-gradient(to top, rgba(0,0,0,0.8), transparent)', color: '#fff' }}>
-          <h1 style={{ margin: '0 0 8px 0', fontSize: '36px', fontWeight: 'bold' }}>Cultural Triangle Adventure</h1>
+          <h1 style={{ margin: '0 0 8px 0', fontSize: '36px', fontWeight: 'bold' }}>
+            {tripData.title || 'Untitled Adventure'}
+          </h1>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '15px', opacity: 0.9 }}>
-            <MapPin size={18} /> Sigiriya & Dambulla
+            <MapPin size={18} /> {tripData.destinations || 'Location TBD'}
           </div>
         </div>
       </div>
@@ -39,7 +71,10 @@ export default function TripDetails({ setActiveTab }) {
               <div style={{ backgroundColor: '#f0f9ff', padding: '12px', borderRadius: '12px', color: '#0EA5E9' }}><Calendar size={24} /></div>
               <div>
                 <div style={{ fontSize: '13px', color: '#64748b', marginBottom: '2px' }}>Duration</div>
-                <div style={{ fontWeight: 'bold', fontSize: '15px', color: '#0f172a' }}>Jun 15 - Jun 20, 2026</div>
+                {/* 🚀 FIXED: Using startDate and endDate from the DB */}
+                <div style={{ fontWeight: 'bold', fontSize: '15px', color: '#0f172a' }}>
+                  {tripData.startDate && tripData.endDate ? `${tripData.startDate} to ${tripData.endDate}` : 'Dates TBD'}
+                </div>
               </div>
             </div>
             
@@ -47,7 +82,10 @@ export default function TripDetails({ setActiveTab }) {
               <div style={{ backgroundColor: '#f0fdf4', padding: '12px', borderRadius: '12px', color: '#10B981' }}><DollarSign size={24} /></div>
               <div>
                 <div style={{ fontSize: '13px', color: '#64748b', marginBottom: '2px' }}>Budget</div>
-                <div style={{ fontWeight: 'bold', fontSize: '15px', color: '#0f172a' }}>$350 - $450</div>
+                {/* 🚀 FIXED: Using minBudget from the DB */}
+                <div style={{ fontWeight: 'bold', fontSize: '15px', color: '#0f172a' }}>
+                  {tripData.minBudget ? `$${tripData.minBudget}` : 'TBD'}
+                </div>
               </div>
             </div>
 
@@ -55,7 +93,10 @@ export default function TripDetails({ setActiveTab }) {
               <div style={{ backgroundColor: '#f5f3ff', padding: '12px', borderRadius: '12px', color: '#8b5cf6' }}><Users size={24} /></div>
               <div>
                 <div style={{ fontSize: '13px', color: '#64748b', marginBottom: '2px' }}>Members</div>
-                <div style={{ fontWeight: 'bold', fontSize: '15px', color: '#0f172a' }}>4/8</div>
+                {/* 🚀 FIXED: Using maxParticipants from the DB */}
+                <div style={{ fontWeight: 'bold', fontSize: '15px', color: '#0f172a' }}>
+                  {tripData.joinedMembers?.length || 0} / {tripData.maxParticipants || 8}
+                </div>
               </div>
             </div>
           </div>
@@ -101,41 +142,75 @@ export default function TripDetails({ setActiveTab }) {
             {/* Tab Content: OVERVIEW */}
             {activeSegment === 'overview' && (
               <div style={{ padding: '32px' }}>
-                
                 <h3 style={{ margin: '0 0 16px 0', fontSize: '20px', color: '#0f172a' }}>About This Trip</h3>
-                <p style={{ color: '#475569', lineHeight: '1.6', fontSize: '15px', marginBottom: '32px' }}>
-                  Join us for an unforgettable journey through Sri Lanka's Cultural Triangle! We'll explore the ancient rock fortress of Sigiriya, marvel at the cave temples of Dambulla, and immerse ourselves in the rich history of this UNESCO World Heritage Site. This trip is perfect for history buffs and adventure seekers alike.
+                <p style={{ color: '#475569', lineHeight: '1.6', fontSize: '15px', marginBottom: '32px', whiteSpace: 'pre-wrap' }}>
+                  {tripData.description || 'No description provided for this adventure yet.'}
                 </p>
-
-                <h4 style={{ margin: '0 0 12px 0', fontSize: '16px', color: '#0f172a' }}>What's Included:</h4>
-                <ul style={{ color: '#475569', lineHeight: '1.8', fontSize: '15px', paddingLeft: '20px', margin: '0 0 32px 0' }}>
-                  <li>Accommodation in comfortable guesthouses</li>
-                  <li>Transportation between destinations</li>
-                  <li>Entrance fees to all sites</li>
-                  <li>Local guide services</li>
-                  <li>Breakfast daily</li>
-                </ul>
-
-                <h4 style={{ margin: '0 0 12px 0', fontSize: '16px', color: '#0f172a' }}>What to Bring:</h4>
-                <ul style={{ color: '#475569', lineHeight: '1.8', fontSize: '15px', paddingLeft: '20px', margin: '0 0 32px 0' }}>
-                  <li>Comfortable hiking shoes</li>
-                  <li>Light, breathable clothing</li>
-                  <li>Sun protection</li>
-                  <li>Camera</li>
-                  <li>Water bottle</li>
-                </ul>
 
                 <h4 style={{ margin: '0 0 16px 0', fontSize: '16px', color: '#0f172a' }}>Trip Organizer</h4>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '16px', backgroundColor: '#f8fafc', padding: '16px', borderRadius: '16px', border: '1px solid #f1f5f9' }}>
-                  <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop" alt="Raj Patel" style={{ width: '56px', height: '56px', borderRadius: '50%', objectFit: 'cover' }} />
+                  <img 
+                    src={tripData.organizer?.avatarUrl || "https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=150&h=150&fit=crop"} 
+                    alt="Organizer" 
+                    style={{ width: '56px', height: '56px', borderRadius: '50%', objectFit: 'cover' }} 
+                  />
                   <div>
-                    <div style={{ fontWeight: 'bold', fontSize: '16px', color: '#0f172a', marginBottom: '4px' }}>Raj Patel</div>
-                    <div style={{ fontSize: '13px', color: '#64748b' }}>Adventure enthusiast | 15+ trips organized</div>
+                    <div style={{ fontWeight: 'bold', fontSize: '16px', color: '#0f172a', marginBottom: '4px' }}>
+                      {tripData.organizer?.firstName || 'Trip'} {tripData.organizer?.lastName || 'Organizer'}
+                    </div>
+                    <div style={{ fontSize: '13px', color: '#64748b' }}>Admin & Organizer</div>
                   </div>
                 </div>
-
               </div>
             )}
+
+            {/* Tab Content: MEMBERS */}
+            {activeSegment === 'members' && (
+              <div style={{ padding: '32px' }}>
+                <h3 style={{ margin: '0 0 24px 0', fontSize: '20px', color: '#0f172a' }}>Travelers ({tripData.joinedMembers?.length || 0})</h3>
+                
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '20px' }}>
+                  {tripData.joinedMembers?.length > 0 ? (
+                    tripData.joinedMembers.map((member) => (
+                      <div key={member.id} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '16px', backgroundColor: '#f8fafc', borderRadius: '16px', border: '1px solid #f1f5f9' }}>
+                        <img 
+                          src={member.avatarUrl || 'https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=150&h=150&fit=crop'} 
+                          alt={member.firstName} 
+                          style={{ width: '48px', height: '48px', borderRadius: '50%', objectFit: 'cover' }} 
+                        />
+                        <div>
+                          <div style={{ fontWeight: 'bold', fontSize: '15px', color: '#0f172a' }}>
+                            {member.firstName} {member.lastName}
+                          </div>
+                          
+                          <div style={{ fontSize: '12px', marginTop: '4px', display: 'flex', alignItems: 'center', gap: '4px', color: member.role === 'admin' ? '#8b5cf6' : (member.isApproved ? '#10B981' : '#f59e0b') }}>
+                            {member.role === 'admin' ? (
+                              <><Shield size={14} /> Admin</>
+                            ) : member.isApproved ? (
+                              <><CheckCircle size={14} /> Approved</>
+                            ) : (
+                              <>Pending Approval</>
+                            )}
+                          </div>
+
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <div style={{ color: '#64748b', gridColumn: '1 / -1', padding: '20px 0' }}>
+                      No members have joined this trip yet.
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {(activeSegment === 'places' || activeSegment === 'expenses') && (
+              <div style={{ padding: '60px 32px', textAlign: 'center', color: '#64748b' }}>
+                Content for {activeSegment} coming soon!
+              </div>
+            )}
+
           </div>
         </div>
 
@@ -144,11 +219,10 @@ export default function TripDetails({ setActiveTab }) {
             ========================================== */}
         <div style={{ width: '320px', display: 'flex', flexDirection: 'column', gap: '24px' }}>
           
-          {/* Weather Widget */}
           <div style={{ background: 'linear-gradient(135deg, #0EA5E9 0%, #0284C7 100%)', borderRadius: '20px', padding: '24px', color: '#fff', boxShadow: '0 4px 12px rgba(14, 165, 233, 0.2)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
               <div>
-                <div style={{ fontSize: '13px', opacity: 0.9, marginBottom: '4px' }}>Sigiriya, Sri Lanka</div>
+                <div style={{ fontSize: '13px', opacity: 0.9, marginBottom: '4px' }}>{tripData.destinations || 'Location TBD'}</div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                   <span style={{ fontSize: '48px', fontWeight: 'bold', lineHeight: 1 }}>28°</span>
                   <Wind size={28} color="#fff" />
@@ -185,7 +259,6 @@ export default function TripDetails({ setActiveTab }) {
             </div>
           </div>
           
-          {/* Quick Actions Panel */}
           <div style={{ backgroundColor: '#fff', padding: '24px', borderRadius: '20px', border: '1px solid #f1f5f9', boxShadow: '0 2px 4px rgba(0,0,0,0.02)' }}>
             <h4 style={{ margin: '0 0 16px 0', fontSize: '16px', color: '#0f172a' }}>Quick Actions</h4>
             

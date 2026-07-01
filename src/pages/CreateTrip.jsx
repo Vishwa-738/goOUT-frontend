@@ -1,8 +1,12 @@
 // src/pages/CreateTrip.jsx
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import API from '../services/api';
 import { MapPin, Calendar, DollarSign, Image as ImageIcon, AlignLeft, Users } from 'lucide-react';
 
 export default function CreateTrip() {
+  const navigate = useNavigate();
+
   const [tripData, setTripData] = useState({
     title: '',
     destination: '',
@@ -10,17 +14,45 @@ export default function CreateTrip() {
     endDate: '',
     budget: '',
     capacity: '',
-    description: ''
+    description: '',
+    imageUrl: '' // 🚀 NEW: Added state for the custom image
   });
 
   const handleChange = (e) => {
     setTripData({ ...tripData, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log("Submitting new trip:", tripData);
-    // Future API call will go here
+    
+    try {
+      const formattedPayload = {
+        title: tripData.title,
+        description: tripData.description,
+        destinations: tripData.destination, 
+        startDate: tripData.startDate,
+        endDate: tripData.endDate,
+        minBudget: parseFloat(tripData.budget) || 0, 
+        maxBudget: parseFloat(tripData.budget) || 0, 
+        maxParticipants: parseInt(tripData.capacity, 10) || 0,
+        imageUrl: tripData.imageUrl, // 🚀 NEW: Send the custom image to the backend
+        isPublic: true,     
+        isOrganizer: true,
+        status: 'UPCOMING'
+      };
+
+      const response = await API.post('/api/v1/trips', formattedPayload); 
+      console.log("Trip successfully saved to database!", response.data);
+      
+      window.dispatchEvent(new CustomEvent('trip-created'));
+      
+      alert("Successfully created trip");
+      navigate('/dashboard'); 
+      
+    } catch (error) {
+      console.error("Error creating trip:", error);
+      alert("Failed to publish the trip. Check the console to see what the backend said.");
+    }
   };
 
   return (
@@ -63,6 +95,22 @@ export default function CreateTrip() {
                 />
               </div>
             </div>
+
+            {/* 🚀 NEW: Cover Image Input */}
+            <div>
+              <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: '500', color: '#475569' }}>Cover Image URL (Optional)</label>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px 16px', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
+                <ImageIcon size={18} color="#94a3b8" />
+                <input 
+                  type="url" 
+                  name="imageUrl"
+                  placeholder="Paste an image link here..." 
+                  onChange={handleChange}
+                  style={{ border: 'none', outline: 'none', width: '100%', backgroundColor: 'transparent' }} 
+                />
+              </div>
+            </div>
+
           </div>
         </div>
 
@@ -102,13 +150,6 @@ export default function CreateTrip() {
               </div>
             </div>
           </div>
-        </div>
-
-        {/* Cover Image Upload (Placeholder) */}
-        <div style={{ backgroundColor: '#fff', padding: '32px', borderRadius: '20px', border: '2px dashed #cbd5e1', textAlign: 'center', cursor: 'pointer' }}>
-          <ImageIcon size={32} color="#94a3b8" style={{ margin: '0 auto 12px auto' }} />
-          <h4 style={{ fontSize: '16px', fontWeight: '500', color: '#475569', marginBottom: '4px' }}>Click to upload cover photo</h4>
-          <p style={{ fontSize: '13px', color: '#94a3b8' }}>PNG, JPG or WEBP (max. 5MB)</p>
         </div>
 
         {/* Submit Button */}
