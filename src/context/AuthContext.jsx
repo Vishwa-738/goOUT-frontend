@@ -33,10 +33,11 @@ export function AuthProvider({ children }) {
       // 1. Send the login request to the live Spring Boot backend
       const response = await api.post('/api/v1/auth/login', { email, password });
       
-      // 2. Extract the token and user data from the backend's response
-      const token = response.data.token;
-      // Note: If your backend sends the user object, use it. Otherwise, we store the email so the app doesn't crash.
-      const userData = response.data.user || { email }; 
+      // 2. Extract the token directly from response.data!
+      const token = response.data; 
+      
+      // Note: Since the backend only sends the token string, we just save the email for the UI.
+      const userData = { email }; 
 
       // 3. Save to localStorage so you stay logged in after a refresh
       localStorage.setItem('token', token);
@@ -48,7 +49,6 @@ export function AuthProvider({ children }) {
       return { success: true };
     } catch (error) {
       console.error("Login failed:", error);
-      // If the backend rejects it (wrong password, etc.), return the error to the Login UI
       return { success: false, message: error.response?.data?.message || "Login failed. Check your credentials." };
     }
   };
