@@ -18,7 +18,7 @@ import CreateTrip from '../pages/CreateTrip';
 import MyTrips from '../pages/MyTrips';
 import Profile from '../pages/Profile';
 import JoinRequestManager from '../pages/JoinRequestManager';
-import TripDetails from '../pages/tripdetails';
+import TripDetails from '../pages/Tripdetails';
 
 // Higher-Order Component to protect dashboard layout panels
 const ProtectedRoute = ({ children }) => {

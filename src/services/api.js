@@ -1,26 +1,28 @@
-// src/services/api.js
 import axios from 'axios';
 
-// Centralized Axios client initialized with the team's backend endpoint contracts
-const api = axios.create({
-  baseURL: 'http://localhost:8080/api/v1',
+// Create a configured Axios instance
+const API = axios.create({
+  // Using Vite's environment variables. 
+  // If the env variable isn't set, it safely falls back to the local backend port.
+  // Force it to use the live backend instead of localhost!
+  baseURL: 'https://another-freezing-glimmer.ngrok-free.dev',
   headers: {
     'Content-Type': 'application/json',
-  },
+  }
 });
 
-// Request Interceptor: Automatically injects JWT auth tokens into headers later
-api.interceptors.request.use(
-  (config) => {
-    const token = localStorage.getItem('token');
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-    return config;
-  },
-  (error) => {
-    return Promise.reject(error);
+// Interceptor to automatically attach the JWT token to requests
+API.interceptors.request.use((config) => {
+  const token = localStorage.getItem('token');
+  
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
   }
-);
+  
+  // 🚀 The exact line Methsara provided to bypass the Ngrok warning block!
+  config.headers['ngrok-skip-browser-warning'] = 'true';
+  
+  return config;
+});
 
-export default api;
+export default API;
