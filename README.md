@@ -1,16 +1,124 @@
-<<<<<<< HEAD
-# React + Vite
+# 🌍 goOUT Frontend
 
+## 📌 Project Overview
+goOUT is a travel planning and trip management web application that allows users to discover trips, create travel plans, manage expenses, and interact through a modern user interface.
 
+---
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## 🚀 Features
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+- User Authentication (Login & Register)
+- Dashboard
+- Create and Manage Trips
+- Discover Trips
+- Expense Tracker
+- User Profile Management
+- Responsive User Interface
 
-## Expanding the ESLint configuration
+---
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
-=======
-# goOUT-frontend
->>>>>>> 1f200ec28375cc6645024da9170ec0bcd104c708
+## 🛠️ Technologies Used
+
+- React.js
+- JavaScript (ES6)
+- Axios
+- React Router
+- CSS
+- Vite
+
+---
+
+## 📂 Project Structure
+
+```
+src/
+│── assets/
+│── components/
+│── context/
+│── layouts/
+│── pages/
+│── routes/
+│── services/
+│── App.jsx
+│── main.jsx
+
+public/
+package.json
+README.md
+```
+
+---
+
+## ⚙️ Installation
+
+### 1. Clone the repository
+
+```bash
+git clone https://github.com/your-username/goOUT-frontend.git
+```
+
+### 2. Navigate to the project
+
+```bash
+cd goOUT-frontend
+```
+
+### 3. Install dependencies
+
+```bash
+npm install
+```
+
+### 4. Start the development server
+
+```bash
+npm run dev
+```
+
+---
+
+## 📸 Screenshots
+
+Add screenshots of the application here.
+
+Example:
+
+- Home Page
+- Login Page
+- Dashboard
+- Create Trip
+- Expense Tracker
+
+---
+
+## 📡 API
+
+This frontend communicates with the goOUT Backend REST API.
+
+Example Base URL:
+
+```
+http://localhost:8080/api
+```
+
+---
+
+## 👨‍💻 Contributors
+
+- Your Name
+- Team Member 2
+- Team Member 3
+
+---
+
+## 📄 License
+
+This project is developed for educational purposes.
+
+---
+
+## 📞 Contact
+
+For any questions or suggestions:
+
+Email: your-email@example.com
