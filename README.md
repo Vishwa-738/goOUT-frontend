@@ -68,10 +68,15 @@ npm run dev
 ## Team & Contributions
 
 **[Vishwa]**   | Frontend Lead | Client architecture, React (Vite) UI/UX orchestration, Axios payload management, and state hydration. |
+
 **[Methsara]** | Backend Lead | Spring Boot REST API architecture, Database management, DTO structure, and secure endpoint delivery. 
+
 **[Viranda]**  | [Expence Tracker] 
+
 **[Bineth]**   | [Profile ] 
+
 **[Tharidu]**  | [UI Design Part]
+
 **[Chamodh]**  | [Create trip]
 
 ---
