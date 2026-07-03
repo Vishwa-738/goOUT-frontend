@@ -1,7 +1,8 @@
 // src/pages/DashboardHome.jsx
 import React, { useState, useEffect, useRef } from 'react';
-import { Image as ImageIcon, Send, MapPin, Heart, MessageCircle, Sun } from 'lucide-react';
+import { Image as ImageIcon, Send, MapPin, Heart, Sun, Eye } from 'lucide-react';
 import api from '../services/api';
+import TripDetails from './TripDetails';
 
 export default function DashboardHome() {
   const [newPostText, setNewPostText] = useState('');
@@ -12,6 +13,8 @@ export default function DashboardHome() {
   const [posts, setPosts] = useState([]);
   const [isLoadingFeed, setIsLoadingFeed] = useState(true); 
   
+  const [viewingTripId, setViewingTripId] = useState(null);
+
   const [weather, setWeather] = useState({ 
     temp: '--', condition: 'Loading...', city: 'Locating...', humidity: '--', wind: '--', feelsLike: '--'
   });
@@ -22,40 +25,68 @@ export default function DashboardHome() {
     feedTab === 'upcoming' ? post.status === 'UPCOMING' : post.status === 'COMPLETED'
   );
 
+  const handleLikeToggle = async (postId) => {
+    setPosts(currentPosts => 
+      currentPosts.map(post => {
+        if (post.id === postId) {
+          const currentlyLiked = post.isLikedByCurrentUser;
+          return {
+            ...post,
+            isLikedByCurrentUser: !currentlyLiked,
+            likeCount: currentlyLiked ? Math.max(0, post.likeCount - 1) : post.likeCount + 1
+          };
+        }
+        return post;
+      })
+    );
+
+    try {
+      await api.post(`/api/v1/trips/${postId}/like`).catch(async () => {
+        await api.post(`/api/v1/posts/${postId}/like`);
+      });
+    } catch (error) {
+      console.error("Failed to sync like with backend:", error);
+    }
+  };
+
   const fetchPosts = async () => {
     setIsLoadingFeed(true);
     try {
       const userString = localStorage.getItem('user');
       const currentUser = userString ? JSON.parse(userString) : null;
       
-      const userName = currentUser 
-        ? `${currentUser.firstName || ''} ${currentUser.lastName || ''}`.trim() || currentUser.fullName || 'Traveler' 
-        : 'Traveler';
-        
-      const userAvatar = currentUser?.profilePic || currentUser?.avatarUrl || 'https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=150&h=150&fit=crop';
-
       const [postsResponse, tripsResponse] = await Promise.all([
         api.get('/api/v1/posts').catch(() => ({ data: [] })),
         api.get('/api/v1/trips').catch(() => ({ data: [] })) 
       ]);
       
       const extractData = (res) => {
+        if (!res || !res.data) return [];
         if (Array.isArray(res.data)) return res.data;
-        if (res.data && res.data.data) return res.data.data;
-        if (res.data && res.data.content) return res.data.content;
+        if (res.data.data && Array.isArray(res.data.data)) return res.data.data;
+        if (res.data.content && Array.isArray(res.data.content)) return res.data.content;
+        if (res.data.trips && Array.isArray(res.data.trips)) return res.data.trips;
+        if (res.data.posts && Array.isArray(res.data.posts)) return res.data.posts;
         return [];
       };
 
-      const rawPosts = extractData(postsResponse);
-      const rawTrips = extractData(tripsResponse);
+      const rawPosts = extractData(postsResponse).map(post => ({ ...post, isRealTrip: false }));
+      const rawTrips = extractData(tripsResponse).map(trip => ({ ...trip, isRealTrip: true }));
 
-      const activeTrips = rawTrips.filter(trip => trip.status !== 'COMPLETED');
-      const combinedData = [...rawPosts, ...activeTrips];
+      const combinedData = [...rawPosts, ...rawTrips];
       
       const mappedPosts = combinedData.map(item => {
-        const postContent = item.content || (item.title ? `Planning a new adventure: ${item.title}! 🌍✈️` : '');
-        
         let calculatedStatus = item.status;
+        
+        const isCompleted = calculatedStatus === 'COMPLETED' || (item.status && item.status.toUpperCase() === 'COMPLETED');
+        const postContent = item.content || (
+          item.title ? (
+            isCompleted
+              ? `Just completed an amazing trip: ${item.title}! 🌍✈️` 
+              : `Planning a new adventure: ${item.title}! 🌍✈️`
+          ) : ''
+        );
+        
         if (!calculatedStatus) {
           if (postContent.includes("Just completed")) {
             calculatedStatus = 'COMPLETED';
@@ -72,18 +103,37 @@ export default function DashboardHome() {
         else if (item.organizerName) actualAuthorName = item.organizerName;
         else if (item.creatorName) actualAuthorName = item.creatorName;
 
-        // 🚀 THE FIX: The Ultimate Avatar Net for Trips & Posts
-       // 🚀 THE FINAL FIX: Now correctly points to item.organizer.avatarUrl
         let actualAvatar = 'https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=150&h=150&fit=crop'; 
         
         if (item.author?.avatarUrl) actualAvatar = item.author.avatarUrl;
-        else if (item.organizer?.avatarUrl) actualAvatar = item.organizer.avatarUrl; // 🚀 Catches the nested avatar
+        else if (item.organizer?.avatarUrl) actualAvatar = item.organizer.avatarUrl; 
         else if (item.user?.avatarUrl) actualAvatar = item.user.avatarUrl;
         else if (item.author?.profilePic) actualAvatar = item.author.profilePic;
         else if (item.organizer?.profilePic) actualAvatar = item.organizer.profilePic;
         else if (item.user?.profilePic) actualAvatar = item.user.profilePic;
-        else if (item.organizerAvatar) actualAvatar = item.organizerAvatar; // Legacy fallback
-        else if (item.creatorAvatar) actualAvatar = item.creatorAvatar;     // Legacy fallback
+        else if (item.organizerAvatar) actualAvatar = item.organizerAvatar; 
+        else if (item.creatorAvatar) actualAvatar = item.creatorAvatar;     
+
+        let rawImage = item.imageUrl || item.coverImageUrl || item.image || item.tripImage || item.trip_image_url;
+        
+        if (rawImage && !rawImage.startsWith('http')) {
+          const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080';
+          rawImage = `${baseUrl}/${rawImage.replace(/^\//, '')}`;
+        }
+
+        const finalImage = rawImage || 'https://images.unsplash.com/photo-1546708973-b339540b5162?w=600';
+        const exactLikeCount = typeof item.likeCount === 'number' ? item.likeCount : (item.likes || 0);
+
+        const isTripItem = Boolean(
+          item.isRealTrip || 
+          item.type === 'TRIP' || 
+          item.startDate || 
+          item.minBudget || 
+          item.maxParticipants || 
+          item.destinations || 
+          item.destination
+        );
+
         return {
           id: item.id || item._id,
           author: { 
@@ -93,10 +143,11 @@ export default function DashboardHome() {
           createdAt: item.createdAt || item.endDate || new Date().toISOString(), 
           location: item.location || item.destinations || 'Unknown Location',
           content: postContent,
-          imageUrl: item.imageUrl || 'https://images.unsplash.com/photo-1546708973-b339540b5162?w=600',
+          imageUrl: finalImage,
           status: calculatedStatus, 
-          likeCount: item.likeCount || Math.floor(Math.random() * 25) + 5, 
-          isLikedByCurrentUser: item.isLikedByCurrentUser || false
+          likeCount: exactLikeCount, 
+          isLikedByCurrentUser: item.isLikedByCurrentUser || false,
+          isTrip: isTripItem 
         };
       });
 
@@ -162,32 +213,55 @@ export default function DashboardHome() {
     }
   }, []);
 
-  useEffect(() => {
-    if (!locationCoords) return;
-    const weatherTimer = setInterval(() => fetchWeatherData(locationCoords.lat, locationCoords.lon), 600000);
-    return () => clearInterval(weatherTimer);
-  }, [locationCoords]);
-
   const handleImageSelect = (e) => {
     const file = e.target.files[0];
     if (file) setSelectedImage(file);
   };
 
-  const handlePostSubmit = async () => { /* Submit logic */ };
-
   const formatTime = (dateString) => {
     if (!dateString) return 'Just now';
-    return new Date(dateString).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+    return new Date(dateString).toLocaleDateString('en-US', { 
+      month: 'short', 
+      day: 'numeric', 
+      hour: '2-digit', 
+      minute: '2-digit' 
+    });
   };
+
+  if (viewingTripId) {
+    return (
+      <div style={{ width: '100%' }}>
+        <button 
+          onClick={() => setViewingTripId(null)}
+          style={{ 
+            marginBottom: '20px', 
+            padding: '10px 18px', 
+            borderRadius: '12px', 
+            border: '1px solid #cbd5e1', 
+            backgroundColor: '#ffffff', 
+            color: '#334155', 
+            fontWeight: '600', 
+            cursor: 'pointer',
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '8px',
+            boxShadow: '0 2px 4px rgba(0,0,0,0.02)'
+          }}
+        >
+          ← Back to Feed
+        </button>
+        <TripDetails tripId={viewingTripId} setActiveTab={() => {}} />
+      </div>
+    );
+  }
 
   return (
     <div style={{ maxWidth: '1040px', margin: '0 auto', display: 'flex', gap: '40px', alignItems: 'flex-start', width: '100%' }}>
       
       <div style={{ flex: 1, maxWidth: '680px', width: '100%', display: 'flex', flexDirection: 'column', gap: '24px' }}>
         
-       
-
-        <div className="d-flex rounded-3 p-1 shadow-sm" style={{ backgroundColor: '#f1f5f9' }}>
+        {/* 🚀 FIXED: Sticky Tab Bar */}
+        <div className="d-flex rounded-3 p-1 shadow-sm" style={{ backgroundColor: '#f1f5f9', position: 'sticky', top: 0, zIndex: 10 }}>
           <button 
             onClick={() => setFeedTab('upcoming')}
             className={`btn flex-grow-1 fw-bold border-0 py-2 ${feedTab === 'upcoming' ? 'bg-white shadow-sm' : 'bg-transparent text-muted'}`}
@@ -234,6 +308,37 @@ export default function DashboardHome() {
                     </div>
                   </div>
                 </div>
+
+                {post.isTrip && (
+                  <button 
+                    onClick={() => setViewingTripId(post.id)}
+                    style={{ 
+                      padding: '8px 14px', 
+                      borderRadius: '10px', 
+                      fontSize: '13px', 
+                      fontWeight: '600', 
+                      display: 'flex', 
+                      alignItems: 'center', 
+                      gap: '6px', 
+                      cursor: 'pointer', 
+                      border: 'none', 
+                      backgroundColor: '#f0f9ff', 
+                      color: '#0EA5E9', 
+                      transition: 'all 0.2s',
+                      boxShadow: '0 2px 4px rgba(14, 165, 233, 0.1)'
+                    }}
+                    onMouseOver={(e) => {
+                      e.currentTarget.style.backgroundColor = '#0EA5E9';
+                      e.currentTarget.style.color = '#ffffff';
+                    }}
+                    onMouseOut={(e) => {
+                      e.currentTarget.style.backgroundColor = '#f0f9ff';
+                      e.currentTarget.style.color = '#0EA5E9';
+                    }}
+                  >
+                    <Eye size={15} /> View Details
+                  </button>
+                )}
               </div>
 
               {post.content && (
@@ -252,16 +357,32 @@ export default function DashboardHome() {
                 </div>
               )}
 
-              <div style={{ display: 'flex', gap: '32px', marginTop: '16px', paddingTop: '16px', borderTop: '1px solid #f1f5f9' }}>
+              <div style={{ display: 'flex', gap: '16px', marginTop: '16px', paddingTop: '12px', borderTop: '1px solid #f1f5f9' }}>
                 <button 
-                  style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'none', border: 'none', cursor: 'pointer', color: '#65676B', fontWeight: '600', fontSize: '15px', transition: 'color 0.2s' }}
+                  onClick={() => handleLikeToggle(post.id)}
+                  style={{ 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    gap: '8px', 
+                    background: 'none', 
+                    border: 'none', 
+                    cursor: 'pointer', 
+                    color: post.isLikedByCurrentUser ? '#e11d48' : '#65676B', 
+                    fontWeight: '600', 
+                    fontSize: '15px', 
+                    transition: 'all 0.2s',
+                    padding: '6px 12px',
+                    borderRadius: '8px'
+                  }}
+                  onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#f8fafc'}
+                  onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
                 >
-                  <Heart size={20} strokeWidth={2} />
-                  {post.likeCount || 0} Likes
-                </button>
-                <button style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'none', border: 'none', cursor: 'pointer', color: '#65676B', fontWeight: '600', fontSize: '15px', transition: 'color 0.2s' }}>
-                  <MessageCircle size={20} strokeWidth={2} />
-                  Comment
+                  <Heart 
+                    size={20} 
+                    strokeWidth={post.isLikedByCurrentUser ? 0 : 2} 
+                    fill={post.isLikedByCurrentUser ? '#e11d48' : 'none'} 
+                  />
+                  {post.likeCount || 0} {post.likeCount === 1 ? 'Like' : 'Likes'}
                 </button>
               </div>
 
@@ -270,7 +391,8 @@ export default function DashboardHome() {
         )}
       </div>
 
-      <div style={{ width: '320px', flexShrink: 0, display: 'flex', flexDirection: 'column', gap: '24px' }}>
+      {/* 🚀 FIXED: Sticky Right Sidebar */}
+      <div style={{ width: '320px', flexShrink: 0, display: 'flex', flexDirection: 'column', gap: '24px', position: 'sticky', top: 0 }}>
         <div style={{ background: 'linear-gradient(135deg, #17B0B2 0%, #0EA5E9 100%)', color: '#ffffff', padding: '24px', borderRadius: '24px', position: 'relative' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
             <span style={{ fontSize: '12px', fontWeight: 'bold', letterSpacing: '1px', textTransform: 'uppercase' }}>Current Conditions</span>

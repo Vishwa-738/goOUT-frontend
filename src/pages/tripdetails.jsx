@@ -105,6 +105,12 @@ export default function TripDetails({ setActiveTab, tripId }) {
           <div style={{ display: 'flex', gap: '16px', marginBottom: '32px' }}>
             <button style={{ flex: 1, backgroundColor: '#0EA5E9', color: '#fff', border: 'none', padding: '16px', borderRadius: '12px', fontWeight: 'bold', fontSize: '15px', cursor: 'pointer', boxShadow: '0 4px 6px rgba(14, 165, 233, 0.2)' }}>
               Request to Join
+              {/* Inside tripdetails.jsx: Only show 'Request to Join' if the trip is NOT completed */}
+{tripData.status !== 'COMPLETED' && (
+  <button style={{ flex: 1, backgroundColor: '#0EA5E9', color: '#fff', border: 'none', padding: '16px', borderRadius: '12px', fontWeight: 'bold', fontSize: '15px', cursor: 'pointer', boxShadow: '0 4px 6px rgba(14, 165, 233, 0.2)' }}>
+    Request to Join
+  </button>
+)}
             </button>
             <button 
               onClick={() => setActiveTab('chat')} 
