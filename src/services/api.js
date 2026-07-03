@@ -5,7 +5,7 @@ const API = axios.create({
   // Using Vite's environment variables. 
   // If the env variable isn't set, it safely falls back to the local backend port.
   // Force it to use the live backend instead of localhost!
-  baseURL: 'https://uneatable-viewable-suitable.ngrok-free.dev/',
+  baseURL: 'https://another-freezing-glimmer.ngrok-free.dev/',
   headers: {
     'Content-Type': 'application/json',
   }
