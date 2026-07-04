@@ -1,8 +1,9 @@
 // src/pages/TripDetails.jsx
 import React, { useState, useEffect } from 'react';
 import { 
-  MapPin, Calendar, DollarSign, Users, CloudRain, Wind, Droplets, 
-  MessageCircle, Cloud, Wallet, CheckCircle, Shield, Check, Utensils, Car, Home, Ticket
+  MapPin, Calendar, DollarSign, Users, Wind, Droplets, 
+  MessageCircle, Cloud, Wallet, CheckCircle, Shield, Check, 
+  Utensils, Car, Home, Ticket, Map, Coffee, Info, X, Clock
 } from 'lucide-react';
 import api from '../services/api'; 
 
@@ -14,9 +15,19 @@ export default function TripDetails({ setActiveTab, tripId }) {
   const [isRequesting, setIsRequesting] = useState(false);
   const [requestSent, setRequestSent] = useState(false);
 
-  // 🚀 NEW: State to hold the fetched expense breakdown
+  // Expenses State
   const [tripExpenses, setTripExpenses] = useState([]);
   const [isLoadingExpenses, setIsLoadingExpenses] = useState(false);
+
+  // Places State & Modal
+  const [tripPlaces, setTripPlaces] = useState([]);
+  const [isLoadingPlaces, setIsLoadingPlaces] = useState(false);
+  const [isPlaceModalOpen, setIsPlaceModalOpen] = useState(false);
+  const [placeForm, setPlaceForm] = useState({
+    name: '',
+    category: 'Food & Dining',
+    tip: ''
+  });
 
   const userString = localStorage.getItem('user');
   const currentUser = userString ? JSON.parse(userString) : null;
@@ -39,16 +50,14 @@ export default function TripDetails({ setActiveTab, tripId }) {
     fetchTripDetails();
   }, [tripId]);
 
-  // 🚀 NEW: Fetch expenses when the user clicks the "Expenses" tab
+  // Fetch Expenses
   useEffect(() => {
     if (activeSegment === 'expenses' && tripId) {
       const fetchTripExpenses = async () => {
         setIsLoadingExpenses(true);
         try {
           const response = await api.get(`/api/v1/expenses/trip/${tripId}`);
-          let rawData = [];
-          if (Array.isArray(response.data)) rawData = response.data;
-          else if (response.data && response.data.data) rawData = response.data.data;
+          let rawData = Array.isArray(response.data) ? response.data : (response.data?.data || []);
           setTripExpenses(rawData);
         } catch (error) {
           console.error("Failed to fetch trip expenses:", error);
@@ -57,6 +66,25 @@ export default function TripDetails({ setActiveTab, tripId }) {
         }
       };
       fetchTripExpenses();
+    }
+  }, [activeSegment, tripId]);
+
+  // Fetch Places
+  useEffect(() => {
+    if (activeSegment === 'places' && tripId) {
+      const fetchTripPlaces = async () => {
+        setIsLoadingPlaces(true);
+        try {
+          const response = await api.get(`/api/v1/trips/${tripId}/places`).catch(() => ({ data: [] }));
+          let rawData = Array.isArray(response.data) ? response.data : (response.data?.data || []);
+          setTripPlaces(rawData);
+        } catch (error) {
+          console.error("Failed to fetch trip places:", error);
+        } finally {
+          setIsLoadingPlaces(false);
+        }
+      };
+      fetchTripPlaces();
     }
   }, [activeSegment, tripId]);
 
@@ -75,17 +103,44 @@ export default function TripDetails({ setActiveTab, tripId }) {
     }
   };
 
-  if (isLoading) {
-    return <div style={{ textAlign: 'center', padding: '50px', color: '#64748b' }}>Loading your adventure...</div>;
-  }
+  const handleAddPlace = async (e) => {
+    e.preventDefault();
+    try {
+      const newPlaceData = { ...placeForm, tripId };
+      await api.post(`/api/v1/trips/${tripId}/places`, newPlaceData);
+      
+      setTripPlaces([...tripPlaces, { ...newPlaceData, id: Math.random(), author: currentUser?.name || 'Traveler' }]);
+      setIsPlaceModalOpen(false);
+      setPlaceForm({ name: '', category: 'Food & Dining', tip: '' }); 
+      
+      setActiveSegment('places');
+      alert("Place added successfully!");
+    } catch (error) {
+      console.error("Error adding place:", error);
+      alert("Failed to add place. Check console.");
+    }
+  };
 
-  if (!tripData) {
-    return <div style={{ textAlign: 'center', padding: '50px', color: '#ef4444' }}>Trip not found.</div>;
-  }
+  if (isLoading) return <div style={{ textAlign: 'center', padding: '50px', color: '#64748b' }}>Loading your adventure...</div>;
+  if (!tripData) return <div style={{ textAlign: 'center', padding: '50px', color: '#ef4444' }}>Trip not found.</div>;
 
-  const isOrganizer = tripData.isOrganizer || tripData.organizer?.id === currentUser?.id;
+  // ======================================================================
+  // 🚀 THE CLEANEST PERMISSIONS LOGIC EVER!
+  // We deleted the messy ID matcher. We now strictly trust the backend's JWT check.
+  // ======================================================================
+  const isOrganizer = tripData.currentUserStatus === 'ORGANIZER' || tripData.isOrganizer === true;
+  const isPending = tripData.currentUserStatus === 'PENDING';
+  
+  // Safety net: We still check if they are in the joinedMembers array just in case 
+  // the backend hasn't set up a specific 'MEMBER' string for currentUserStatus yet.
+  const currentUserId = currentUser ? String(currentUser.id || currentUser._id) : null;
+  const joinedRecord = tripData.joinedMembers && tripData.joinedMembers.find(m => {
+    const matchId = String(m.id || m._id || m.userId || (m.user && m.user.id));
+    return matchId === currentUserId;
+  });
 
-  // Helper function to group expenses by category for the UI
+  const isMember = isOrganizer || ['MEMBER', 'ACCEPTED', 'APPROVED'].includes(tripData.currentUserStatus) || Boolean(joinedRecord);
+
   const groupedExpenses = tripExpenses.reduce((acc, exp) => {
     const cat = exp.category || 'Other';
     if (!acc[cat]) acc[cat] = [];
@@ -95,7 +150,6 @@ export default function TripDetails({ setActiveTab, tripId }) {
 
   const totalSpent = tripExpenses.reduce((sum, exp) => sum + (exp.amount || 0), 0);
 
-  // Helper to pick icons based on category
   const getCategoryIcon = (cat) => {
     if (cat.includes('Food')) return <Utensils size={20} color="#ea580c" />;
     if (cat.includes('Transport')) return <Car size={20} color="#0EA5E9" />;
@@ -104,8 +158,15 @@ export default function TripDetails({ setActiveTab, tripId }) {
     return <DollarSign size={20} color="#64748b" />;
   };
 
+  const getPlaceIcon = (cat) => {
+    if (cat === 'Food & Dining') return <Utensils size={24} color="#ea580c" />;
+    if (cat === 'Sightseeing') return <Map size={24} color="#0EA5E9" />;
+    if (cat === 'Rest Stop (Washrooms)') return <Coffee size={24} color="#10B981" />;
+    return <Info size={24} color="#8b5cf6" />;
+  };
+
   return (
-    <div style={{ maxWidth: '1100px', margin: '0 auto', fontFamily: 'sans-serif' }}>
+    <div style={{ maxWidth: '1100px', margin: '0 auto', fontFamily: 'sans-serif', position: 'relative' }}>
       
       {/* --- HERO BANNER --- */}
       <div style={{ position: 'relative', height: '350px', borderRadius: '24px', overflow: 'hidden', marginBottom: '32px', backgroundColor: '#e2e8f0' }}>
@@ -126,11 +187,7 @@ export default function TripDetails({ setActiveTab, tripId }) {
 
       <div style={{ display: 'flex', gap: '32px', alignItems: 'flex-start' }}>
         
-        {/* ==========================================
-            MAIN CONTENT AREA (Left Side)
-            ========================================== */}
         <div style={{ flex: 1 }}>
-          
           <div style={{ backgroundColor: '#fff', padding: '24px', borderRadius: '20px', border: '1px solid #f1f5f9', display: 'flex', gap: '24px', marginBottom: '24px', boxShadow: '0 2px 4px rgba(0,0,0,0.02)' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flex: 1 }}>
               <div style={{ backgroundColor: '#f0f9ff', padding: '12px', borderRadius: '12px', color: '#0EA5E9' }}><Calendar size={24} /></div>
@@ -164,21 +221,22 @@ export default function TripDetails({ setActiveTab, tripId }) {
           </div>
 
           <div style={{ display: 'flex', gap: '16px', marginBottom: '32px' }}>
+            
             {tripData.status === 'UPCOMING' && !isOrganizer && (
               <button 
                 onClick={handleRequestToJoin}
-                disabled={isRequesting || requestSent}
+                disabled={isRequesting || requestSent || isMember || isPending}
                 style={{ 
                   flex: 1, 
-                  backgroundColor: requestSent ? '#10B981' : (isRequesting ? '#94a3b8' : '#0EA5E9'), 
+                  backgroundColor: (isMember || requestSent) ? '#10B981' : (isPending ? '#f59e0b' : (isRequesting ? '#94a3b8' : '#0EA5E9')), 
                   color: '#fff', 
                   border: 'none', 
                   padding: '16px', 
                   borderRadius: '12px', 
                   fontWeight: 'bold', 
                   fontSize: '15px', 
-                  cursor: (isRequesting || requestSent) ? 'default' : 'pointer', 
-                  boxShadow: requestSent ? 'none' : '0 4px 6px rgba(14, 165, 233, 0.2)', 
+                  cursor: (isRequesting || requestSent || isMember || isPending) ? 'default' : 'pointer', 
+                  boxShadow: (requestSent || isMember || isPending) ? 'none' : '0 4px 6px rgba(14, 165, 233, 0.2)', 
                   transition: 'all 0.2s',
                   display: 'flex',
                   alignItems: 'center',
@@ -186,7 +244,10 @@ export default function TripDetails({ setActiveTab, tripId }) {
                   gap: '8px'
                 }}
               >
-                {requestSent ? <><Check size={20} /> Request Sent!</> : (isRequesting ? 'Sending Request...' : 'Request to Join')}
+                {isMember ? <><Check size={20} /> Already Joined</> 
+                 : isPending ? <><Clock size={20} /> Request Pending</>
+                 : requestSent ? <><Check size={20} /> Request Sent!</> 
+                 : (isRequesting ? 'Sending Request...' : 'Request to Join')}
               </button>
             )}
 
@@ -229,6 +290,7 @@ export default function TripDetails({ setActiveTab, tripId }) {
               })}
             </div>
 
+            {/* OVERVIEW */}
             {activeSegment === 'overview' && (
               <div style={{ padding: '32px' }}>
                 <h3 style={{ margin: '0 0 16px 0', fontSize: '20px', color: '#0f172a' }}>About This Trip</h3>
@@ -253,7 +315,44 @@ export default function TripDetails({ setActiveTab, tripId }) {
               </div>
             )}
 
-            {/* 🚀 THE NEW EXPENSES BREAKDOWN TAB */}
+            {/* PLACES */}
+            {activeSegment === 'places' && (
+              <div style={{ padding: '32px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+                  <div>
+                    <h3 style={{ margin: '0 0 4px 0', fontSize: '20px', color: '#0f172a' }}>Curated Places & Tips</h3>
+                    <p style={{ margin: 0, fontSize: '14px', color: '#64748b' }}>Insider knowledge added by trip members.</p>
+                  </div>
+                </div>
+                
+                {isLoadingPlaces ? (
+                  <p style={{ color: '#64748b', textAlign: 'center', padding: '20px 0' }}>Loading insider tips...</p>
+                ) : tripPlaces.length === 0 ? (
+                  <div style={{ textAlign: 'center', padding: '40px 0', color: '#64748b', backgroundColor: '#f8fafc', borderRadius: '16px', border: '1px dashed #cbd5e1' }}>
+                    <Map Pin size={48} color="#cbd5e1" style={{ marginBottom: '16px' }} />
+                    <p style={{ margin: 0, fontWeight: '500' }}>No places recommended yet.</p>
+                    {isMember && <p style={{ margin: '8px 0 0 0', fontSize: '13px' }}>Click "Place Updates" on the right to add the first one!</p>}
+                  </div>
+                ) : (
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+                    {tripPlaces.map((place, idx) => (
+                      <div key={idx} style={{ padding: '20px', borderRadius: '16px', border: '1px solid #f1f5f9', boxShadow: '0 2px 8px rgba(0,0,0,0.02)', display: 'flex', gap: '16px', alignItems: 'flex-start' }}>
+                        <div style={{ padding: '12px', borderRadius: '12px', backgroundColor: '#f8fafc' }}>
+                          {getPlaceIcon(place.category)}
+                        </div>
+                        <div>
+                          <div style={{ fontSize: '12px', fontWeight: 'bold', color: '#64748b', textTransform: 'uppercase', marginBottom: '4px' }}>{place.category}</div>
+                          <h4 style={{ margin: '0 0 8px 0', fontSize: '16px', fontWeight: 'bold', color: '#0f172a' }}>{place.name}</h4>
+                          <p style={{ margin: 0, fontSize: '14px', color: '#475569', lineHeight: '1.5' }}>"{place.tip}"</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* EXPENSES */}
             {activeSegment === 'expenses' && (
               <div style={{ padding: '32px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
@@ -274,8 +373,6 @@ export default function TripDetails({ setActiveTab, tripId }) {
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
                     {Object.entries(groupedExpenses).map(([category, items]) => (
                       <div key={category} style={{ border: '1px solid #f1f5f9', borderRadius: '16px', overflow: 'hidden' }}>
-                        
-                        {/* Category Header */}
                         <div style={{ backgroundColor: '#f8fafc', padding: '16px', display: 'flex', alignItems: 'center', gap: '12px', borderBottom: '1px solid #f1f5f9' }}>
                           <div style={{ backgroundColor: '#fff', padding: '8px', borderRadius: '8px', boxShadow: '0 2px 4px rgba(0,0,0,0.02)' }}>
                             {getCategoryIcon(category)}
@@ -285,8 +382,6 @@ export default function TripDetails({ setActiveTab, tripId }) {
                             ${items.reduce((sum, i) => sum + (i.amount || 0), 0).toFixed(2)}
                           </span>
                         </div>
-                        
-                        {/* Line Items */}
                         <div style={{ padding: '0 16px' }}>
                           {items.map((item, idx) => (
                             <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', padding: '16px 0', borderBottom: idx !== items.length - 1 ? '1px solid #f1f5f9' : 'none' }}>
@@ -302,7 +397,6 @@ export default function TripDetails({ setActiveTab, tripId }) {
                             </div>
                           ))}
                         </div>
-
                       </div>
                     ))}
                   </div>
@@ -310,34 +404,35 @@ export default function TripDetails({ setActiveTab, tripId }) {
               </div>
             )}
 
+            {/* MEMBERS TAB */}
             {activeSegment === 'members' && (
               <div style={{ padding: '32px' }}>
                 <h3 style={{ margin: '0 0 24px 0', fontSize: '20px', color: '#0f172a' }}>Travelers ({tripData.joinedMembers?.length || 0})</h3>
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '20px' }}>
                   {tripData.joinedMembers?.length > 0 ? (
-                    tripData.joinedMembers.map((member) => (
-                      <div key={member.id} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '16px', backgroundColor: '#f8fafc', borderRadius: '16px', border: '1px solid #f1f5f9' }}>
-                        <img 
-                          src={member.avatarUrl || 'https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=150&h=150&fit=crop'} 
-                          alt={member.firstName} 
-                          style={{ width: '48px', height: '48px', borderRadius: '50%', objectFit: 'cover' }} 
-                        />
-                        <div>
-                          <div style={{ fontWeight: 'bold', fontSize: '15px', color: '#0f172a' }}>
-                            {member.firstName} {member.lastName}
-                          </div>
-                          <div style={{ fontSize: '12px', marginTop: '4px', display: 'flex', alignItems: 'center', gap: '4px', color: member.role === 'admin' ? '#8b5cf6' : (member.isApproved ? '#10B981' : '#f59e0b') }}>
-                            {member.role === 'admin' ? (
-                              <><Shield size={14} /> Admin</>
-                            ) : member.isApproved ? (
-                              <><CheckCircle size={14} /> Approved</>
-                            ) : (
-                              <>Pending Approval</>
-                            )}
+                    tripData.joinedMembers.map((member) => {
+                      return (
+                        <div key={member.id || member._id} style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '16px', backgroundColor: '#f8fafc', borderRadius: '16px', border: '1px solid #f1f5f9' }}>
+                          <img 
+                            src={member.avatarUrl || 'https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=150&h=150&fit=crop'} 
+                            alt={member.firstName} 
+                            style={{ width: '48px', height: '48px', borderRadius: '50%', objectFit: 'cover' }} 
+                          />
+                          <div>
+                            <div style={{ fontWeight: 'bold', fontSize: '15px', color: '#0f172a' }}>
+                              {member.firstName} {member.lastName}
+                            </div>
+                            <div style={{ fontSize: '12px', marginTop: '4px', display: 'flex', alignItems: 'center', gap: '4px', color: member.role === 'admin' ? '#8b5cf6' : '#10B981' }}>
+                              {member.role === 'admin' || member.isOrganizer ? (
+                                <><Shield size={14} /> Admin</>
+                              ) : (
+                                <><CheckCircle size={14} /> Member</>
+                              )}
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    ))
+                      )
+                    })
                   ) : (
                     <div style={{ color: '#64748b', gridColumn: '1 / -1', padding: '20px 0' }}>
                       No members have joined this trip yet.
@@ -346,21 +441,13 @@ export default function TripDetails({ setActiveTab, tripId }) {
                 </div>
               </div>
             )}
-
-            {activeSegment === 'places' && (
-              <div style={{ padding: '60px 32px', textAlign: 'center', color: '#64748b' }}>
-                Places content coming soon!
-              </div>
-            )}
-
           </div>
         </div>
 
         {/* ==========================================
-            RIGHT SIDEBAR (Weather & Actions)
+            RIGHT SIDEBAR
             ========================================== */}
         <div style={{ width: '320px', flexShrink: 0, display: 'flex', flexDirection: 'column', gap: '24px' }}>
-          
           <div style={{ background: 'linear-gradient(135deg, #0EA5E9 0%, #0284C7 100%)', borderRadius: '20px', padding: '24px', color: '#fff', boxShadow: '0 4px 12px rgba(14, 165, 233, 0.2)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
               <div>
@@ -389,16 +476,6 @@ export default function TripDetails({ setActiveTab, tripId }) {
                 </div>
               </div>
             </div>
-
-            <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-              {['Mon', 'Tue', 'Wed', 'Thu', 'Fri'].map((day, i) => (
-                <div key={day} style={{ textAlign: 'center' }}>
-                  <div style={{ fontSize: '12px', opacity: 0.8, marginBottom: '6px' }}>{day}</div>
-                  <Cloud size={16} style={{ margin: '0 auto 6px auto', opacity: 0.9 }} />
-                  <div style={{ fontSize: '12px', fontWeight: 'bold' }}>27°</div>
-                </div>
-              ))}
-            </div>
           </div>
           
           <div style={{ backgroundColor: '#fff', padding: '24px', borderRadius: '20px', border: '1px solid #f1f5f9', boxShadow: '0 2px 4px rgba(0,0,0,0.02)' }}>
@@ -414,6 +491,15 @@ export default function TripDetails({ setActiveTab, tripId }) {
             </button>
             
             <button 
+              onClick={() => {
+                if (!isMember) {
+                  alert(isPending 
+                    ? "Your request is still pending! Wait for the organizer to approve it." 
+                    : "Only approved trip members and organizers can add place updates!");
+                  return;
+                }
+                setIsPlaceModalOpen(true);
+              }}
               style={{ width: '100%', padding: '12px 16px', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '12px', borderRadius: '12px', border: '1px solid #e2e8f0', background: 'transparent', cursor: 'pointer', color: '#334155', fontSize: '14px', fontWeight: '500', transition: 'all 0.2s' }}
               onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#f8fafc'}
               onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
@@ -429,11 +515,66 @@ export default function TripDetails({ setActiveTab, tripId }) {
             >
               <Wallet size={18} color="#64748b" /> Track Expenses
             </button>
-
           </div>
         </div>
-
       </div>
+
+      {/* 🚀 ADD PLACE MODAL */}
+      {isPlaceModalOpen && (
+        <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div style={{ backgroundColor: '#fff', padding: '32px', borderRadius: '24px', width: '100%', maxWidth: '500px', boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1)' }}>
+            
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+              <h3 style={{ margin: 0, fontSize: '20px', fontWeight: 'bold' }}>Add a Place Recommendation</h3>
+              <button onClick={() => setIsPlaceModalOpen(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#64748b' }}>
+                <X size={24} />
+              </button>
+            </div>
+
+            <form onSubmit={handleAddPlace}>
+              <div style={{ marginBottom: '16px' }}>
+                <label style={{ display: 'block', fontSize: '13px', fontWeight: 'bold', color: '#475569', marginBottom: '8px' }}>Name of Place</label>
+                <input 
+                  type="text" required
+                  placeholder="e.g., Kandy Railway Station"
+                  value={placeForm.name}
+                  onChange={(e) => setPlaceForm({...placeForm, name: e.target.value})}
+                  style={{ width: '100%', padding: '12px 16px', borderRadius: '12px', border: '1px solid #e2e8f0', outline: 'none' }}
+                />
+              </div>
+
+              <div style={{ marginBottom: '16px' }}>
+                <label style={{ display: 'block', fontSize: '13px', fontWeight: 'bold', color: '#475569', marginBottom: '8px' }}>Category</label>
+                <select 
+                  value={placeForm.category}
+                  onChange={(e) => setPlaceForm({...placeForm, category: e.target.value})}
+                  style={{ width: '100%', padding: '12px 16px', borderRadius: '12px', border: '1px solid #e2e8f0', outline: 'none', backgroundColor: '#fff' }}
+                >
+                  <option value="Food & Dining">Food & Dining</option>
+                  <option value="Sightseeing">Sightseeing / Viewpoint</option>
+                  <option value="Rest Stop (Washrooms)">Rest Stop (Clean Washrooms)</option>
+                  <option value="Other Tip">Other Info</option>
+                </select>
+              </div>
+
+              <div style={{ marginBottom: '24px' }}>
+                <label style={{ display: 'block', fontSize: '13px', fontWeight: 'bold', color: '#475569', marginBottom: '8px' }}>Insider Tip</label>
+                <textarea 
+                  required rows="3"
+                  placeholder="e.g., Very clean washrooms here, highly recommend stopping before the long drive!"
+                  value={placeForm.tip}
+                  onChange={(e) => setPlaceForm({...placeForm, tip: e.target.value})}
+                  style={{ width: '100%', padding: '12px 16px', borderRadius: '12px', border: '1px solid #e2e8f0', outline: 'none', resize: 'none' }}
+                />
+              </div>
+
+              <button type="submit" style={{ width: '100%', padding: '16px', backgroundColor: '#0EA5E9', color: '#fff', border: 'none', borderRadius: '12px', fontWeight: 'bold', fontSize: '15px', cursor: 'pointer' }}>
+                Save Recommendation
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
