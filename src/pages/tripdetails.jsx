@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { 
   MapPin, Calendar, DollarSign, Users, CloudRain, Wind, Droplets, 
-  MessageCircle, Cloud, Wallet, CheckCircle, Shield 
+  MessageCircle, Cloud, Wallet, CheckCircle, Shield, Check
 } from 'lucide-react';
 import api from '../services/api'; 
 
@@ -10,6 +10,13 @@ export default function TripDetails({ setActiveTab, tripId }) {
   const [activeSegment, setActiveSegment] = useState('overview');
   const [tripData, setTripData] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
+  
+  const [isRequesting, setIsRequesting] = useState(false);
+  const [requestSent, setRequestSent] = useState(false);
+
+  // Extract current user to prevent them from requesting their own trips
+  const userString = localStorage.getItem('user');
+  const currentUser = userString ? JSON.parse(userString) : null;
 
   useEffect(() => {
     if (!tripId) return;
@@ -18,7 +25,6 @@ export default function TripDetails({ setActiveTab, tripId }) {
       setIsLoading(true);
       try {
         const response = await api.get(`/api/v1/trips/${tripId}`); 
-        console.log("🔥 Backend JSON Data:", response.data);
         setTripData(response.data);
       } catch (error) {
         console.error("Error fetching trip details:", error);
@@ -30,6 +36,24 @@ export default function TripDetails({ setActiveTab, tripId }) {
     fetchTripDetails();
   }, [tripId]);
 
+  const handleRequestToJoin = async () => {
+    if (isRequesting || requestSent) return;
+    
+    setIsRequesting(true);
+    try {
+      // Hitting the exact /join endpoint the backend team prepared
+      await api.post(`/api/v1/trips/${tripId}/join`);
+      
+      setRequestSent(true);
+      alert("Join request sent successfully! The organizer will review it soon.");
+    } catch (error) {
+      console.error("Error sending join request:", error);
+      alert(error.response?.data?.message || "Failed to send request. You might have already requested to join this trip.");
+    } finally {
+      setIsRequesting(false);
+    }
+  };
+
   if (isLoading) {
     return <div style={{ textAlign: 'center', padding: '50px', color: '#64748b' }}>Loading your adventure...</div>;
   }
@@ -38,13 +62,16 @@ export default function TripDetails({ setActiveTab, tripId }) {
     return <div style={{ textAlign: 'center', padding: '50px', color: '#ef4444' }}>Trip not found.</div>;
   }
 
+  // LOGIC: Determine if the current user is the organizer
+  const isOrganizer = tripData.isOrganizer || tripData.organizer?.id === currentUser?.id;
+
   return (
     <div style={{ maxWidth: '1100px', margin: '0 auto', fontFamily: 'sans-serif' }}>
       
       {/* --- HERO BANNER --- */}
       <div style={{ position: 'relative', height: '350px', borderRadius: '24px', overflow: 'hidden', marginBottom: '32px', backgroundColor: '#e2e8f0' }}>
         <img 
-          src={tripData.coverImageUrl || "https://images.unsplash.com/photo-1544735716-392fe2489ffa?w=1200&h=400&fit=crop"} 
+          src={tripData.coverImageUrl || tripData.imageUrl || "https://images.unsplash.com/photo-1544735716-392fe2489ffa?w=1200&h=400&fit=crop"} 
           alt="Trip Hero" 
           style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
         />
@@ -53,7 +80,7 @@ export default function TripDetails({ setActiveTab, tripId }) {
             {tripData.title || 'Untitled Adventure'}
           </h1>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '15px', opacity: 0.9 }}>
-            <MapPin size={18} /> {tripData.destinations || 'Location TBD'}
+            <MapPin size={18} /> {tripData.destinations || tripData.destination || 'Location TBD'}
           </div>
         </div>
       </div>
@@ -71,7 +98,6 @@ export default function TripDetails({ setActiveTab, tripId }) {
               <div style={{ backgroundColor: '#f0f9ff', padding: '12px', borderRadius: '12px', color: '#0EA5E9' }}><Calendar size={24} /></div>
               <div>
                 <div style={{ fontSize: '13px', color: '#64748b', marginBottom: '2px' }}>Duration</div>
-                {/* 🚀 FIXED: Using startDate and endDate from the DB */}
                 <div style={{ fontWeight: 'bold', fontSize: '15px', color: '#0f172a' }}>
                   {tripData.startDate && tripData.endDate ? `${tripData.startDate} to ${tripData.endDate}` : 'Dates TBD'}
                 </div>
@@ -82,7 +108,6 @@ export default function TripDetails({ setActiveTab, tripId }) {
               <div style={{ backgroundColor: '#f0fdf4', padding: '12px', borderRadius: '12px', color: '#10B981' }}><DollarSign size={24} /></div>
               <div>
                 <div style={{ fontSize: '13px', color: '#64748b', marginBottom: '2px' }}>Budget</div>
-                {/* 🚀 FIXED: Using minBudget from the DB */}
                 <div style={{ fontWeight: 'bold', fontSize: '15px', color: '#0f172a' }}>
                   {tripData.minBudget ? `$${tripData.minBudget}` : 'TBD'}
                 </div>
@@ -93,7 +118,6 @@ export default function TripDetails({ setActiveTab, tripId }) {
               <div style={{ backgroundColor: '#f5f3ff', padding: '12px', borderRadius: '12px', color: '#8b5cf6' }}><Users size={24} /></div>
               <div>
                 <div style={{ fontSize: '13px', color: '#64748b', marginBottom: '2px' }}>Members</div>
-                {/* 🚀 FIXED: Using maxParticipants from the DB */}
                 <div style={{ fontWeight: 'bold', fontSize: '15px', color: '#0f172a' }}>
                   {tripData.joinedMembers?.length || 0} / {tripData.maxParticipants || 8}
                 </div>
@@ -103,18 +127,45 @@ export default function TripDetails({ setActiveTab, tripId }) {
 
           {/* Action Buttons */}
           <div style={{ display: 'flex', gap: '16px', marginBottom: '32px' }}>
-            <button style={{ flex: 1, backgroundColor: '#0EA5E9', color: '#fff', border: 'none', padding: '16px', borderRadius: '12px', fontWeight: 'bold', fontSize: '15px', cursor: 'pointer', boxShadow: '0 4px 6px rgba(14, 165, 233, 0.2)' }}>
-              Request to Join
-              {/* Inside tripdetails.jsx: Only show 'Request to Join' if the trip is NOT completed */}
-{tripData.status !== 'COMPLETED' && (
-  <button style={{ flex: 1, backgroundColor: '#0EA5E9', color: '#fff', border: 'none', padding: '16px', borderRadius: '12px', fontWeight: 'bold', fontSize: '15px', cursor: 'pointer', boxShadow: '0 4px 6px rgba(14, 165, 233, 0.2)' }}>
-    Request to Join
-  </button>
-)}
-            </button>
+            
+            {/* 🚀 THE BUTTON FIX: Only shows if UPCOMING and the user is NOT the organizer! */}
+            {tripData.status === 'UPCOMING' && !isOrganizer && (
+              <button 
+                onClick={handleRequestToJoin}
+                disabled={isRequesting || requestSent}
+                style={{ 
+                  flex: 1, 
+                  backgroundColor: requestSent ? '#10B981' : (isRequesting ? '#94a3b8' : '#0EA5E9'), 
+                  color: '#fff', 
+                  border: 'none', 
+                  padding: '16px', 
+                  borderRadius: '12px', 
+                  fontWeight: 'bold', 
+                  fontSize: '15px', 
+                  cursor: (isRequesting || requestSent) ? 'default' : 'pointer', 
+                  boxShadow: requestSent ? 'none' : '0 4px 6px rgba(14, 165, 233, 0.2)', 
+                  transition: 'all 0.2s',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '8px'
+                }}
+              >
+                {requestSent ? <><Check size={20} /> Request Sent!</> : (isRequesting ? 'Sending Request...' : 'Request to Join')}
+              </button>
+            )}
+
+            {isOrganizer && (
+              <div style={{ flex: 1, backgroundColor: '#f1f5f9', color: '#64748b', padding: '16px', borderRadius: '12px', fontWeight: 'bold', fontSize: '15px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', border: '1px solid #e2e8f0' }}>
+                <Shield size={20} /> You are the Organizer
+              </div>
+            )}
+            
             <button 
               onClick={() => setActiveTab('chat')} 
-              style={{ flex: 1, backgroundColor: '#fff', color: '#334155', border: '1px solid #e2e8f0', padding: '16px', borderRadius: '12px', fontWeight: 'bold', fontSize: '15px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', boxShadow: '0 2px 4px rgba(0,0,0,0.02)' }}
+              style={{ flex: 1, backgroundColor: '#fff', color: '#334155', border: '1px solid #e2e8f0', padding: '16px', borderRadius: '12px', fontWeight: 'bold', fontSize: '15px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', boxShadow: '0 2px 4px rgba(0,0,0,0.02)', transition: 'background-color 0.2s' }}
+              onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#f8fafc'}
+              onMouseOut={(e) => e.currentTarget.style.backgroundColor = '#fff'}
             >
               <MessageCircle size={20} /> Chat with Group
             </button>
@@ -223,12 +274,12 @@ export default function TripDetails({ setActiveTab, tripId }) {
         {/* ==========================================
             RIGHT SIDEBAR (Weather & Actions)
             ========================================== */}
-        <div style={{ width: '320px', display: 'flex', flexDirection: 'column', gap: '24px' }}>
+        <div style={{ width: '320px', flexShrink: 0, display: 'flex', flexDirection: 'column', gap: '24px' }}>
           
           <div style={{ background: 'linear-gradient(135deg, #0EA5E9 0%, #0284C7 100%)', borderRadius: '20px', padding: '24px', color: '#fff', boxShadow: '0 4px 12px rgba(14, 165, 233, 0.2)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
               <div>
-                <div style={{ fontSize: '13px', opacity: 0.9, marginBottom: '4px' }}>{tripData.destinations || 'Location TBD'}</div>
+                <div style={{ fontSize: '13px', opacity: 0.9, marginBottom: '4px' }}>{tripData.destinations || tripData.destination || 'Location TBD'}</div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                   <span style={{ fontSize: '48px', fontWeight: 'bold', lineHeight: 1 }}>28°</span>
                   <Wind size={28} color="#fff" />
