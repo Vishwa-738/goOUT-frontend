@@ -63,7 +63,7 @@ export default function MyTrips({ setActiveTab }) {
       await API.patch(`/api/v1/trips/${tripId}/complete`);
       alert("Trip successfully ended!");
       
-      // 🚀 THE FIX: Broadcast event so DashboardHome can refresh its feed
+      // Broadcast event so DashboardHome can refresh its feed
       window.dispatchEvent(new CustomEvent('trip-status-changed'));
       
     } catch (error) {
@@ -124,12 +124,16 @@ export default function MyTrips({ setActiveTab }) {
       <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
         {tripList.map((trip) => {
           const isAdmin = trip.isOrganizer === true;
+          
+          // 🚀 FIXED: Dynamically grab the image from the database, just like the Discover feed!
+          const actualImage = trip.imageUrl || trip.coverImageUrl || 'https://images.unsplash.com/photo-1546708973-b339540b5162?w=600';
 
           return (
             <div key={trip.id || trip._id} style={{ backgroundColor: '#ffffff', borderRadius: '20px', border: '1px solid #f1f5f9', display: 'flex', overflow: 'hidden', boxShadow: '0 2px 4px rgba(0,0,0,0.02)' }}>
               
               <div style={{ width: '300px', height: '220px', position: 'relative', flexShrink: 0 }}>
-                <img src={'https://images.unsplash.com/photo-1546708973-b339540b5162?w=600'} alt={trip.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                {/* 🚀 FIXED: Render the dynamic image here */}
+                <img src={actualImage} alt={trip.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                 <span style={{ position: 'absolute', top: '16px', left: '16px', backgroundColor: isAdmin ? '#10B981' : '#8b5cf6', color: '#ffffff', padding: '6px 16px', borderRadius: '20px', fontSize: '12px', fontWeight: 'bold', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
                   {isAdmin ? 'Admin' : 'Member'}
                 </span>
