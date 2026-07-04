@@ -1,14 +1,11 @@
 // src/pages/ExpenseTracker.jsx
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Sigma, User, Grid } from 'lucide-react';
 import api from '../services/api';
 
-// 🚀 1. IMPORT YOUR NEW IMAGES HERE!
-// (Make sure the file extensions match what you actually saved: .png, .jpg, or .svg)
 import bg1 from '../assets/card-bg-1.png';
 import bg2 from '../assets/card-bg-2.png';
 import bg3 from '../assets/card-bg-3.png';
-
 
 export default function ExpenseTracker({ tripId, tripName, setActiveTab }) {
   const [expenses, setExpenses] = useState([]);
@@ -20,10 +17,13 @@ export default function ExpenseTracker({ tripId, tripName, setActiveTab }) {
     perPerson: 0
   });
 
+  // 🚀 NEW: State to hold the official trip members
+  const [tripMembers, setTripMembers] = useState([]);
+
   const [description, setDescription] = useState('');
   const [amount, setAmount] = useState('');
   const [category, setCategory] = useState('');
-  const [paidBy, setPaidBy] = useState('');
+  const [paidBy, setPaidBy] = useState(''); // This will now store the userId!
 
   const fetchExpenses = async () => {
     setIsLoading(true);
@@ -51,10 +51,35 @@ export default function ExpenseTracker({ tripId, tripName, setActiveTab }) {
     }
   };
 
+  // 🚀 NEW: Fetch the actual trip members to populate the Dropdown!
+  const fetchTripMembers = async () => {
+    try {
+      const response = await api.get(`/api/v1/trips/${tripId}`);
+      const data = response.data;
+      
+      let membersList = [];
+      
+      // Add the Organizer
+      if (data.organizer) membersList.push(data.organizer);
+      
+      // Add the Joined Members (excluding the organizer if they are duplicated)
+      if (data.joinedMembers) {
+        const orgId = data.organizer?.id || data.organizer?._id;
+        const others = data.joinedMembers.filter(m => (m.id || m._id) !== orgId);
+        membersList = [...membersList, ...others];
+      }
+      
+      setTripMembers(membersList);
+    } catch (error) {
+      console.error("Failed to fetch trip members for dropdown:", error);
+    }
+  };
+
   useEffect(() => {
     if (tripId) {
       fetchExpenses();
       fetchDashboardStats(); 
+      fetchTripMembers(); // Call the new function
     }
   }, [tripId]);
 
@@ -66,7 +91,7 @@ export default function ExpenseTracker({ tripId, tripName, setActiveTab }) {
         title: description, 
         amount: parseFloat(amount),
         category: category,
-        paidBy: paidBy
+        paidBy: paidBy // 🚀 This is now safely sending the userId!
       };
       await api.post('/api/v1/expenses', payload);
       setDescription('');
@@ -79,6 +104,12 @@ export default function ExpenseTracker({ tripId, tripName, setActiveTab }) {
       console.error("Error creating expense:", error);
       alert("Failed to save the expense. Check the console!");
     }
+  };
+
+  // 🚀 PRO-UI HELPER: Translates the backend ID back into a real name for the table!
+  const getMemberName = (idOrName) => {
+    const member = tripMembers.find(m => String(m.id || m._id) === String(idOrName));
+    return member ? `${member.firstName} ${member.lastName}` : idOrName;
   };
 
   const uniqueCategories = new Set(expenses.map(e => e.category)).size;
@@ -103,9 +134,7 @@ export default function ExpenseTracker({ tripId, tripName, setActiveTab }) {
           <ArrowLeft size={16} /> Back to Trips
         </button>
         
-        {/* 🚀 2. ADDED THE CUSTOM LOGO NEXT TO THE TITLE */}
         <div className="d-flex align-items-center gap-3 mb-1">
-          
           <h2 className="fw-bold text-dark mb-0" style={{ fontSize: '2.2rem', letterSpacing: '-0.5px' }}>
             {tripName || 'Expense'} Tracker
           </h2>
@@ -114,16 +143,17 @@ export default function ExpenseTracker({ tripId, tripName, setActiveTab }) {
       </div>
 
       <div className="row g-4 mb-4">
-        {/* 🚀 3. APPLIED BACKGROUND IMAGE 1 */}
+        {/* CARD 1 */}
         <div className="col-12 col-md-4">
           <div className="card border-0 text-white p-4 rounded-4 shadow-sm" style={{ 
-            backgroundColor: '#14a3e4', // Fallback color
+            backgroundColor: '#14a3e4', 
             backgroundImage: `url(${bg1})`, 
             backgroundSize: 'cover', 
-            backgroundPosition: 'center' 
+            backgroundPosition: 'center',
+            minHeight: '120px' 
           }}>
-            <div className="d-flex align-items-center gap-3">
-              <div className="rounded-3 bg-white bg-opacity-25 p-3 fs-3 d-flex align-items-center justify-content-center" style={{ width: '56px', height: '56px' }}>$</div>
+            <div className="d-flex align-items-center gap-3 h-100">
+              <Sigma size={48} color="#ffffff" />
               <div>
                 <span className="small opacity-90 d-block mb-1">Total Expenses</span>
                 <h3 className="fw-bold mb-0">${(dashboardStats.totalExpenses || 0).toFixed(2)}</h3>
@@ -132,16 +162,17 @@ export default function ExpenseTracker({ tripId, tripName, setActiveTab }) {
           </div>
         </div>
 
-        {/* 🚀 4. APPLIED BACKGROUND IMAGE 2 */}
+        {/* CARD 2 */}
         <div className="col-12 col-md-4">
           <div className="card border-0 text-white p-4 rounded-4 shadow-sm" style={{ 
-            backgroundColor: '#1cbd74', // Fallback color
+            backgroundColor: '#1cbd74', 
             backgroundImage: `url(${bg2})`, 
             backgroundSize: 'cover', 
-            backgroundPosition: 'center' 
+            backgroundPosition: 'center',
+            minHeight: '120px'
           }}>
-            <div className="d-flex align-items-center gap-3">
-              <div className="rounded-3 bg-white bg-opacity-25 p-3 fs-3 d-flex align-items-center justify-content-center" style={{ width: '56px', height: '56px' }}>👥</div>
+            <div className="d-flex align-items-center gap-3 h-100">
+              <User size={48} color="#ffffff" />
               <div>
                 <span className="small opacity-90 d-block mb-1">Per Person (Avg)</span>
                 <h3 className="fw-bold mb-0">${(dashboardStats.perPerson || 0).toFixed(2)}</h3>
@@ -150,16 +181,17 @@ export default function ExpenseTracker({ tripId, tripName, setActiveTab }) {
           </div>
         </div>
 
-        {/* 🚀 5. APPLIED BACKGROUND IMAGE 3 */}
+        {/* CARD 3 */}
         <div className="col-12 col-md-4">
           <div className="card border-0 text-white p-4 rounded-4 shadow-sm" style={{ 
-            backgroundColor: '#8a3ffc', // Fallback color
+            backgroundColor: '#8a3ffc', 
             backgroundImage: `url(${bg3})`, 
             backgroundSize: 'cover', 
-            backgroundPosition: 'center' 
+            backgroundPosition: 'center',
+            minHeight: '120px'
           }}>
-            <div className="d-flex align-items-center gap-3">
-              <div className="rounded-3 bg-white bg-opacity-25 p-3 fs-3 d-flex align-items-center justify-content-center" style={{ width: '56px', height: '56px' }}>📊</div>
+            <div className="d-flex align-items-center gap-3 h-100">
+              <Grid size={48} color="#ffffff" />
               <div>
                 <span className="small opacity-90 d-block mb-1">Categories</span>
                 <h3 className="fw-bold mb-0">{uniqueCategories}</h3>
@@ -202,7 +234,7 @@ export default function ExpenseTracker({ tripId, tripName, setActiveTab }) {
               <div className="mb-3">
                 <label className="form-label small fw-bold text-secondary mb-1">Category *</label>
                 <select 
-                  className="form-select bg-light border-0 py-2.5 px-3 text-muted rounded-3 shadow-none"
+                  className="form-select bg-light border-0 py-2.5 px-3 text-dark rounded-3 shadow-none"
                   value={category}
                   onChange={(e) => setCategory(e.target.value)}
                   required
@@ -218,17 +250,24 @@ export default function ExpenseTracker({ tripId, tripName, setActiveTab }) {
 
               <div className="mb-4">
                 <label className="form-label small fw-bold text-secondary mb-1">Paid By *</label>
-                <input 
-                  type="text" 
-                  className="form-control bg-light border-0 py-2.5 px-3 text-dark rounded-3 shadow-none" 
-                  placeholder="e.g., Vishwa"
+                
+                {/* 🚀 FIXED: Dynamic Dropdown securely passing member.id! */}
+                <select 
+                  className="form-select bg-light border-0 py-2.5 px-3 text-dark rounded-3 shadow-none"
                   value={paidBy}
                   onChange={(e) => setPaidBy(e.target.value)}
-                  required 
-                />
+                  required
+                >
+                  <option value="">Select who paid...</option>
+                  {tripMembers.map(member => (
+                    <option key={member.id || member._id} value={member.id || member._id}>
+                      {member.firstName} {member.lastName}
+                    </option>
+                  ))}
+                </select>
               </div>
 
-              <button type="submit" className="btn btn-primary w-100 py-2.5 fw-semibold border-0 rounded-3 text-white" style={{ backgroundColor: '#14a3e4' }}>
+              <button type="submit" className="btn w-100 py-2.5 fw-semibold border-0 rounded-3 text-white" style={{ backgroundColor: '#0EA5E9' }}>
                 Add Expense
               </button>
             </form>
@@ -244,7 +283,7 @@ export default function ExpenseTracker({ tripId, tripName, setActiveTab }) {
                 <div key={cat}>
                   <div className="d-flex justify-content-between align-items-center mb-1">
                     <span className="fw-semibold text-dark">{cat}</span>
-                    <span className="fw-bold text-primary" style={{ color: '#14a3e4' }}>
+                    <span className="fw-bold" style={{ color: '#0EA5E9' }}>
                       ${(categoryTotals[cat] || 0).toFixed(2)}
                     </span>
                   </div>
@@ -252,7 +291,7 @@ export default function ExpenseTracker({ tripId, tripName, setActiveTab }) {
                     <div 
                       className="progress-bar rounded-pill" 
                       role="progressbar" 
-                      style={{ width: getCategoryWidth(categoryTotals[cat]), backgroundColor: '#14a3e4', transition: 'width 0.5s ease-in-out' }} 
+                      style={{ width: getCategoryWidth(categoryTotals[cat]), backgroundColor: '#0EA5E9', transition: 'width 0.5s ease-in-out' }} 
                     ></div>
                   </div>
                 </div>
@@ -294,7 +333,9 @@ export default function ExpenseTracker({ tripId, tripName, setActiveTab }) {
                             {item.category || 'Other'}
                           </span>
                         </td>
-                        <td className="py-3 border-0 text-secondary">{item.paidBy}</td>
+                        {/* 🚀 PRO-UI: Translates the ID back to the real name! */}
+                        <td className="py-3 border-0 text-secondary">{getMemberName(item.paidBy)}</td>
+                        
                         <td className="py-3 border-0 text-secondary">
                           {item.createdAt ? new Date(item.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'Today'}
                         </td>
