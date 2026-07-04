@@ -3,34 +3,35 @@ import React, { useState, useEffect } from 'react';
 import { ArrowLeft } from 'lucide-react';
 import api from '../services/api';
 
+// 🚀 1. IMPORT YOUR NEW IMAGES HERE!
+// (Make sure the file extensions match what you actually saved: .png, .jpg, or .svg)
+import bg1 from '../assets/card-bg-1.png';
+import bg2 from '../assets/card-bg-2.png';
+import bg3 from '../assets/card-bg-3.png';
+
+
 export default function ExpenseTracker({ tripId, tripName, setActiveTab }) {
   const [expenses, setExpenses] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   
-  // 🚀 NEW: State to hold Methsara's auto-calculated math
   const [dashboardStats, setDashboardStats] = useState({
     totalExpenses: 0,
     totalTravelers: 0,
     perPerson: 0
   });
 
-  // Input Form State
   const [description, setDescription] = useState('');
   const [amount, setAmount] = useState('');
   const [category, setCategory] = useState('');
   const [paidBy, setPaidBy] = useState('');
 
-  // 1. READ: Fetch expenses from the updated backend URL
   const fetchExpenses = async () => {
     setIsLoading(true);
     try {
-      // 🚀 THE FIX: Updated to match Methsara's new URL structure
       const response = await api.get(`/api/v1/expenses/trip/${tripId}`);
-      
       let rawData = [];
       if (Array.isArray(response.data)) rawData = response.data;
       else if (response.data && response.data.data) rawData = response.data.data;
-      
       setExpenses(rawData);
     } catch (error) {
       console.error("Failed to fetch expenses:", error);
@@ -39,7 +40,6 @@ export default function ExpenseTracker({ tripId, tripName, setActiveTab }) {
     }
   };
 
-  // 🚀 2. READ: Fetch the pre-calculated math from the Bonus endpoint
   const fetchDashboardStats = async () => {
     try {
       const response = await api.get(`/api/v1/expenses/trip/${tripId}/dashboard`);
@@ -54,14 +54,12 @@ export default function ExpenseTracker({ tripId, tripName, setActiveTab }) {
   useEffect(() => {
     if (tripId) {
       fetchExpenses();
-      fetchDashboardStats(); // Fetch the math stats when the trip loads
+      fetchDashboardStats(); 
     }
   }, [tripId]);
 
-  // 3. CREATE: Send a new expense to the backend
   const handleAddExpense = async (e) => {
     e.preventDefault();
-    
     try {
       const payload = {
         tripId: tripId,
@@ -70,26 +68,19 @@ export default function ExpenseTracker({ tripId, tripName, setActiveTab }) {
         category: category,
         paidBy: paidBy
       };
-
       await api.post('/api/v1/expenses', payload);
-      
-      // Clear the form fields
       setDescription('');
       setAmount('');
       setCategory('');
       setPaidBy('');
-
-      // Refresh BOTH the list and the math totals instantly!
       fetchExpenses();
       fetchDashboardStats();
-
     } catch (error) {
       console.error("Error creating expense:", error);
       alert("Failed to save the expense. Check the console!");
     }
   };
 
-  // 4. FRONTEND MATH: We still need to calculate Category widths for the progress bars
   const uniqueCategories = new Set(expenses.map(e => e.category)).size;
   
   const categoryTotals = expenses.reduce((acc, curr) => {
@@ -104,8 +95,6 @@ export default function ExpenseTracker({ tripId, tripName, setActiveTab }) {
 
   return (
     <div className="container-fluid px-0 py-2">
-      
-      {/* HEADER & BACK BUTTON */}
       <div className="mb-4">
         <button 
           onClick={() => setActiveTab('expenses')}
@@ -113,16 +102,26 @@ export default function ExpenseTracker({ tripId, tripName, setActiveTab }) {
         >
           <ArrowLeft size={16} /> Back to Trips
         </button>
-        <h2 className="fw-bold text-dark mb-1" style={{ fontSize: '2.2rem', letterSpacing: '-0.5px' }}>
-          {tripName || 'Expense'} Tracker
-        </h2>
-        <p className="text-secondary" style={{ fontSize: '1.05rem' }}>Track and split trip expenses with your travel group</p>
+        
+        {/* 🚀 2. ADDED THE CUSTOM LOGO NEXT TO THE TITLE */}
+        <div className="d-flex align-items-center gap-3 mb-1">
+          
+          <h2 className="fw-bold text-dark mb-0" style={{ fontSize: '2.2rem', letterSpacing: '-0.5px' }}>
+            {tripName || 'Expense'} Tracker
+          </h2>
+        </div>
+        <p className="text-secondary" style={{ fontSize: '1.05rem', marginTop: '8px' }}>Track and split trip expenses with your travel group</p>
       </div>
 
-      {/* TOP STATISTICS CARDS (Now powered by the backend bonus endpoint!) */}
       <div className="row g-4 mb-4">
+        {/* 🚀 3. APPLIED BACKGROUND IMAGE 1 */}
         <div className="col-12 col-md-4">
-          <div className="card border-0 text-white p-4 rounded-4 shadow-sm" style={{ backgroundColor: '#14a3e4' }}>
+          <div className="card border-0 text-white p-4 rounded-4 shadow-sm" style={{ 
+            backgroundColor: '#14a3e4', // Fallback color
+            backgroundImage: `url(${bg1})`, 
+            backgroundSize: 'cover', 
+            backgroundPosition: 'center' 
+          }}>
             <div className="d-flex align-items-center gap-3">
               <div className="rounded-3 bg-white bg-opacity-25 p-3 fs-3 d-flex align-items-center justify-content-center" style={{ width: '56px', height: '56px' }}>$</div>
               <div>
@@ -133,8 +132,14 @@ export default function ExpenseTracker({ tripId, tripName, setActiveTab }) {
           </div>
         </div>
 
+        {/* 🚀 4. APPLIED BACKGROUND IMAGE 2 */}
         <div className="col-12 col-md-4">
-          <div className="card border-0 text-white p-4 rounded-4 shadow-sm" style={{ backgroundColor: '#1cbd74' }}>
+          <div className="card border-0 text-white p-4 rounded-4 shadow-sm" style={{ 
+            backgroundColor: '#1cbd74', // Fallback color
+            backgroundImage: `url(${bg2})`, 
+            backgroundSize: 'cover', 
+            backgroundPosition: 'center' 
+          }}>
             <div className="d-flex align-items-center gap-3">
               <div className="rounded-3 bg-white bg-opacity-25 p-3 fs-3 d-flex align-items-center justify-content-center" style={{ width: '56px', height: '56px' }}>👥</div>
               <div>
@@ -145,8 +150,14 @@ export default function ExpenseTracker({ tripId, tripName, setActiveTab }) {
           </div>
         </div>
 
+        {/* 🚀 5. APPLIED BACKGROUND IMAGE 3 */}
         <div className="col-12 col-md-4">
-          <div className="card border-0 text-white p-4 rounded-4 shadow-sm" style={{ backgroundColor: '#8a3ffc' }}>
+          <div className="card border-0 text-white p-4 rounded-4 shadow-sm" style={{ 
+            backgroundColor: '#8a3ffc', // Fallback color
+            backgroundImage: `url(${bg3})`, 
+            backgroundSize: 'cover', 
+            backgroundPosition: 'center' 
+          }}>
             <div className="d-flex align-items-center gap-3">
               <div className="rounded-3 bg-white bg-opacity-25 p-3 fs-3 d-flex align-items-center justify-content-center" style={{ width: '56px', height: '56px' }}>📊</div>
               <div>
@@ -159,19 +170,17 @@ export default function ExpenseTracker({ tripId, tripName, setActiveTab }) {
       </div>
 
       <div className="row g-4">
-        
-        {/* LEFT COLUMN: INPUT FORM */}
         <div className="col-12 col-lg-4">
           <div className="card border-0 shadow-sm rounded-4 p-4 bg-white">
             <h4 className="fw-bold text-dark mb-4" style={{ fontSize: '1.3rem' }}>Add Expense</h4>
             
             <form onSubmit={handleAddExpense}>
               <div className="mb-3">
-                <label className="form-label small fw-bold text-secondary mb-1">Description *</label>
+                <label className="form-label small fw-bold text-secondary mb-1">Details (Where & What?) *</label>
                 <input 
                   type="text" 
                   className="form-control bg-light border-0 py-2.5 px-3 text-dark rounded-3 shadow-none" 
-                  placeholder="e.g., Hotel booking"
+                  placeholder="e.g., Dinner at Kandy Seafood, or 10-Seater Van Rental"
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
                   required 
@@ -200,9 +209,9 @@ export default function ExpenseTracker({ tripId, tripName, setActiveTab }) {
                 >
                   <option value="">Select category</option>
                   <option value="Accommodation">Accommodation</option>
-                  <option value="Transport">Transport</option>
-                  <option value="Activities">Activities</option>
-                  <option value="Food">Food</option>
+                  <option value="Transport">Transport (Car, Van, Train)</option>
+                  <option value="Activities">Activities & Tickets</option>
+                  <option value="Food">Food & Dining</option>
                   <option value="Other">Other</option>
                 </select>
               </div>
@@ -226,10 +235,7 @@ export default function ExpenseTracker({ tripId, tripName, setActiveTab }) {
           </div>
         </div>
 
-        {/* RIGHT COLUMN */}
         <div className="col-12 col-lg-8">
-          
-          {/* PROGRESS BARS */}
           <div className="card border-0 shadow-sm rounded-4 p-4 bg-white mb-4">
             <h4 className="fw-bold text-dark mb-4" style={{ fontSize: '1.3rem' }}>Expenses by Category</h4>
             
@@ -254,7 +260,6 @@ export default function ExpenseTracker({ tripId, tripName, setActiveTab }) {
             </div>
           </div>
 
-          {/* LEDGER TABLE */}
           <div className="card border-0 shadow-sm rounded-4 p-4 bg-white">
             <h4 className="fw-bold text-dark mb-4" style={{ fontSize: '1.3rem' }}>All Expenses</h4>
             
@@ -281,9 +286,9 @@ export default function ExpenseTracker({ tripId, tripName, setActiveTab }) {
                         <td className="py-3 border-0 fw-medium">{item.title || item.description}</td>
                         <td className="py-3 border-0">
                           <span className={`badge rounded-pill px-2.5 py-1.5 fw-semibold ${
-                            item.category === 'Accommodation' ? 'bg-primary bg-opacity-10 text-primary' :
-                            item.category === 'Transport' ? 'bg-info bg-opacity-10 text-info' :
-                            item.category === 'Activities' ? 'bg-warning bg-opacity-10 text-warning' :
+                            (item.category || '').includes('Accommodation') ? 'bg-primary bg-opacity-10 text-primary' :
+                            (item.category || '').includes('Transport') ? 'bg-info bg-opacity-10 text-info' :
+                            (item.category || '').includes('Activities') ? 'bg-warning bg-opacity-10 text-warning' :
                             'bg-danger bg-opacity-10 text-danger'
                           }`}>
                             {item.category || 'Other'}
