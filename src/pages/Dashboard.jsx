@@ -1,11 +1,12 @@
 // src/pages/Dashboard.jsx
 import React, { useState } from 'react';
+import { Routes, Route, useNavigate, useLocation, Navigate } from 'react-router-dom'; // 🚀 NEW: React Router Imports
 import CreateTrip from './CreateTrip';
 import { User, Settings, LogOut, Bell } from 'lucide-react';
 import Discover from './DiscoverTrips';
 import Sidebar from '../components/Sidebar';
 import ExpenseTracker from './ExpenseTracker';
-import ExpenseTripsList from './ExpenseTripsList'; // 🚀 NEW: Import the Master list
+import ExpenseTripsList from './ExpenseTripsList'; 
 import Profile from './Profile';
 import MyTrips from './MyTrips'; 
 import TripDetails from './TripDetails'; 
@@ -14,21 +15,39 @@ import DashboardHome from './DashboardHome';
 import logo from '../assets/Full size logo.svg';
 import topBarBg from '../assets/Top bar image.svg';
 import pageBg from '../assets/page-background.svg';
+import SettingsPage from './Settings'; // Name it SettingsPage to avoid conflict with the lucide 'Settings' icon
 
 export default function Dashboard() {
-  const [activeTab, setActiveTab] = useState('home');
-  const [isProfileOpen, setIsProfileOpen] = useState(false);
-  const [selectedExpenseTrip, setSelectedExpenseTrip] = useState(null); // 🚀 NEW: Tracks the clicked trip
+  // 🚀 THE FIX: We use Router hooks instead of a local state string
+  const navigate = useNavigate();
+  const location = useLocation();
 
-  // 🚀 GRAB THE USER DATA FROM LOCAL STORAGE
+  // 🚀 Read the current URL to figure out which Sidebar button to highlight
+  const pathParts = location.pathname.split('/');
+  let activeTab = pathParts[pathParts.length - 1];
+  if (activeTab === 'dashboard') activeTab = 'home'; // Default fallback
+
+  // 🚀 THE MAGIC SHIM: 
+  // We keep setActiveTab so we don't break your other files! 
+  // Now, when a child component calls setActiveTab('expenses'), it actually changes the URL!
+  const setActiveTab = (tab) => {
+    navigate(`/dashboard/${tab}`);
+  };
+
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
+  
+  // We keep this here so the Expense list can pass the clicked trip to the Tracker!
+  const [selectedExpenseTrip, setSelectedExpenseTrip] = useState(null); 
+
+  // GRAB THE USER DATA FROM LOCAL STORAGE
   const userString = localStorage.getItem('user');
   const currentUser = userString ? JSON.parse(userString) : null;
 
-  // 🚀 FALLBACK TO DEFAULTS JUST IN CASE
+  // FALLBACK TO DEFAULTS JUST IN CASE
   const displayName = currentUser?.name || currentUser?.email?.split('@')[0] || "Traveler";
   const displayEmail = currentUser?.email || "No email found";
   
-  // 🚀 DYNAMIC PROFILE PICTURE WITH DEFAULT GENERATOR
+  // DYNAMIC PROFILE PICTURE
   const displayPic = currentUser?.profilePic || currentUser?.avatar || "https://ui-avatars.com/api/?name=" + displayName + "&background=0EA5E9&color=fff";
 
  return (
@@ -157,30 +176,34 @@ export default function Dashboard() {
 
         <div style={{ padding: '32px', flex: 1, overflowY: 'auto' }}>
           
-          {activeTab === 'home' && <DashboardHome />}
-          {activeTab === 'discover' && <Discover setActiveTab={setActiveTab} />}
-          {activeTab === 'trip-details' && <TripDetails setActiveTab={setActiveTab} />}
-          {activeTab === 'chat' && <ChatRoom />}
-          {activeTab === 'my-trips' && <MyTrips setActiveTab={setActiveTab} />}
-          {activeTab === 'profile' && <Profile />}
-          {activeTab === 'create-trip' && <CreateTrip setActiveTab={setActiveTab} />}
-
-          {/* 🚀 EXPENSES MASTER VIEW: Shows the list of trips */}
-          {activeTab === 'expenses' && (
-            <ExpenseTripsList 
-              setActiveTab={setActiveTab} 
-              setSelectedExpenseTrip={setSelectedExpenseTrip} 
-            />
-          )}
-
-          {/* 🚀 EXPENSES DETAIL VIEW: Shows the actual ledger for the clicked trip */}
-          {activeTab === 'expense-details' && selectedExpenseTrip && (
-            <ExpenseTracker 
-              tripId={selectedExpenseTrip.id || selectedExpenseTrip._id} 
-              tripName={selectedExpenseTrip.title}
-              setActiveTab={setActiveTab} 
-            />
-          )}
+          {/* 🚀 THE NEW ROUTER BLOCK: Changes the screen based on the actual URL! */}
+          <Routes>
+            <Route path="/" element={<Navigate to="home" replace />} />
+            <Route path="home" element={<DashboardHome />} />
+            <Route path="discover" element={<Discover setActiveTab={setActiveTab} />} />
+            <Route path="trip-details" element={<TripDetails setActiveTab={setActiveTab} />} />
+            <Route path="chat" element={<ChatRoom />} />
+            <Route path="my-trips" element={<MyTrips setActiveTab={setActiveTab} />} />
+            <Route path="profile" element={<Profile />} />
+            <Route path="create-trip" element={<CreateTrip setActiveTab={setActiveTab} />} />
+            
+            <Route path="expenses" element={
+              <ExpenseTripsList setActiveTab={setActiveTab} setSelectedExpenseTrip={setSelectedExpenseTrip} />
+            } />
+            
+            <Route path="expense-details" element={
+              selectedExpenseTrip ? (
+                <ExpenseTracker 
+                  tripId={selectedExpenseTrip.id || selectedExpenseTrip._id} 
+                  tripName={selectedExpenseTrip.title}
+                  setActiveTab={setActiveTab} 
+                />
+              ) : (
+                // Safety net: If someone hits refresh on the tracker page, it safely kicks them back to the list!
+                <Navigate to="/dashboard/expenses" replace /> 
+              )
+            } />
+          </Routes>
 
         </div>
       </div>

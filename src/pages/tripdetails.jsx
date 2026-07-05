@@ -3,7 +3,8 @@ import React, { useState, useEffect } from 'react';
 import { 
   MapPin, Calendar, DollarSign, Users, Wind, Droplets, 
   MessageCircle, Cloud, Wallet, CheckCircle, Shield, Check, 
-  Utensils, Car, Home, Ticket, Map, Coffee, Info, X, Clock
+  Utensils, Car, Home, Ticket, Map, Coffee, Info, X, Clock,
+  Edit, Plus, Trash2 // 🚀 NEW ICONS IMPORTED HERE
 } from 'lucide-react';
 import api from '../services/api'; 
 
@@ -15,19 +16,20 @@ export default function TripDetails({ setActiveTab, tripId }) {
   const [isRequesting, setIsRequesting] = useState(false);
   const [requestSent, setRequestSent] = useState(false);
 
-  // Expenses State
+  // Expenses & Places State
   const [tripExpenses, setTripExpenses] = useState([]);
   const [isLoadingExpenses, setIsLoadingExpenses] = useState(false);
-
-  // Places State & Modal
   const [tripPlaces, setTripPlaces] = useState([]);
   const [isLoadingPlaces, setIsLoadingPlaces] = useState(false);
   const [isPlaceModalOpen, setIsPlaceModalOpen] = useState(false);
-  const [placeForm, setPlaceForm] = useState({
-    name: '',
-    category: 'Food & Dining',
-    tip: ''
-  });
+  const [placeForm, setPlaceForm] = useState({ name: '', category: 'Food & Dining', tip: '' });
+
+  // 🚀 NEW: Overview Edit State
+  const [isEditingOverview, setIsEditingOverview] = useState(false);
+  const [overviewDescription, setOverviewDescription] = useState('');
+  const [galleryImages, setGalleryImages] = useState([]);
+  const [newImageUrl, setNewImageUrl] = useState('');
+  const [isSavingOverview, setIsSavingOverview] = useState(false);
 
   const userString = localStorage.getItem('user');
   const currentUser = userString ? JSON.parse(userString) : null;
@@ -40,6 +42,9 @@ export default function TripDetails({ setActiveTab, tripId }) {
       try {
         const response = await api.get(`/api/v1/trips/${tripId}`); 
         setTripData(response.data);
+        // Pre-fill the edit states with existing data
+        setOverviewDescription(response.data.description || '');
+        setGalleryImages(response.data.galleryImages || []);
       } catch (error) {
         console.error("Error fetching trip details:", error);
       } finally {
@@ -121,18 +126,45 @@ export default function TripDetails({ setActiveTab, tripId }) {
     }
   };
 
+  // 🚀 NEW: Handle Saving the Overview Details
+  const handleSaveOverview = async () => {
+    setIsSavingOverview(true);
+    try {
+      const payload = {
+        description: overviewDescription,
+        galleryImages: galleryImages
+      };
+      
+      // Hitting the new endpoint the backend team will make
+      await api.patch(`/api/v1/trips/${tripId}/overview`, payload).catch(err => {
+        console.warn("Backend endpoint might not be ready yet. Falling back to default PUT request.", err);
+        return api.put(`/api/v1/trips/${tripId}`, { ...tripData, ...payload });
+      });
+
+      // Instantly update the local UI
+      setTripData({ ...tripData, description: overviewDescription, galleryImages: galleryImages });
+      setIsEditingOverview(false);
+      alert("Trip overview updated successfully!");
+    } catch (error) {
+      console.error("Error saving overview:", error);
+      alert("Failed to save changes. Make sure the backend endpoint is ready!");
+    } finally {
+      setIsSavingOverview(false);
+    }
+  };
+
+  const handleAddGalleryImage = () => {
+    if (!newImageUrl.trim()) return;
+    setGalleryImages([...galleryImages, newImageUrl.trim()]);
+    setNewImageUrl('');
+  };
+
   if (isLoading) return <div style={{ textAlign: 'center', padding: '50px', color: '#64748b' }}>Loading your adventure...</div>;
   if (!tripData) return <div style={{ textAlign: 'center', padding: '50px', color: '#ef4444' }}>Trip not found.</div>;
 
-  // ======================================================================
-  // 🚀 THE CLEANEST PERMISSIONS LOGIC EVER!
-  // We deleted the messy ID matcher. We now strictly trust the backend's JWT check.
-  // ======================================================================
   const isOrganizer = tripData.currentUserStatus === 'ORGANIZER' || tripData.isOrganizer === true;
   const isPending = tripData.currentUserStatus === 'PENDING';
   
-  // Safety net: We still check if they are in the joinedMembers array just in case 
-  // the backend hasn't set up a specific 'MEMBER' string for currentUserStatus yet.
   const currentUserId = currentUser ? String(currentUser.id || currentUser._id) : null;
   const joinedRecord = tripData.joinedMembers && tripData.joinedMembers.find(m => {
     const matchId = String(m.id || m._id || m.userId || (m.user && m.user.id));
@@ -221,7 +253,6 @@ export default function TripDetails({ setActiveTab, tripId }) {
           </div>
 
           <div style={{ display: 'flex', gap: '16px', marginBottom: '32px' }}>
-            
             {tripData.status === 'UPCOMING' && !isOrganizer && (
               <button 
                 onClick={handleRequestToJoin}
@@ -290,13 +321,113 @@ export default function TripDetails({ setActiveTab, tripId }) {
               })}
             </div>
 
-            {/* OVERVIEW */}
+            {/* 🚀 UPGRADED: OVERVIEW TAB WITH EDIT MODE & GALLERY */}
             {activeSegment === 'overview' && (
               <div style={{ padding: '32px' }}>
-                <h3 style={{ margin: '0 0 16px 0', fontSize: '20px', color: '#0f172a' }}>About This Trip</h3>
-                <p style={{ color: '#475569', lineHeight: '1.6', fontSize: '15px', marginBottom: '32px', whiteSpace: 'pre-wrap' }}>
-                  {tripData.description || 'No description provided for this adventure yet.'}
-                </p>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+                  <h3 style={{ margin: 0, fontSize: '20px', color: '#0f172a' }}>About This Trip</h3>
+                  
+                  {isOrganizer && !isEditingOverview && (
+                    <button 
+                      onClick={() => setIsEditingOverview(true)}
+                      style={{ background: '#f8fafc', border: '1px solid #e2e8f0', padding: '8px 16px', borderRadius: '8px', color: '#334155', fontWeight: 'bold', fontSize: '13px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}
+                    >
+                      <Edit size={16} /> Edit Overview
+                    </button>
+                  )}
+                </div>
+
+                {isEditingOverview ? (
+                  /* --- EDIT MODE UI --- */
+                  <div style={{ backgroundColor: '#f8fafc', padding: '24px', borderRadius: '16px', border: '1px solid #e2e8f0', marginBottom: '32px' }}>
+                    <label style={{ display: 'block', fontWeight: 'bold', fontSize: '14px', color: '#334155', marginBottom: '8px' }}>Trip Description</label>
+                    <textarea 
+                      rows="5"
+                      value={overviewDescription}
+                      onChange={(e) => setOverviewDescription(e.target.value)}
+                      placeholder="Write an exciting description for your trip..."
+                      style={{ width: '100%', padding: '12px', borderRadius: '12px', border: '1px solid #cbd5e1', outline: 'none', resize: 'vertical', marginBottom: '24px', fontFamily: 'inherit' }}
+                    />
+
+                    <label style={{ display: 'block', fontWeight: 'bold', fontSize: '14px', color: '#334155', marginBottom: '8px' }}>Add Photos to Gallery (Paste Image URL)</label>
+                    <div style={{ display: 'flex', gap: '8px', marginBottom: '16px' }}>
+                      <input 
+                        type="url" 
+                        value={newImageUrl}
+                        onChange={(e) => setNewImageUrl(e.target.value)}
+                        placeholder="https://example.com/photo.jpg"
+                        style={{ flex: 1, padding: '12px', borderRadius: '12px', border: '1px solid #cbd5e1', outline: 'none' }}
+                      />
+                      <button 
+                        onClick={handleAddGalleryImage}
+                        type="button"
+                        style={{ backgroundColor: '#10B981', color: '#fff', border: 'none', padding: '0 20px', borderRadius: '12px', fontWeight: 'bold', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px' }}
+                      >
+                        <Plus size={18} /> Add
+                      </button>
+                    </div>
+
+                    {/* Miniature Preview of added images in Edit Mode */}
+                    {galleryImages.length > 0 && (
+                      <div style={{ display: 'flex', gap: '12px', overflowX: 'auto', paddingBottom: '12px', marginBottom: '24px' }}>
+                        {galleryImages.map((imgUrl, idx) => (
+                          <div key={idx} style={{ position: 'relative', width: '100px', height: '100px', flexShrink: 0, borderRadius: '8px', overflow: 'hidden', border: '1px solid #cbd5e1' }}>
+                            <img src={imgUrl} alt="Preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                            <button 
+                              onClick={() => setGalleryImages(galleryImages.filter((_, i) => i !== idx))}
+                              style={{ position: 'absolute', top: '4px', right: '4px', background: 'rgba(239, 68, 68, 0.9)', color: '#fff', border: 'none', borderRadius: '50%', padding: '4px', cursor: 'pointer' }}
+                            >
+                              <Trash2 size={12} />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end', borderTop: '1px solid #e2e8f0', paddingTop: '20px' }}>
+                      <button 
+                        onClick={() => {
+                          setIsEditingOverview(false);
+                          setOverviewDescription(tripData.description || '');
+                          setGalleryImages(tripData.galleryImages || []);
+                        }}
+                        style={{ padding: '12px 20px', backgroundColor: '#fff', border: '1px solid #cbd5e1', borderRadius: '12px', fontWeight: 'bold', color: '#475569', cursor: 'pointer' }}
+                      >
+                        Cancel
+                      </button>
+                      <button 
+                        onClick={handleSaveOverview}
+                        disabled={isSavingOverview}
+                        style={{ padding: '12px 24px', backgroundColor: '#0EA5E9', border: 'none', borderRadius: '12px', fontWeight: 'bold', color: '#fff', cursor: isSavingOverview ? 'not-allowed' : 'pointer' }}
+                      >
+                        {isSavingOverview ? 'Saving...' : 'Save Changes'}
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  /* --- VIEW MODE UI --- */
+                  <>
+                    <p style={{ color: '#475569', lineHeight: '1.7', fontSize: '15px', marginBottom: '32px', whiteSpace: 'pre-wrap' }}>
+                      {tripData.description || 'No description provided for this adventure yet.'}
+                    </p>
+
+                    {/* Image Gallery Grid */}
+                    {tripData.galleryImages && tripData.galleryImages.length > 0 && (
+                      <div style={{ marginBottom: '40px' }}>
+                        <h4 style={{ margin: '0 0 16px 0', fontSize: '16px', color: '#0f172a' }}>Trip Gallery</h4>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '16px' }}>
+                          {tripData.galleryImages.map((imgUrl, idx) => (
+                            <div key={idx} style={{ height: '200px', borderRadius: '16px', overflow: 'hidden', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
+                              <img src={imgUrl} alt={`Trip Gallery ${idx + 1}`} style={{ width: '100%', height: '100%', objectFit: 'cover', transition: 'transform 0.3s' }} onMouseOver={e => e.currentTarget.style.transform = 'scale(1.05)'} onMouseOut={e => e.currentTarget.style.transform = 'scale(1)'} />
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </>
+                )}
+
+                <div style={{ height: '1px', backgroundColor: '#f1f5f9', margin: '32px 0' }}></div>
 
                 <h4 style={{ margin: '0 0 16px 0', fontSize: '16px', color: '#0f172a' }}>Trip Organizer</h4>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '16px', backgroundColor: '#f8fafc', padding: '16px', borderRadius: '16px', border: '1px solid #f1f5f9' }}>
@@ -492,10 +623,8 @@ export default function TripDetails({ setActiveTab, tripId }) {
             
             <button 
               onClick={() => {
-                if (!isMember) {
-                  alert(isPending 
-                    ? "Your request is still pending! Wait for the organizer to approve it." 
-                    : "Only approved trip members and organizers can add place updates!");
+                if (!isMember && !isOrganizer) {
+                  alert("Only trip members and organizers can add place updates!");
                   return;
                 }
                 setIsPlaceModalOpen(true);

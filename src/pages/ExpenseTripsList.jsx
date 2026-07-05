@@ -1,26 +1,25 @@
 // src/pages/ExpenseTripsList.jsx
 import React, { useState, useEffect } from 'react';
-import { Map, ArrowRight, Wallet } from 'lucide-react';
+import { Map, ArrowRight, Wallet, Search } from 'lucide-react'; 
 import api from '../services/api';
 
 export default function ExpenseTripsList({ setActiveTab, setSelectedExpenseTrip }) {
   const [trips, setTrips] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  
+  // Search bar state
+  const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => {
     const fetchTrips = async () => {
       try {
-        // 🚀 THE FIX: Hitting Methsara's new dedicated endpoint!
-        // The api.js interceptor automatically attaches the JWT token.
         const response = await api.get('/api/v1/trips/my-trips');
         
-        // Safely extract the array based on how Spring Boot wraps the JSON
         let rawData = [];
         if (Array.isArray(response.data)) rawData = response.data;
         else if (response.data && response.data.data) rawData = response.data.data;
         else if (response.data && response.data.content) rawData = response.data.content;
 
-        // No more frontend filtering needed! The backend did the heavy lifting.
         setTrips(rawData);
       } catch (error) {
         console.error("Failed to fetch My Trips for expenses:", error);
@@ -37,6 +36,15 @@ export default function ExpenseTripsList({ setActiveTab, setSelectedExpenseTrip 
     setActiveTab('expense-details'); 
   };
 
+  // 🚀 UPGRADED: Instant filtering by both Title AND Location!
+  const filteredTrips = trips.filter(trip => {
+    const title = (trip.title || trip.name || 'Untitled Trip').toLowerCase();
+    const location = (trip.destinations || trip.location || 'Location TBD').toLowerCase();
+    const searchLower = searchTerm.toLowerCase();
+    
+    return title.includes(searchLower) || location.includes(searchLower);
+  });
+
   return (
     <div style={{ maxWidth: '1000px', margin: '0 auto', fontFamily: 'sans-serif' }}>
       
@@ -44,7 +52,30 @@ export default function ExpenseTripsList({ setActiveTab, setSelectedExpenseTrip 
         <h2 style={{ fontSize: '28px', fontWeight: 'bold', color: '#0f172a', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '12px' }}>
           <Wallet size={28} color="#10B981" /> Select a Trip Budget
         </h2>
-        <p style={{ color: '#64748b', fontSize: '15px' }}>Choose a trip below to manage expenses, split costs, and track your budget.</p>
+        <p style={{ color: '#64748b', fontSize: '15px', marginBottom: '24px' }}>Choose a trip below to manage expenses, split costs, and track your budget.</p>
+        
+        <div style={{ position: 'relative', width: '100%', maxWidth: '400px' }}>
+          <Search size={18} style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
+          <input
+            type="text"
+            placeholder="Search by trip name or location..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            style={{ 
+              width: '100%', 
+              padding: '14px 16px 14px 44px', 
+              borderRadius: '12px', 
+              border: '1px solid #e2e8f0', 
+              fontSize: '15px', 
+              outline: 'none', 
+              backgroundColor: '#fff', 
+              boxShadow: '0 2px 4px rgba(0,0,0,0.02)',
+              transition: 'border-color 0.2s ease'
+            }}
+            onFocus={(e) => e.target.style.borderColor = '#10B981'}
+            onBlur={(e) => e.target.style.borderColor = '#e2e8f0'}
+          />
+        </div>
       </div>
 
       {isLoading ? (
@@ -53,9 +84,15 @@ export default function ExpenseTripsList({ setActiveTab, setSelectedExpenseTrip 
         <div style={{ textAlign: 'center', padding: '60px', backgroundColor: '#fff', borderRadius: '20px', border: '1px solid #f1f5f9' }}>
           <p style={{ color: '#64748b', fontSize: '16px' }}>You haven't created or joined any trips yet.</p>
         </div>
+      ) : filteredTrips.length === 0 ? (
+        <div style={{ textAlign: 'center', padding: '60px', backgroundColor: '#fff', borderRadius: '20px', border: '1px dashed #cbd5e1' }}>
+          <p style={{ color: '#64748b', fontSize: '16px', margin: 0 }}>No trips match your search for "{searchTerm}".</p>
+        </div>
       ) : (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '20px' }}>
-          {trips.map(trip => (
+          
+          {/* 🚀 THE FIX: This now maps over 'filteredTrips' instead of 'trips' */}
+          {filteredTrips.map(trip => (
             <div 
               key={trip.id || trip._id || Math.random()} 
               onClick={() => handleTripSelect(trip)}
