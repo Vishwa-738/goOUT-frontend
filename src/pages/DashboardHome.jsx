@@ -77,18 +77,15 @@ export default function DashboardHome() {
       
       const mappedPosts = combinedData.map(item => {
         let calculatedStatus = item.status;
-        
         const isCompleted = calculatedStatus === 'COMPLETED' || (item.status && item.status.toUpperCase() === 'COMPLETED');
+        
+        // 🚀 SMART TITLE: Just the title and emojis!
         const postContent = item.content || (
-          item.title ? (
-            isCompleted
-              ? `Just completed an amazing trip: ${item.title}! 🌍✈️` 
-              : `Planning a new adventure: ${item.title}! 🌍✈️`
-          ) : ''
+          item.title ? `${item.title} ` : ''
         );
         
         if (!calculatedStatus) {
-          if (postContent.includes("Just completed")) {
+          if (item.content && item.content.includes("Just completed")) {
             calculatedStatus = 'COMPLETED';
           } else {
             calculatedStatus = 'UPCOMING';
@@ -134,13 +131,30 @@ export default function DashboardHome() {
           item.destination
         );
 
+        // =========================================================
+        // 🚀 THE ULTIMATE DATE EXTRACTOR
+        // Catches Strings, Java Arrays, and alternate backend names
+        // =========================================================
+        const extractDate = (obj) => {
+          const rawDate = obj.createdAt || obj.created_at || obj.createdDate || obj.timestamp || obj.date;
+          if (!rawDate) return null; // Returns null so we don't fake the time!
+          
+          // Check if Spring Boot sent the date as an array [YYYY, MM, DD, HH, mm]
+          if (Array.isArray(rawDate)) {
+            const [year, month, day, hour = 0, minute = 0, second = 0] = rawDate;
+            // JS months are 0-indexed, so we subtract 1 from the month
+            return new Date(year, month - 1, day, hour, minute, second).toISOString();
+          }
+          return String(rawDate);
+        };
+
         return {
           id: item.id || item._id,
           author: { 
             name: actualAuthorName,       
             avatarUrl: actualAvatar 
           },
-          createdAt: item.createdAt || item.endDate || new Date().toISOString(), 
+          createdAt: extractDate(item), // Safely extracted date!
           location: item.location || item.destinations || 'Unknown Location',
           content: postContent,
           imageUrl: finalImage,
@@ -151,7 +165,11 @@ export default function DashboardHome() {
         };
       });
 
-      mappedPosts.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+      mappedPosts.sort((a, b) => {
+        if (!a.createdAt) return 1;
+        if (!b.createdAt) return -1;
+        return new Date(b.createdAt) - new Date(a.createdAt);
+      });
       setPosts(mappedPosts);
     } catch (error) {
       console.error("Error fetching feed:", error);
@@ -218,9 +236,13 @@ export default function DashboardHome() {
     if (file) setSelectedImage(file);
   };
 
+  // 🚀 FIXED: Fallback format exactly as requested without faking the live time
   const formatTime = (dateString) => {
-    if (!dateString) return 'Just now';
-    return new Date(dateString).toLocaleDateString('en-US', { 
+    if (!dateString) return 'Recent';
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) return 'Recent';
+
+    return date.toLocaleDateString('en-US', { 
       month: 'short', 
       day: 'numeric', 
       hour: '2-digit', 
@@ -260,7 +282,6 @@ export default function DashboardHome() {
       
       <div style={{ flex: 1, maxWidth: '680px', width: '100%', display: 'flex', flexDirection: 'column', gap: '24px' }}>
         
-        {/* 🚀 FIXED: Sticky Tab Bar */}
         <div className="d-flex rounded-3 p-1 shadow-sm" style={{ backgroundColor: '#f1f5f9', position: 'sticky', top: 0, zIndex: 10 }}>
           <button 
             onClick={() => setFeedTab('upcoming')}
@@ -298,6 +319,7 @@ export default function DashboardHome() {
                   <div>
                     <h4 style={{ margin: 0, fontSize: '16px', fontWeight: 'bold', color: '#0f172a' }}>{post.author?.name}</h4>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', color: '#64748b', marginTop: '2px' }}>
+                      {/* Displays true backend creation time */}
                       <span>{formatTime(post.createdAt)}</span>
                       {post.location && (
                         <>
@@ -391,7 +413,6 @@ export default function DashboardHome() {
         )}
       </div>
 
-      {/* 🚀 FIXED: Sticky Right Sidebar */}
       <div style={{ width: '320px', flexShrink: 0, display: 'flex', flexDirection: 'column', gap: '24px', position: 'sticky', top: 0 }}>
         <div style={{ background: 'linear-gradient(135deg, #17B0B2 0%, #0EA5E9 100%)', color: '#ffffff', padding: '24px', borderRadius: '24px', position: 'relative' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>

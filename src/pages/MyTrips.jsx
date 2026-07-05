@@ -1,6 +1,6 @@
 // src/pages/MyTrips.jsx
-import React, { useState, useEffect } from 'react';
-import { Calendar, MapPin, Users, DollarSign, Plus, Eye, Edit2, UserCheck, Trash2, Check, X, CheckCircle } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { Calendar, MapPin, Users, DollarSign, Plus, Eye, Edit2, UserCheck, Trash2, Check, X, CheckCircle, ChevronDown } from 'lucide-react';
 import TripDetails from './TripDetails'; 
 import API from '../services/api'; 
 
@@ -13,6 +13,10 @@ export default function MyTrips({ setActiveTab }) {
   const [selectedTripId, setSelectedTripId] = useState(null);
   const [pendingRequests, setPendingRequests] = useState([]);
   const [loadingRequests, setLoadingRequests] = useState(false);
+
+  // 🚀 NEW: Refs for smooth scrolling
+  const organizingRef = useRef(null);
+  const joinedRef = useRef(null);
 
   useEffect(() => {
     const fetchTrips = async () => {
@@ -52,7 +56,6 @@ export default function MyTrips({ setActiveTab }) {
     const isConfirmed = window.confirm("Are you sure you want to end this trip? It will be marked as finished.");
     if (!isConfirmed) return;
 
-    // Instantly update UI locally in the MyTrips list
     setTrips(currentTrips => 
       currentTrips.map(trip => 
         (trip.id || trip._id) === tripId ? { ...trip, status: 'COMPLETED' } : trip
@@ -62,10 +65,7 @@ export default function MyTrips({ setActiveTab }) {
     try {
       await API.patch(`/api/v1/trips/${tripId}/complete`);
       alert("Trip successfully ended!");
-      
-      // Broadcast event so DashboardHome can refresh its feed
       window.dispatchEvent(new CustomEvent('trip-status-changed'));
-      
     } catch (error) {
       console.error("Failed to end trip on backend:", error);
       alert("Failed to update the trip on the server. Please try again.");
@@ -102,6 +102,11 @@ export default function MyTrips({ setActiveTab }) {
     }
   };
 
+  // 🚀 NEW: Helper function to scroll to the sections smoothly
+  const scrollToSection = (elementRef) => {
+    elementRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
+
   if (viewingTripId) {
     return <TripDetails setActiveTab={setActiveTab} tripId={viewingTripId} onBack={() => setViewingTripId(null)} />;
   }
@@ -117,22 +122,19 @@ export default function MyTrips({ setActiveTab }) {
 
   const renderTripCards = (tripList) => {
     if (tripList.length === 0) {
-      return <p style={{ color: '#64748b', fontStyle: 'italic' }}>No trips in this category yet.</p>;
+      return <p style={{ color: '#64748b', fontStyle: 'italic', padding: '20px', backgroundColor: '#f8fafc', borderRadius: '12px' }}>No trips in this category yet.</p>;
     }
     
     return (
       <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
         {tripList.map((trip) => {
           const isAdmin = trip.isOrganizer === true;
-          
-          // 🚀 FIXED: Dynamically grab the image from the database, just like the Discover feed!
           const actualImage = trip.imageUrl || trip.coverImageUrl || 'https://images.unsplash.com/photo-1546708973-b339540b5162?w=600';
 
           return (
             <div key={trip.id || trip._id} style={{ backgroundColor: '#ffffff', borderRadius: '20px', border: '1px solid #f1f5f9', display: 'flex', overflow: 'hidden', boxShadow: '0 2px 4px rgba(0,0,0,0.02)' }}>
               
               <div style={{ width: '300px', height: '220px', position: 'relative', flexShrink: 0 }}>
-                {/* 🚀 FIXED: Render the dynamic image here */}
                 <img src={actualImage} alt={trip.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                 <span style={{ position: 'absolute', top: '16px', left: '16px', backgroundColor: isAdmin ? '#10B981' : '#8b5cf6', color: '#ffffff', padding: '6px 16px', borderRadius: '20px', fontSize: '12px', fontWeight: 'bold', boxShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>
                   {isAdmin ? 'Admin' : 'Member'}
@@ -215,7 +217,7 @@ export default function MyTrips({ setActiveTab }) {
       </div>
 
       {/* METRICS STATS ROW */}
-      <div style={{ display: 'flex', gap: '24px', marginBottom: '40px' }}>
+      <div style={{ display: 'flex', gap: '24px', marginBottom: '32px' }}>
         {stats.map((stat, idx) => (
           <div key={idx} style={{ flex: 1, backgroundColor: '#ffffff', borderRadius: '20px', padding: '24px', display: 'flex', alignItems: 'center', gap: '20px', border: '1px solid #f1f5f9', boxShadow: '0 2px 4px rgba(0,0,0,0.02)' }}>
             <div style={{ width: '56px', height: '56px', borderRadius: '16px', backgroundColor: stat.color, color: '#ffffff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '24px', fontWeight: 'bold' }}>
@@ -229,12 +231,38 @@ export default function MyTrips({ setActiveTab }) {
         ))}
       </div>
 
+      {/* 🚀 NEW: QUICK JUMP NAVIGATION BAR */}
+      {!loading && trips.length > 0 && (
+        <div style={{ display: 'flex', gap: '16px', marginBottom: '40px', padding: '16px', backgroundColor: '#ffffff', borderRadius: '16px', border: '1px solid #f1f5f9', boxShadow: '0 2px 4px rgba(0,0,0,0.02)' }}>
+          <span style={{ fontWeight: '600', color: '#64748b', alignSelf: 'center', marginRight: '8px' }}>Quick Jump:</span>
+          
+          <button 
+            onClick={() => scrollToSection(organizingRef)}
+            style={{ padding: '8px 16px', borderRadius: '12px', border: '1px solid #bbf7d0', backgroundColor: '#f0fdf4', color: '#16a34a', fontWeight: '600', fontSize: '14px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', transition: 'all 0.2s' }}
+            onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#dcfce7'}
+            onMouseOut={(e) => e.currentTarget.style.backgroundColor = '#f0fdf4'}
+          >
+            Trips I'm Organizing <ChevronDown size={16} />
+          </button>
+
+          <button 
+            onClick={() => scrollToSection(joinedRef)}
+            style={{ padding: '8px 16px', borderRadius: '12px', border: '1px solid #ddd6fe', backgroundColor: '#f5f3ff', color: '#7c3aed', fontWeight: '600', fontSize: '14px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '6px', transition: 'all 0.2s' }}
+            onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#ede9fe'}
+            onMouseOut={(e) => e.currentTarget.style.backgroundColor = '#f5f3ff'}
+          >
+            Trips I've Joined <ChevronDown size={16} />
+          </button>
+        </div>
+      )}
+
       {/* TRIP LISTS */}
       {loading ? (
-        <p>Loading your adventures from the database...</p>
+        <div style={{ textAlign: 'center', padding: '40px', color: '#64748b' }}>Loading your adventures from the database...</div>
       ) : (
         <>
-          <div style={{ marginBottom: '48px' }}>
+          {/* 🚀 NEW: Added the organizingRef here so the page knows where to scroll! */}
+          <div ref={organizingRef} style={{ marginBottom: '48px', scrollMarginTop: '20px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
               <div style={{ width: '4px', height: '24px', backgroundColor: '#10B981', borderRadius: '4px' }}></div>
               <h2 style={{ fontSize: '22px', fontWeight: 'bold', color: '#0f172a', margin: 0 }}>Trips I'm Organizing</h2>
@@ -242,7 +270,8 @@ export default function MyTrips({ setActiveTab }) {
             {renderTripCards(organizedTrips)}
           </div>
 
-          <div>
+          {/* 🚀 NEW: Added the joinedRef here so the page knows where to scroll! */}
+          <div ref={joinedRef} style={{ scrollMarginTop: '20px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
               <div style={{ width: '4px', height: '24px', backgroundColor: '#8b5cf6', borderRadius: '4px' }}></div>
               <h2 style={{ fontSize: '22px', fontWeight: 'bold', color: '#0f172a', margin: 0 }}>Trips I've Joined</h2>

@@ -4,7 +4,6 @@ import Dashboard from './pages/Dashboard';
 import Home from './pages/Home';
 import Login from './pages/Login';
 import Register from './pages/Register';
-import MyTrips from './pages/MyTrips'; // 👈 1. Newly imported page!
 
 function App() {
   return (
@@ -13,8 +12,10 @@ function App() {
         <Route path="/" element={<Home />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
-        <Route path="/dashboard" element={<Dashboard />} />
-        <Route path="/my-trips" element={<MyTrips />} /> {/* 👈 2. New route added! */}
+        
+        {/* 🚀 THE FIX: Added /* so the Dashboard can handle its own sub-pages! */}
+        <Route path="/dashboard/*" element={<Dashboard />} />
+        
       </Routes>
     </Router>
   );
