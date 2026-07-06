@@ -26,8 +26,8 @@ export default function DashboardHome() {
   );
 
   // 🚀 THE FIX: Now it accepts `isTrip` so it knows exactly which endpoint to hit!
+  // 🚀 FIXED: Now accepts isTrip to hit the correct endpoint on the first try!
   const handleLikeToggle = async (postId, isTrip) => {
-    // 1. Optimistically update the UI instantly
     setPosts(currentPosts => 
       currentPosts.map(post => {
         if (post.id === postId) {
@@ -42,8 +42,8 @@ export default function DashboardHome() {
       })
     );
 
-    // 2. Safely sync with the correct backend endpoint
     try {
+      // No more guessing! We route it perfectly based on isTrip
       if (isTrip) {
         await api.post(`/api/v1/trips/${postId}/like`);
       } else {
@@ -51,7 +51,6 @@ export default function DashboardHome() {
       }
     } catch (error) {
       console.error("Failed to sync like with backend:", error);
-      // Optional: You could revert the UI state here if it fails
     }
   };
 
@@ -378,11 +377,13 @@ export default function DashboardHome() {
 
               <div style={{ display: 'flex', gap: '16px', marginTop: '16px', paddingTop: '12px', borderTop: '1px solid #f1f5f9' }}>
                 {/* 🚀 THE FIX: Passed post.isTrip right here into the click handler! */}
-                <button 
-                  onClick={() => handleLikeToggle(post.id, post.isTrip)}
-                  style={{ 
-                    display: 'flex', 
-                    alignItems: 'center', 
+                {/* Replace your current button onClick with this: */}
+<button 
+  onClick={() => handleLikeToggle(post.id, post.isTrip)}
+  style={{ 
+    display: 'flex', 
+    alignItems: 'center', 
+    // ... keep the rest of your styles the exact same ... 
                     gap: '8px', 
                     background: 'none', 
                     border: 'none', 
