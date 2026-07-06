@@ -25,40 +25,62 @@ export default function DashboardHome() {
     feedTab === 'upcoming' ? post.status === 'UPCOMING' : post.status === 'COMPLETED'
   );
 
+  // 🚀 THE FACEBOOK-STYLE LIKE SYSTEM
   const handleLikeToggle = async (postId, isTrip) => {
-    // 1. Optimistically update the UI instantly
+    if (!postId) {
+      console.error("CRITICAL: Tried to like an item but the ID is missing!");
+      return;
+    }
+
+    // 1. Save the previous state in case we need to roll back
+    const postToUpdate = posts.find(p => p.id === postId);
+    if (!postToUpdate) return;
+    const previousState = { ...postToUpdate };
+
+    // Calculate what the UI *should* look like instantly
+    const newIsLiked = !previousState.isLikedByCurrentUser;
+    const newLikeCount = newIsLiked 
+      ? previousState.likeCount + 1 
+      : Math.max(0, previousState.likeCount - 1);
+
+    // 2. OPTIMISTIC UPDATE: Change the UI instantly (zero lag)
     setPosts(currentPosts => 
-      currentPosts.map(post => {
-        if (post.id === postId) {
-          const currentlyLiked = post.isLikedByCurrentUser;
-          return {
-            ...post,
-            isLikedByCurrentUser: !currentlyLiked,
-            likeCount: currentlyLiked ? Math.max(0, post.likeCount - 1) : post.likeCount + 1
-          };
-        }
-        return post;
-      })
+      currentPosts.map(post => 
+        post.id === postId 
+          ? { ...post, isLikedByCurrentUser: newIsLiked, likeCount: newLikeCount }
+          : post
+      )
     );
 
-    // 2. Safely sync with the correct backend endpoint
+    // 3. BACKGROUND SYNC: Tell the backend
     try {
-      if (isTrip) {
-        await api.post(`/api/v1/trips/${postId}/like`, {}); 
-      } else {
-        await api.post(`/api/v1/posts/${postId}/like`, {});
+      const endpoint = isTrip ? `/api/v1/trips/${postId}/like` : `/api/v1/posts/${postId}/like`;
+      const response = await api.post(endpoint);
+
+      // 4. SERVER TRUTH SYNC: If the backend replies with the exact numbers, quietly update to match them
+      if (response.data && typeof response.data === 'object' && response.data.likeCount !== undefined) {
+        setPosts(currentPosts => 
+          currentPosts.map(post => 
+            post.id === postId 
+              ? { ...post, isLikedByCurrentUser: response.data.isLikedByCurrentUser, likeCount: response.data.likeCount }
+              : post
+          )
+        );
       }
     } catch (error) {
-      console.error("Failed to sync like with backend:", error.response || error);
+      console.error("Failed to sync like. Rolling back UI.", error);
+      // 5. ROLLBACK: If the server crashed, revert the heart back to normal so the user isn't lied to
+      setPosts(currentPosts => 
+        currentPosts.map(post => 
+          post.id === postId ? previousState : post
+        )
+      );
     }
   };
 
   const fetchPosts = async () => {
     setIsLoadingFeed(true);
     try {
-      const userString = localStorage.getItem('user');
-      const currentUser = userString ? JSON.parse(userString) : null;
-      
       const [postsResponse, tripsResponse] = await Promise.all([
         api.get('/api/v1/posts').catch(() => ({ data: [] })),
         api.get('/api/v1/trips').catch(() => ({ data: [] })) 
@@ -83,9 +105,7 @@ export default function DashboardHome() {
         let calculatedStatus = item.status;
         const isCompleted = calculatedStatus === 'COMPLETED' || (item.status && item.status.toUpperCase() === 'COMPLETED');
         
-        const postContent = item.content || (
-          item.title ? `${item.title} 🌍 ✈️` : ''
-        );
+        const postContent = item.content || (item.title ? `${item.title} 🌍 ✈️` : '');
         
         if (!calculatedStatus) {
           if (item.content && item.content.includes("Just completed")) {
@@ -104,7 +124,6 @@ export default function DashboardHome() {
         else if (item.creatorName) actualAuthorName = item.creatorName;
 
         let actualAvatar = 'https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=150&h=150&fit=crop'; 
-        
         if (item.author?.avatarUrl) actualAvatar = item.author.avatarUrl;
         else if (item.organizer?.avatarUrl) actualAvatar = item.organizer.avatarUrl; 
         else if (item.user?.avatarUrl) actualAvatar = item.user.avatarUrl;
@@ -115,34 +134,23 @@ export default function DashboardHome() {
         else if (item.creatorAvatar) actualAvatar = item.creatorAvatar;     
 
         let rawImage = item.imageUrl || item.coverImageUrl || item.image || item.tripImage || item.trip_image_url;
-        
         if (rawImage && !rawImage.startsWith('http')) {
           const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080';
           rawImage = `${baseUrl}/${rawImage.replace(/^\//, '')}`;
         }
-
         const finalImage = rawImage || 'https://images.unsplash.com/photo-1546708973-b339540b5162?w=600';
         
-        // 🚀 SAFELY GRAB THE ID, NO MATTER WHAT THE DTO CALLS IT
+        // Safely extract the ID
         const actualId = item.id || item._id || item.tripId || item.postId;
-
         const exactLikeCount = typeof item.likeCount === 'number' ? item.likeCount : (item.likes || 0);
 
         const isTripItem = Boolean(
-          item.isRealTrip || 
-          item.type === 'TRIP' || 
-          item.tripId || 
-          item.startDate || 
-          item.minBudget || 
-          item.maxParticipants || 
-          item.destinations || 
-          item.destination
+          item.isRealTrip || item.type === 'TRIP' || item.tripId || item.startDate || item.minBudget || item.maxParticipants || item.destinations || item.destination
         );
 
         const extractDate = (obj) => {
           const rawDate = obj.createdAt || obj.created_at || obj.createdDate || obj.timestamp || obj.date;
           if (!rawDate) return null; 
-          
           if (Array.isArray(rawDate)) {
             const [year, month, day, hour = 0, minute = 0, second = 0] = rawDate;
             return new Date(year, month - 1, day, hour, minute, second).toISOString();
@@ -152,10 +160,7 @@ export default function DashboardHome() {
 
         return {
           id: actualId,
-          author: { 
-            name: actualAuthorName,       
-            avatarUrl: actualAvatar 
-          },
+          author: { name: actualAuthorName, avatarUrl: actualAvatar },
           createdAt: extractDate(item), 
           location: item.location || item.destinations || 'Unknown Location',
           content: postContent,
@@ -183,10 +188,8 @@ export default function DashboardHome() {
   useEffect(() => {
     fetchPosts();
     const handleFeedUpdate = () => fetchPosts(); 
-
     window.addEventListener('trip-status-changed', handleFeedUpdate);
     window.addEventListener('trip-created', handleFeedUpdate);
-    
     return () => {
       window.removeEventListener('trip-status-changed', handleFeedUpdate);
       window.removeEventListener('trip-created', handleFeedUpdate);
@@ -237,13 +240,7 @@ export default function DashboardHome() {
     if (!dateString) return 'Recent';
     const date = new Date(dateString);
     if (isNaN(date.getTime())) return 'Recent';
-
-    return date.toLocaleDateString('en-US', { 
-      month: 'short', 
-      day: 'numeric', 
-      hour: '2-digit', 
-      minute: '2-digit' 
-    });
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
   };
 
   if (viewingTripId) {
@@ -251,20 +248,7 @@ export default function DashboardHome() {
       <div style={{ width: '100%' }}>
         <button 
           onClick={() => setViewingTripId(null)}
-          style={{ 
-            marginBottom: '20px', 
-            padding: '10px 18px', 
-            borderRadius: '12px', 
-            border: '1px solid #cbd5e1', 
-            backgroundColor: '#ffffff', 
-            color: '#334155', 
-            fontWeight: '600', 
-            cursor: 'pointer',
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: '8px',
-            boxShadow: '0 2px 4px rgba(0,0,0,0.02)'
-          }}
+          style={{ marginBottom: '20px', padding: '10px 18px', borderRadius: '12px', border: '1px solid #cbd5e1', backgroundColor: '#ffffff', color: '#334155', fontWeight: '600', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '8px', boxShadow: '0 2px 4px rgba(0,0,0,0.02)' }}
         >
           ← Back to Feed
         </button>
@@ -307,20 +291,13 @@ export default function DashboardHome() {
               
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
                 <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-                  <img 
-                    src={post.author?.avatarUrl} 
-                    alt={post.author?.name} 
-                    style={{ width: '48px', height: '48px', borderRadius: '50%', objectFit: 'cover' }} 
-                  />
+                  <img src={post.author?.avatarUrl} alt={post.author?.name} style={{ width: '48px', height: '48px', borderRadius: '50%', objectFit: 'cover' }} />
                   <div>
                     <h4 style={{ margin: 0, fontSize: '16px', fontWeight: 'bold', color: '#0f172a' }}>{post.author?.name}</h4>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', color: '#64748b', marginTop: '2px' }}>
                       <span>{formatTime(post.createdAt)}</span>
                       {post.location && (
-                        <>
-                          <span>•</span>
-                          <span style={{ display: 'flex', alignItems: 'center', gap: '2px' }}><MapPin size={12} /> {post.location}</span>
-                        </>
+                        <><span>•</span><span style={{ display: 'flex', alignItems: 'center', gap: '2px' }}><MapPin size={12} /> {post.location}</span></>
                       )}
                     </div>
                   </div>
@@ -329,29 +306,9 @@ export default function DashboardHome() {
                 {post.isTrip && (
                   <button 
                     onClick={() => setViewingTripId(post.id)}
-                    style={{ 
-                      padding: '8px 14px', 
-                      borderRadius: '10px', 
-                      fontSize: '13px', 
-                      fontWeight: '600', 
-                      display: 'flex', 
-                      alignItems: 'center', 
-                      gap: '6px', 
-                      cursor: 'pointer', 
-                      border: 'none', 
-                      backgroundColor: '#f0f9ff', 
-                      color: '#0EA5E9', 
-                      transition: 'all 0.2s',
-                      boxShadow: '0 2px 4px rgba(14, 165, 233, 0.1)'
-                    }}
-                    onMouseOver={(e) => {
-                      e.currentTarget.style.backgroundColor = '#0EA5E9';
-                      e.currentTarget.style.color = '#ffffff';
-                    }}
-                    onMouseOut={(e) => {
-                      e.currentTarget.style.backgroundColor = '#f0f9ff';
-                      e.currentTarget.style.color = '#0EA5E9';
-                    }}
+                    style={{ padding: '8px 14px', borderRadius: '10px', fontSize: '13px', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', border: 'none', backgroundColor: '#f0f9ff', color: '#0EA5E9', transition: 'all 0.2s', boxShadow: '0 2px 4px rgba(14, 165, 233, 0.1)' }}
+                    onMouseOver={(e) => { e.currentTarget.style.backgroundColor = '#0EA5E9'; e.currentTarget.style.color = '#ffffff'; }}
+                    onMouseOut={(e) => { e.currentTarget.style.backgroundColor = '#f0f9ff'; e.currentTarget.style.color = '#0EA5E9'; }}
                   >
                     <Eye size={15} /> View Details
                   </button>
@@ -359,47 +316,23 @@ export default function DashboardHome() {
               </div>
 
               {post.content && (
-                <p style={{ color: '#334155', fontSize: '15px', lineHeight: '1.6', marginBottom: '0', whiteSpace: 'pre-wrap' }}>
-                  {post.content}
-                </p>
+                <p style={{ color: '#334155', fontSize: '15px', lineHeight: '1.6', marginBottom: '0', whiteSpace: 'pre-wrap' }}>{post.content}</p>
               )}
 
               {post.imageUrl && (
                 <div style={{ marginTop: '16px', borderRadius: '12px', overflow: 'hidden', border: '1px solid #f1f5f9' }}>
-                  <img 
-                    src={post.imageUrl} 
-                    alt="Trip memory" 
-                    style={{ width: '100%', maxHeight: '350px', objectFit: 'cover', display: 'block' }} 
-                  />
+                  <img src={post.imageUrl} alt="Trip memory" style={{ width: '100%', maxHeight: '350px', objectFit: 'cover', display: 'block' }} />
                 </div>
               )}
 
               <div style={{ display: 'flex', gap: '16px', marginTop: '16px', paddingTop: '12px', borderTop: '1px solid #f1f5f9' }}>
-                {/* 🚀 THE PRISTINE, FIXED LIKE BUTTON */}
                 <button 
                   onClick={() => handleLikeToggle(post.id, post.isTrip)}
-                  style={{ 
-                    display: 'flex', 
-                    alignItems: 'center', 
-                    gap: '8px', 
-                    background: 'none', 
-                    border: 'none', 
-                    cursor: 'pointer', 
-                    color: post.isLikedByCurrentUser ? '#e11d48' : '#65676B', 
-                    fontWeight: '600', 
-                    fontSize: '15px', 
-                    transition: 'all 0.2s',
-                    padding: '6px 12px',
-                    borderRadius: '8px'
-                  }}
+                  style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'none', border: 'none', cursor: 'pointer', color: post.isLikedByCurrentUser ? '#e11d48' : '#65676B', fontWeight: '600', fontSize: '15px', transition: 'all 0.2s', padding: '6px 12px', borderRadius: '8px' }}
                   onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#f8fafc'}
                   onMouseOut={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
                 >
-                  <Heart 
-                    size={20} 
-                    strokeWidth={post.isLikedByCurrentUser ? 0 : 2} 
-                    fill={post.isLikedByCurrentUser ? '#e11d48' : 'none'} 
-                  />
+                  <Heart size={20} strokeWidth={post.isLikedByCurrentUser ? 0 : 2} fill={post.isLikedByCurrentUser ? '#e11d48' : 'none'} />
                   {post.likeCount || 0} {post.likeCount === 1 ? 'Like' : 'Likes'}
                 </button>
               </div>
