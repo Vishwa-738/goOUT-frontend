@@ -25,7 +25,9 @@ export default function DashboardHome() {
     feedTab === 'upcoming' ? post.status === 'UPCOMING' : post.status === 'COMPLETED'
   );
 
-  const handleLikeToggle = async (postId) => {
+  // 🚀 THE FIX: Now it accepts `isTrip` so it knows exactly which endpoint to hit!
+  const handleLikeToggle = async (postId, isTrip) => {
+    // 1. Optimistically update the UI instantly
     setPosts(currentPosts => 
       currentPosts.map(post => {
         if (post.id === postId) {
@@ -40,12 +42,16 @@ export default function DashboardHome() {
       })
     );
 
+    // 2. Safely sync with the correct backend endpoint
     try {
-      await api.post(`/api/v1/trips/${postId}/like`).catch(async () => {
+      if (isTrip) {
+        await api.post(`/api/v1/trips/${postId}/like`);
+      } else {
         await api.post(`/api/v1/posts/${postId}/like`);
-      });
+      }
     } catch (error) {
       console.error("Failed to sync like with backend:", error);
+      // Optional: You could revert the UI state here if it fails
     }
   };
 
@@ -79,9 +85,8 @@ export default function DashboardHome() {
         let calculatedStatus = item.status;
         const isCompleted = calculatedStatus === 'COMPLETED' || (item.status && item.status.toUpperCase() === 'COMPLETED');
         
-        // 🚀 SMART TITLE: Just the title and emojis!
         const postContent = item.content || (
-          item.title ? `${item.title} ` : ''
+          item.title ? `${item.title} 🌍 ✈️` : ''
         );
         
         if (!calculatedStatus) {
@@ -131,18 +136,12 @@ export default function DashboardHome() {
           item.destination
         );
 
-        // =========================================================
-        // 🚀 THE ULTIMATE DATE EXTRACTOR
-        // Catches Strings, Java Arrays, and alternate backend names
-        // =========================================================
         const extractDate = (obj) => {
           const rawDate = obj.createdAt || obj.created_at || obj.createdDate || obj.timestamp || obj.date;
-          if (!rawDate) return null; // Returns null so we don't fake the time!
+          if (!rawDate) return null; 
           
-          // Check if Spring Boot sent the date as an array [YYYY, MM, DD, HH, mm]
           if (Array.isArray(rawDate)) {
             const [year, month, day, hour = 0, minute = 0, second = 0] = rawDate;
-            // JS months are 0-indexed, so we subtract 1 from the month
             return new Date(year, month - 1, day, hour, minute, second).toISOString();
           }
           return String(rawDate);
@@ -154,7 +153,7 @@ export default function DashboardHome() {
             name: actualAuthorName,       
             avatarUrl: actualAvatar 
           },
-          createdAt: extractDate(item), // Safely extracted date!
+          createdAt: extractDate(item), 
           location: item.location || item.destinations || 'Unknown Location',
           content: postContent,
           imageUrl: finalImage,
@@ -236,7 +235,6 @@ export default function DashboardHome() {
     if (file) setSelectedImage(file);
   };
 
-  // 🚀 FIXED: Fallback format exactly as requested without faking the live time
   const formatTime = (dateString) => {
     if (!dateString) return 'Recent';
     const date = new Date(dateString);
@@ -319,7 +317,6 @@ export default function DashboardHome() {
                   <div>
                     <h4 style={{ margin: 0, fontSize: '16px', fontWeight: 'bold', color: '#0f172a' }}>{post.author?.name}</h4>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', color: '#64748b', marginTop: '2px' }}>
-                      {/* Displays true backend creation time */}
                       <span>{formatTime(post.createdAt)}</span>
                       {post.location && (
                         <>
@@ -380,8 +377,9 @@ export default function DashboardHome() {
               )}
 
               <div style={{ display: 'flex', gap: '16px', marginTop: '16px', paddingTop: '12px', borderTop: '1px solid #f1f5f9' }}>
+                {/* 🚀 THE FIX: Passed post.isTrip right here into the click handler! */}
                 <button 
-                  onClick={() => handleLikeToggle(post.id)}
+                  onClick={() => handleLikeToggle(post.id, post.isTrip)}
                   style={{ 
                     display: 'flex', 
                     alignItems: 'center', 
