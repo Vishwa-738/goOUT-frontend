@@ -25,7 +25,6 @@ export default function DashboardHome() {
     feedTab === 'upcoming' ? post.status === 'UPCOMING' : post.status === 'COMPLETED'
   );
 
-  // 🚀 THE FIX: Now it accepts `isTrip` so it knows exactly which endpoint to hit!
   const handleLikeToggle = async (postId, isTrip) => {
     // 1. Optimistically update the UI instantly
     setPosts(currentPosts => 
@@ -42,7 +41,7 @@ export default function DashboardHome() {
       })
     );
 
-    // 2. Bulletproof Network Request (Added `{}` as the payload body)
+    // 2. Safely sync with the correct backend endpoint
     try {
       if (isTrip) {
         await api.post(`/api/v1/trips/${postId}/like`, {}); 
@@ -123,11 +122,16 @@ export default function DashboardHome() {
         }
 
         const finalImage = rawImage || 'https://images.unsplash.com/photo-1546708973-b339540b5162?w=600';
+        
+        // 🚀 SAFELY GRAB THE ID, NO MATTER WHAT THE DTO CALLS IT
+        const actualId = item.id || item._id || item.tripId || item.postId;
+
         const exactLikeCount = typeof item.likeCount === 'number' ? item.likeCount : (item.likes || 0);
 
         const isTripItem = Boolean(
           item.isRealTrip || 
           item.type === 'TRIP' || 
+          item.tripId || 
           item.startDate || 
           item.minBudget || 
           item.maxParticipants || 
@@ -147,7 +151,7 @@ export default function DashboardHome() {
         };
 
         return {
-          id: item.id || item._id,
+          id: actualId,
           author: { 
             name: actualAuthorName,       
             avatarUrl: actualAvatar 
@@ -228,11 +232,6 @@ export default function DashboardHome() {
       fetchWeatherData(6.9271, 79.8612);
     }
   }, []);
-
-  const handleImageSelect = (e) => {
-    const file = e.target.files[0];
-    if (file) setSelectedImage(file);
-  };
 
   const formatTime = (dateString) => {
     if (!dateString) return 'Recent';
@@ -376,14 +375,12 @@ export default function DashboardHome() {
               )}
 
               <div style={{ display: 'flex', gap: '16px', marginTop: '16px', paddingTop: '12px', borderTop: '1px solid #f1f5f9' }}>
-                {/* 🚀 THE FIX: Passed post.isTrip right here into the click handler! */}
-                {/* Replace your current button onClick with this: */}
-<button 
-  onClick={() => handleLikeToggle(post.id, post.isTrip)}
-  style={{ 
-    display: 'flex', 
-    alignItems: 'center', 
-    // ... keep the rest of your styles the exact same ... 
+                {/* 🚀 THE PRISTINE, FIXED LIKE BUTTON */}
+                <button 
+                  onClick={() => handleLikeToggle(post.id, post.isTrip)}
+                  style={{ 
+                    display: 'flex', 
+                    alignItems: 'center', 
                     gap: '8px', 
                     background: 'none', 
                     border: 'none', 
