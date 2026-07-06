@@ -4,7 +4,7 @@ import {
   MapPin, Calendar, DollarSign, Users, Wind, Droplets, 
   MessageCircle, Cloud, Wallet, CheckCircle, Shield, Check, 
   Utensils, Car, Home, Ticket, Map, Coffee, Info, X, Clock,
-  Edit, Plus, Trash2 // 🚀 NEW ICONS IMPORTED HERE
+  Edit, Plus, Trash2, Sun, CloudRain, CloudLightning
 } from 'lucide-react';
 import api from '../services/api'; 
 
@@ -24,12 +24,17 @@ export default function TripDetails({ setActiveTab, tripId }) {
   const [isPlaceModalOpen, setIsPlaceModalOpen] = useState(false);
   const [placeForm, setPlaceForm] = useState({ name: '', category: 'Food & Dining', tip: '' });
 
-  // 🚀 NEW: Overview Edit State
+  // Overview Edit State
   const [isEditingOverview, setIsEditingOverview] = useState(false);
   const [overviewDescription, setOverviewDescription] = useState('');
   const [galleryImages, setGalleryImages] = useState([]);
   const [newImageUrl, setNewImageUrl] = useState('');
   const [isSavingOverview, setIsSavingOverview] = useState(false);
+
+  // 🚀 NEW: Dynamic Weather State
+  const [weather, setWeather] = useState({
+    temp: '--', condition: 'Fetching...', humidity: '--', wind: '--'
+  });
 
   const userString = localStorage.getItem('user');
   const currentUser = userString ? JSON.parse(userString) : null;
@@ -42,7 +47,6 @@ export default function TripDetails({ setActiveTab, tripId }) {
       try {
         const response = await api.get(`/api/v1/trips/${tripId}`); 
         setTripData(response.data);
-        // Pre-fill the edit states with existing data
         setOverviewDescription(response.data.description || '');
         setGalleryImages(response.data.galleryImages || []);
       } catch (error) {
@@ -54,6 +58,56 @@ export default function TripDetails({ setActiveTab, tripId }) {
 
     fetchTripDetails();
   }, [tripId]);
+
+  // 🚀 NEW: Dynamic Weather Fetching Engine
+  useEffect(() => {
+    if (tripData?.destinations || tripData?.destination) {
+      const fetchWeather = async () => {
+        try {
+          const locationString = tripData.destinations || tripData.destination;
+          // Extract just the city name (e.g., "Galle" from "Galle, Sri Lanka") for better search results
+          const city = locationString.split(',')[0].trim();
+
+          // 1. Geocode the city name to get Latitude and Longitude
+          const geoRes = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(city)}&count=1&language=en&format=json`);
+          const geoData = await geoRes.json();
+
+          if (!geoData.results || geoData.results.length === 0) {
+            setWeather(prev => ({ ...prev, condition: 'Weather unavailable' }));
+            return;
+          }
+
+          const { latitude, longitude } = geoData.results[0];
+
+          // 2. Fetch the live weather using those coordinates
+          const weatherRes = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current=temperature_2m,relative_humidity_2m,wind_speed_10m,weather_code`);
+          const weatherData = await weatherRes.json();
+          const current = weatherData.current;
+
+          // 3. Translate the weather code into readable text
+          const code = current.weather_code;
+          let condition = 'Clear';
+          if (code >= 1 && code <= 3) condition = 'Partly Cloudy';
+          if (code >= 45 && code <= 55) condition = 'Foggy';
+          if (code >= 61 && code <= 67) condition = 'Rain';
+          if (code >= 80 && code <= 82) condition = 'Heavy Rain';
+          if (code >= 95) condition = 'Thunderstorm';
+
+          setWeather({
+            temp: Math.round(current.temperature_2m),
+            humidity: current.relative_humidity_2m,
+            wind: Math.round(current.wind_speed_10m),
+            condition: condition
+          });
+        } catch (error) {
+          console.error("Failed to fetch dynamic weather:", error);
+          setWeather({ temp: '--', condition: 'Offline', humidity: '--', wind: '--' });
+        }
+      };
+
+      fetchWeather();
+    }
+  }, [tripData]);
 
   // Fetch Expenses
   useEffect(() => {
@@ -126,7 +180,6 @@ export default function TripDetails({ setActiveTab, tripId }) {
     }
   };
 
-  // 🚀 NEW: Handle Saving the Overview Details
   const handleSaveOverview = async () => {
     setIsSavingOverview(true);
     try {
@@ -135,13 +188,10 @@ export default function TripDetails({ setActiveTab, tripId }) {
         galleryImages: galleryImages
       };
       
-      // Hitting the new endpoint the backend team will make
       await api.patch(`/api/v1/trips/${tripId}/overview`, payload).catch(err => {
-        console.warn("Backend endpoint might not be ready yet. Falling back to default PUT request.", err);
         return api.put(`/api/v1/trips/${tripId}`, { ...tripData, ...payload });
       });
 
-      // Instantly update the local UI
       setTripData({ ...tripData, description: overviewDescription, galleryImages: galleryImages });
       setIsEditingOverview(false);
       alert("Trip overview updated successfully!");
@@ -195,6 +245,14 @@ export default function TripDetails({ setActiveTab, tripId }) {
     if (cat === 'Sightseeing') return <Map size={24} color="#0EA5E9" />;
     if (cat === 'Rest Stop (Washrooms)') return <Coffee size={24} color="#10B981" />;
     return <Info size={24} color="#8b5cf6" />;
+  };
+
+  // Helper to get a dynamic icon based on the weather condition
+  const getWeatherIcon = (condition) => {
+    if (condition.includes('Rain')) return <CloudRain size={28} color="#fff" />;
+    if (condition.includes('Thunderstorm')) return <CloudLightning size={28} color="#fff" />;
+    if (condition.includes('Cloud') || condition.includes('Fog')) return <Cloud size={28} color="#fff" />;
+    return <Sun size={28} color="#fff" />;
   };
 
   return (
@@ -256,18 +314,24 @@ export default function TripDetails({ setActiveTab, tripId }) {
             {tripData.status === 'UPCOMING' && !isOrganizer && (
               <button 
                 onClick={handleRequestToJoin}
-                disabled={isRequesting || requestSent || isMember || isPending}
+                disabled={
+                  isRequesting || 
+                  requestSent || 
+                  isMember || 
+                  isPending || 
+                  ((tripData.joinedMembers?.length || 0) >= (tripData.maxParticipants || 8))
+                }
                 style={{ 
                   flex: 1, 
-                  backgroundColor: (isMember || requestSent) ? '#10B981' : (isPending ? '#f59e0b' : (isRequesting ? '#94a3b8' : '#0EA5E9')), 
+                  backgroundColor: (isMember || requestSent) ? '#10B981' : (isPending ? '#f59e0b' : (((tripData.joinedMembers?.length || 0) >= (tripData.maxParticipants || 8)) ? '#ef4444' : (isRequesting ? '#94a3b8' : '#0EA5E9'))), 
                   color: '#fff', 
                   border: 'none', 
                   padding: '16px', 
                   borderRadius: '12px', 
                   fontWeight: 'bold', 
                   fontSize: '15px', 
-                  cursor: (isRequesting || requestSent || isMember || isPending) ? 'default' : 'pointer', 
-                  boxShadow: (requestSent || isMember || isPending) ? 'none' : '0 4px 6px rgba(14, 165, 233, 0.2)', 
+                  cursor: (isRequesting || requestSent || isMember || isPending || ((tripData.joinedMembers?.length || 0) >= (tripData.maxParticipants || 8))) ? 'default' : 'pointer', 
+                  boxShadow: (requestSent || isMember || isPending || ((tripData.joinedMembers?.length || 0) >= (tripData.maxParticipants || 8))) ? 'none' : '0 4px 6px rgba(14, 165, 233, 0.2)', 
                   transition: 'all 0.2s',
                   display: 'flex',
                   alignItems: 'center',
@@ -278,6 +342,7 @@ export default function TripDetails({ setActiveTab, tripId }) {
                 {isMember ? <><Check size={20} /> Already Joined</> 
                  : isPending ? <><Clock size={20} /> Request Pending</>
                  : requestSent ? <><Check size={20} /> Request Sent!</> 
+                 : ((tripData.joinedMembers?.length || 0) >= (tripData.maxParticipants || 8)) ? <><X size={20} /> Trip is Full</>
                  : (isRequesting ? 'Sending Request...' : 'Request to Join')}
               </button>
             )}
@@ -321,7 +386,6 @@ export default function TripDetails({ setActiveTab, tripId }) {
               })}
             </div>
 
-            {/* 🚀 UPGRADED: OVERVIEW TAB WITH EDIT MODE & GALLERY */}
             {activeSegment === 'overview' && (
               <div style={{ padding: '32px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
@@ -338,7 +402,6 @@ export default function TripDetails({ setActiveTab, tripId }) {
                 </div>
 
                 {isEditingOverview ? (
-                  /* --- EDIT MODE UI --- */
                   <div style={{ backgroundColor: '#f8fafc', padding: '24px', borderRadius: '16px', border: '1px solid #e2e8f0', marginBottom: '32px' }}>
                     <label style={{ display: 'block', fontWeight: 'bold', fontSize: '14px', color: '#334155', marginBottom: '8px' }}>Trip Description</label>
                     <textarea 
@@ -367,7 +430,6 @@ export default function TripDetails({ setActiveTab, tripId }) {
                       </button>
                     </div>
 
-                    {/* Miniature Preview of added images in Edit Mode */}
                     {galleryImages.length > 0 && (
                       <div style={{ display: 'flex', gap: '12px', overflowX: 'auto', paddingBottom: '12px', marginBottom: '24px' }}>
                         {galleryImages.map((imgUrl, idx) => (
@@ -405,13 +467,11 @@ export default function TripDetails({ setActiveTab, tripId }) {
                     </div>
                   </div>
                 ) : (
-                  /* --- VIEW MODE UI --- */
                   <>
                     <p style={{ color: '#475569', lineHeight: '1.7', fontSize: '15px', marginBottom: '32px', whiteSpace: 'pre-wrap' }}>
                       {tripData.description || 'No description provided for this adventure yet.'}
                     </p>
 
-                    {/* Image Gallery Grid */}
                     {tripData.galleryImages && tripData.galleryImages.length > 0 && (
                       <div style={{ marginBottom: '40px' }}>
                         <h4 style={{ margin: '0 0 16px 0', fontSize: '16px', color: '#0f172a' }}>Trip Gallery</h4>
@@ -446,7 +506,6 @@ export default function TripDetails({ setActiveTab, tripId }) {
               </div>
             )}
 
-            {/* PLACES */}
             {activeSegment === 'places' && (
               <div style={{ padding: '32px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
@@ -483,7 +542,6 @@ export default function TripDetails({ setActiveTab, tripId }) {
               </div>
             )}
 
-            {/* EXPENSES */}
             {activeSegment === 'expenses' && (
               <div style={{ padding: '32px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
@@ -535,7 +593,6 @@ export default function TripDetails({ setActiveTab, tripId }) {
               </div>
             )}
 
-            {/* MEMBERS TAB */}
             {activeSegment === 'members' && (
               <div style={{ padding: '32px' }}>
                 <h3 style={{ margin: '0 0 24px 0', fontSize: '20px', color: '#0f172a' }}>Travelers ({tripData.joinedMembers?.length || 0})</h3>
@@ -584,10 +641,12 @@ export default function TripDetails({ setActiveTab, tripId }) {
               <div>
                 <div style={{ fontSize: '13px', opacity: 0.9, marginBottom: '4px' }}>{tripData.destinations || tripData.destination || 'Location TBD'}</div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                  <span style={{ fontSize: '48px', fontWeight: 'bold', lineHeight: 1 }}>28°</span>
-                  <Wind size={28} color="#fff" />
+                  {/* 🚀 NEW: Dynamic Temperature & Icon injected here */}
+                  <span style={{ fontSize: '48px', fontWeight: 'bold', lineHeight: 1 }}>{weather.temp}°</span>
+                  {getWeatherIcon(weather.condition)}
                 </div>
-                <div style={{ fontSize: '14px', marginTop: '8px', opacity: 0.9 }}>Partly Cloudy</div>
+                {/* 🚀 NEW: Dynamic Condition injected here */}
+                <div style={{ fontSize: '14px', marginTop: '8px', opacity: 0.9 }}>{weather.condition}</div>
               </div>
             </div>
             
@@ -596,14 +655,16 @@ export default function TripDetails({ setActiveTab, tripId }) {
                 <Wind size={18} style={{ opacity: 0.8 }} />
                 <div>
                   <div style={{ fontSize: '11px', opacity: 0.8 }}>Wind</div>
-                  <div style={{ fontSize: '13px', fontWeight: 'bold' }}>12 km/h</div>
+                  {/* 🚀 NEW: Dynamic Wind injected here */}
+                  <div style={{ fontSize: '13px', fontWeight: 'bold' }}>{weather.wind} km/h</div>
                 </div>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <Droplets size={18} style={{ opacity: 0.8 }} />
                 <div>
                   <div style={{ fontSize: '11px', opacity: 0.8 }}>Humidity</div>
-                  <div style={{ fontSize: '13px', fontWeight: 'bold' }}>75%</div>
+                  {/* 🚀 NEW: Dynamic Humidity injected here */}
+                  <div style={{ fontSize: '13px', fontWeight: 'bold' }}>{weather.humidity}%</div>
                 </div>
               </div>
             </div>

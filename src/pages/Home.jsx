@@ -1,68 +1,162 @@
 // src/pages/Home.jsx
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
+import { Heart, Users, Map, Bell, CreditCard } from 'lucide-react'; 
+import api from '../services/api';
 
-// 🚀 THE FIX 1: Import the exact header assets you use in the Dashboard
 import topBarBg from '../assets/Top bar image.svg';
 import logo from '../assets/Full size logo.svg';
 
-function Home() {
+export default function Home() {
   const navigate = useNavigate();
+  
+  const [popularPosts, setPopularPosts] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const popularDestinations = [
-    { name: 'Ella', activeTrips: 24, image: 'https://images.unsplash.com/photo-1546708973-b339540b5162?w=600&auto=format&fit=crop&q=80' },
-    { name: 'Sigiriya', activeTrips: 18, image: 'https://images.unsplash.com/photo-1588598126710-53bc7f9273c0?w=600&auto=format&fit=crop&q=80' },
-    { name: 'Mirissa', activeTrips: 32, image: 'https://images.unsplash.com/photo-1544735716-392fe2489ffa?w=600&auto=format&fit=crop&q=80' }
-  ];
+  // 🚀 FETCH DYNAMIC POPULAR POSTS
+  useEffect(() => {
+    const fetchTopPosts = async () => {
+      try {
+        // 🚀 THE FIX: ONLY hit the public trending endpoint! No more fallbacks to private routes!
+        const response = await api.get('/api/v1/posts/public/trending');
+        
+        let rawData = Array.isArray(response.data) ? response.data : (response.data?.data || response.data?.content || []);
+        
+        const sorted = rawData.sort((a, b) => (b.likeCount || b.likes || 0) - (a.likeCount || a.likes || 0)).slice(0, 3);
+        
+        const mapped = sorted.map(post => {
+          let rawImg = post.imageUrl || post.coverImageUrl || post.image;
+          if (rawImg && !rawImg.startsWith('http')) {
+            const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080';
+            rawImg = `${baseUrl}/${rawImg.replace(/^\//, '')}`;
+          }
+
+          return {
+            name: post.location || post.destinations || post.title || 'Beautiful Destination',
+            likes: post.likeCount || post.likes || 0,
+            image: rawImg || 'https://images.unsplash.com/photo-1546708973-b339540b5162?w=600'
+          };
+        });
+
+        if (mapped.length === 0) {
+          throw new Error("No data"); 
+        } else {
+          setPopularPosts(mapped);
+        }
+      } catch (error) {
+        console.warn("Could not load live trending posts, loading defaults.");
+        setPopularPosts([
+          { name: 'Ella Rock, LK', likes: 124, image: 'https://images.unsplash.com/photo-1546708973-b339540b5162?w=600&auto=format&fit=crop&q=80' },
+          { name: 'Sigiriya, LK', likes: 98, image: 'https://images.unsplash.com/photo-1588598126710-53bc7f9273c0?w=600&auto=format&fit=crop&q=80' },
+          { name: 'Mirissa Beach, LK', likes: 85, image: 'https://images.unsplash.com/photo-1544735716-392fe2489ffa?w=600&auto=format&fit=crop&q=80' }
+        ]);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchTopPosts();
+  }, []);
+
+  // 🚀 THE SCROLL REVEAL ENGINE
+  useEffect(() => {
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('active');
+        }
+      });
+    }, { 
+      threshold: 0.1, 
+      rootMargin: "0px 0px -50px 0px" 
+    });
+
+    const elements = document.querySelectorAll('.reveal');
+    elements.forEach(el => observer.observe(el));
+
+    return () => observer.disconnect();
+  }, [popularPosts]); 
 
   return (
-    <div className="min-vh-100 d-flex flex-column bg-white">
+    <div className="min-vh-100 d-flex flex-column bg-white" style={{ overflowX: 'hidden' }}>
       
-      {/* 🚀 THE FIX 2: Replaced the standard navbar with your Dashboard Header layout */}
+      {/* 🚀 ANIMATION CSS STYLES */}
+      <style>
+        {`
+          @keyframes fadeInUp {
+            0% { opacity: 0; transform: translateY(40px); }
+            100% { opacity: 1; transform: translateY(0); }
+          }
+          @keyframes cinematicZoom {
+            0% { transform: scale(1); }
+            100% { transform: scale(1.15); }
+          }
+          @keyframes softPulse {
+            0% { box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.5); }
+            70% { box-shadow: 0 0 0 15px rgba(255, 255, 255, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(255, 255, 255, 0); }
+          }
+          .animate-fade-up {
+            opacity: 0;
+            animation: fadeInUp 1s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+          }
+          .reveal {
+            opacity: 0;
+            transition: all 0.9s cubic-bezier(0.16, 1, 0.3, 1);
+          }
+          .reveal.active {
+            opacity: 1;
+            transform: translate(0, 0) scale(1);
+          }
+          .reveal-up { transform: translateY(50px); }
+          .reveal-left { transform: translateX(-50px); }
+          .reveal-right { transform: translateX(50px); }
+          .reveal-scale { transform: scale(0.85); }
+
+          .hover-lift {
+            transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.4s ease;
+          }
+          .hover-lift:hover {
+            transform: translateY(-12px);
+            box-shadow: 0 25px 50px -12px rgba(14, 165, 233, 0.2) !important;
+          }
+          .pulse-btn { animation: softPulse 2s infinite; }
+          .delay-1 { transition-delay: 0.1s; animation-delay: 0.1s; }
+          .delay-2 { transition-delay: 0.2s; animation-delay: 0.2s; }
+          .delay-3 { transition-delay: 0.3s; animation-delay: 0.3s; }
+          .delay-4 { transition-delay: 0.4s; animation-delay: 0.4s; }
+        `}
+      </style>
+
+      {/* HEADER */}
       <header style={{
         backgroundImage: `url(${topBarBg})`, 
         backgroundSize: 'cover',
         backgroundPosition: 'center',
-        borderBottom: '1px solid #f1f5f9',
-        padding: '10px 32px',
+        padding: '12px 32px',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
         position: 'sticky',
         top: 0,
-        zIndex: 1020
+        zIndex: 1020,
+        boxShadow: '0 4px 20px rgba(0,0,0,0.05)'
       }}>
-        <Link 
-          to="/" 
-          style={{ 
-            textDecoration: 'none', 
-            display: 'flex', 
-            alignItems: 'center', 
-            width: '120px', 
-            justifyContent: 'center' 
-          }}
-        >
-          <img 
-            src={logo} 
-            alt="GoOut Logo" 
-            style={{ 
-              height: '60px', 
-              width: '100%', 
-              objectFit: 'contain',
-              transform: 'scale(3.7)' 
-            }} 
-          />
+        <Link to="/" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', width: '120px', justifyContent: 'center' }}>
+          <img src={logo} alt="GoOut Logo" style={{ height: '60px', width: '100%', objectFit: 'contain', transform: 'scale(3.7)' }} />
         </Link>
         <div className="d-flex gap-3">
           <button 
-            className="btn btn-outline-primary px-4 fw-bold rounded-3 bg-white" 
+            className="btn px-4 fw-bold rounded-pill" 
+            style={{ color: '#0EA5E9', border: '2px solid #0EA5E9', backgroundColor: 'transparent', transition: 'all 0.2s' }}
+            onMouseOver={(e) => { e.target.style.backgroundColor = '#f0f9ff'; }}
+            onMouseOut={(e) => { e.target.style.backgroundColor = 'transparent'; }}
             onClick={() => navigate('/login')}
           >
-            Login
+            Log In
           </button>
           <button 
-            className="btn text-white px-4 fw-bold rounded-3 shadow-sm" 
-            style={{ backgroundColor: '#0EA5E9', border: 'none' }}
+            className="btn text-white px-4 fw-bold rounded-pill shadow-sm hover-lift" 
+            style={{ background: 'linear-gradient(135deg, #0EA5E9 0%, #17B0B2 100%)', border: 'none' }}
             onClick={() => navigate('/login')}
           >
             Get Started
@@ -70,209 +164,173 @@ function Home() {
         </div>
       </header>
 
-      {/* Hero Section */}
-      <section 
-        className="text-white text-center d-flex align-items-center justify-content-center px-3"
-        style={{
-          background: `linear-gradient(rgba(14, 165, 233, 0.45), rgba(15, 23, 42, 0.85)), url('https://images.unsplash.com/photo-1544735716-392fe2489ffa?w=1600&auto=format&fit=crop&q=80')`,
+      {/* HERO SECTION */}
+      <section style={{ position: 'relative', height: '80vh', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{
+          position: 'absolute', top: 0, left: 0, width: '100%', height: '100%',
+          // 🚀 RESTORED: Back to the reliable Unsplash image so the page isn't white!
+          backgroundImage: `url('https://images.unsplash.com/photo-1544735716-392fe2489ffa?w=1920&auto=format&fit=crop&q=80')`,
           backgroundSize: 'cover',
           backgroundPosition: 'center',
-          minHeight: '70vh'
-        }}
-      >
-        <div style={{ maxWidth: '800px' }}>
-          <h1 className="display-3 fw-bold mb-3">Explore Sri Lanka Together</h1>
-          <p className="lead fs-4 mb-4 opacity-90">
-            Join solo travelers and groups discovering the pearl of the Indian Ocean. Share experiences, track expenses, and make memories.
-          </p>
-          <div className="d-flex justify-content-center gap-3">
-            <button 
-              className="btn btn-white btn-lg bg-white text-primary fw-bold px-4 shadow rounded-3 border-0" 
-              onClick={() => navigate('/login')}
-            >
-              Get Started
-            </button>
-            <button 
-              className="btn btn-outline-light btn-lg px-4 rounded-3" 
-              onClick={() => navigate('/login')}
-            >
-              Discover Trips
-            </button>
+          animation: 'cinematicZoom 25s alternate infinite ease-in-out',
+          zIndex: 0
+        }}></div>
+        
+        <div style={{
+          position: 'absolute', top: 0, left: 0, width: '100%', height: '100%',
+          background: 'linear-gradient(135deg, rgba(15, 23, 42, 0.9) 0%, rgba(14, 165, 233, 0.6) 100%)',
+          zIndex: 1
+        }}></div>
+
+        <div className="container text-center text-white z-2 px-3">
+          <div style={{ maxWidth: '900px', margin: '0 auto' }}>
+            <span className="badge bg-white text-primary mb-4 px-3 py-2 rounded-pill animate-fade-up fw-bold shadow-sm" style={{ letterSpacing: '1px' }}>
+              🌍 THE #1 TRAVEL APP IN SRI LANKA
+            </span>
+            <h1 className="display-2 fw-bold mb-4 animate-fade-up delay-1" style={{ textShadow: '0 4px 12px rgba(0,0,0,0.2)' }}>
+              Explore Sri Lanka Together.
+            </h1>
+            <p className="lead fs-4 mb-5 opacity-90 animate-fade-up delay-2" style={{ textShadow: '0 2px 4px rgba(0,0,0,0.3)' }}>
+              Join solo travelers and adventurous groups discovering the pearl of the Indian Ocean. Share experiences, track expenses, and make memories that last a lifetime.
+            </p>
+            <div className="d-flex justify-content-center gap-3 animate-fade-up delay-3">
+              <button 
+                className="btn btn-lg bg-white fw-bold px-5 py-3 rounded-pill hover-lift" 
+                style={{ color: '#0EA5E9', boxShadow: '0 10px 25px rgba(0,0,0,0.2)' }}
+                onClick={() => navigate('/login')}
+              >
+                Start Your Journey
+              </button>
+            </div>
           </div>
         </div>
       </section>
 
-      {/* Features Grid Section */}
-      <section className="container text-center py-5 my-4">
-        <h2 className="fw-bold text-dark mb-5">Everything You Need for Group Travel</h2>
+      {/* FEATURES SECTION */}
+      <section className="container py-5 my-5 overflow-hidden">
+        <div className="text-center mb-5 reveal reveal-up">
+          <h2 className="display-5 fw-bold text-dark mb-3">Everything You Need</h2>
+          <p className="text-muted fs-5">Powerful tools to make group travel effortless.</p>
+        </div>
+        
         <div className="row g-4">
-          
-          <div className="col-12 col-md-3">
-            <div className="card h-100 border-0 p-4 shadow-sm bg-light-subtle rounded-4">
-              <h5 className="fw-bold mb-2">Find Travel Groups</h5>
-              <p className="text-muted small mb-0">Connect with like-minded travelers and join groups exploring Sri Lanka together.</p>
+          {[
+            { title: 'Find Groups', icon: <Users size={32} color="#0EA5E9"/>, desc: 'Connect with like-minded travelers heading your way.' },
+            { title: 'Share Experiences', icon: <Map size={32} color="#17B0B2"/>, desc: 'Post stories, interactive maps, and photos to the feed.' },
+            { title: 'Live Updates', icon: <Bell size={32} color="#F59E0B"/>, desc: 'Instant weather tracking and community notifications.' },
+            { title: 'Split Expenses', icon: <CreditCard size={32} color="#10B981"/>, desc: 'Built-in shared ledgers so nobody overpays.' }
+          ].map((feature, idx) => (
+            <div key={idx} className={`col-12 col-md-6 col-lg-3 reveal reveal-up delay-${idx + 1}`}>
+              <div className="card h-100 border-0 p-4 bg-light-subtle rounded-4 hover-lift" style={{ transition: 'all 0.4s ease' }}>
+                <div className="mb-4 bg-white shadow-sm d-inline-flex align-items-center justify-content-center rounded-circle" style={{ width: '64px', height: '64px' }}>
+                  {feature.icon}
+                </div>
+                <h4 className="fw-bold mb-3 color-dark">{feature.title}</h4>
+                <p className="text-muted mb-0 lh-lg">{feature.desc}</p>
+              </div>
             </div>
-          </div>
-
-          <div className="col-12 col-md-3">
-            <div className="card h-100 border-0 p-4 shadow-sm bg-light-subtle rounded-4">
-              <h5 className="fw-bold mb-2">Share Experiences</h5>
-              <p className="text-muted small mb-0">Post your travel stories, photos, and tips with the community.</p>
-            </div>
-          </div>
-
-          <div className="col-12 col-md-3">
-            <div className="card h-100 border-0 p-4 shadow-sm bg-light-subtle rounded-4">
-              <h5 className="fw-bold mb-2">Live Travel Updates</h5>
-              <p className="text-muted small mb-0">Get real-time weather, place recommendations, and travel alerts.</p>
-            </div>
-          </div>
-
-          <div className="col-12 col-md-3">
-            <div className="card h-100 border-0 p-4 shadow-sm bg-light-subtle rounded-4">
-              <h5 className="fw-bold mb-2">Budget Tracking</h5>
-              <p className="text-muted small mb-0">Track shared expenses and split costs seamlessly with your travel group.</p>
-            </div>
-          </div>
-
+          ))}
         </div>
       </section>
 
-      {/* Popular Destinations Section */}
-      <section className="bg-light py-5">
-        <div className="container">
-          <h2 className="fw-bold text-center text-dark mb-5">Popular Destinations</h2>
+      {/* DYNAMIC POPULAR DESTINATIONS */}
+      <section className="py-5 overflow-hidden" style={{ backgroundColor: '#f8fafc' }}>
+        <div className="container py-4">
+          <div className="d-flex justify-content-between align-items-end mb-5 reveal reveal-left">
+            <div>
+              <h2 className="display-6 fw-bold text-dark mb-2">Trending Right Now</h2>
+              <p className="text-muted fs-5 mb-0">The most loved destinations by the GoOut community.</p>
+            </div>
+          </div>
+          
           <div className="row g-4">
-            {popularDestinations.map((dest, index) => (
-              <div key={index} className="col-12 col-md-4">
-                <div 
-                  className="card border-0 rounded-4 shadow-sm overflow-hidden text-white d-flex align-items-end p-3 position-relative"
-                  style={{
-                    height: '280px',
-                    background: `linear-gradient(transparent, rgba(0,0,0,0.85)), url('${dest.image}')`,
-                    backgroundSize: 'cover',
-                    backgroundPosition: 'center'
-                  }}
-                >
-                  <div className="z-1">
-                    <h4 className="fw-bold mb-1">{dest.name}</h4>
-                    <span className="small text-warning">⭐ {dest.activeTrips} Active Trips</span>
+            {isLoading ? (
+              <div className="text-center py-5 text-muted w-100 reveal reveal-up">Loading top destinations...</div>
+            ) : (
+              popularPosts.map((dest, idx) => (
+                <div key={idx} className={`col-12 col-md-4 reveal reveal-scale delay-${idx + 1}`}>
+                  <div 
+                    className="position-relative rounded-4 overflow-hidden hover-lift shadow" 
+                    style={{ height: '350px', cursor: 'pointer' }}
+                  >
+                    <img src={dest.image} alt={dest.name} className="w-100 h-100 object-fit-cover" style={{ transition: 'transform 0.6s cubic-bezier(0.16, 1, 0.3, 1)' }} onMouseOver={(e)=>e.target.style.transform='scale(1.15)'} onMouseOut={(e)=>e.target.style.transform='scale(1)'} />
+                    <div className="position-absolute top-0 start-0 w-100 h-100" style={{ background: 'linear-gradient(to bottom, rgba(0,0,0,0.1), rgba(0,0,0,0.85))', pointerEvents: 'none' }}></div>
+                    <div className="position-absolute bottom-0 start-0 p-4 w-100 pointer-events-none">
+                      <div className="d-flex justify-content-between align-items-end">
+                        <h3 className="text-white fw-bold mb-0" style={{ textShadow: '0 2px 4px rgba(0,0,0,0.3)' }}>{dest.name}</h3>
+                        <span className="badge bg-white text-danger fw-bold shadow-sm d-flex align-items-center gap-1 px-3 py-2 rounded-pill" style={{ fontSize: '14px' }}>
+                          <Heart size={16} fill="currentColor" /> {dest.likes}
+                        </span>
+                      </div>
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              ))
+            )}
           </div>
         </div>
       </section>
 
-      {/* 🚀 THE FIX 1: Seamless CTA Section - Removed the hard blue, added a dark glass overlay */}
+      {/* CTA SECTION */}
       <section 
-        className="text-white text-center py-5 px-3" 
-        style={{ 
-          /* The base is the same gradient as the footer so it matches perfectly */
-          background: 'linear-gradient(135deg, #17B0B2 0%, #8ADD63 100%)',
-          /* We add a subtle dark overlay so the CTA stands out from the footer links below */
-          boxShadow: 'inset 0 0 0 2000px rgba(0, 0, 0, 0.1)' 
-        }}
+        className="text-white text-center py-5 px-3 position-relative overflow-hidden" 
+        style={{ background: 'linear-gradient(135deg, #17B0B2 0%, #8ADD63 100%)' }}
       >
-        <div className="py-4">
-          <h2 className="fw-bold mb-3">Ready to Start Your Adventure?</h2>
-          <p className="fs-5 mb-4 opacity-90">Join thousands of travelers exploring Sri Lanka together</p>
+        <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', background: 'url("data:image/svg+xml,%3Csvg width=\'60\' height=\'60\' viewBox=\'0 0 60 60\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cg fill=\'none\' fill-rule=\'evenodd\'%3E%3Cg fill=\'%23ffffff\' fill-opacity=\'0.1\'%3E%3Cpath d=\'M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z\'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")', opacity: 0.5 }}></div>
+        <div className="py-5 position-relative z-1 reveal reveal-up">
+          <h2 className="display-4 fw-bold mb-3" style={{ textShadow: '0 2px 4px rgba(0,0,0,0.1)' }}>Ready to Start Your Adventure?</h2>
+          <p className="fs-5 mb-5 opacity-90 delay-1">Join thousands of travelers exploring Sri Lanka together</p>
           <button 
-            className="btn btn-light fw-bold btn-lg px-5 shadow-sm rounded-3" 
-            style={{ color: '#17B0B2' }} /* Matches the primary teal */
+            className="btn bg-white fw-bold btn-lg px-5 py-3 rounded-pill pulse-btn delay-2" 
+            style={{ color: '#17B0B2', boxShadow: '0 10px 25px rgba(0,0,0,0.15)' }} 
             onClick={() => navigate('/login')}
           >
-            Join GoOut Today
+            Create Your Free Account
           </button>
         </div>
       </section>
 
-      {/* 🚀 THE FIX 2: Footer Layout - Matches the CTA gradient exactly without a harsh border */}
-      <footer 
-        className="text-white py-5 px-4 mt-auto" 
-        style={{ background: 'linear-gradient(135deg, #17B0B2 0%, #8ADD63 100%)' }}
-      >
+      {/* FOOTER */}
+      <footer className="text-white py-5 px-4 mt-auto overflow-hidden" style={{ backgroundColor: '#0f172a' }}>
         <div className="container">
-          <div className="row g-4">
-            
-            <div className="col-12 col-md-3">
+          <div className="row g-4 mb-4">
+            <div className="col-12 col-md-4 pe-md-5 reveal reveal-up">
               <h5 className="text-white fw-bold mb-3 d-flex align-items-center gap-2">
-                <span style={{ fontSize: '24px' }}>🌐</span> GoOut
+                <img src={logo} alt="GoOut Logo" style={{ height: '40px', filter: 'brightness(0) invert(1)' }} />
               </h5>
-              <p className="small text-white opacity-75">Connecting travelers across Sri Lanka</p>
+              <p className="text-white opacity-50 lh-lg">The premier social platform connecting solo travelers, families, and friends to explore the beauty of Sri Lanka without the stress of planning alone.</p>
             </div>
-
-            <div className="col-6 col-md-3">
-              <h6 className="text-white fw-bold mb-3 text-uppercase small tracking-wider">Product</h6>
-              <ul className="list-unstyled d-flex flex-column gap-2 small">
-                <li>
-                  <span 
-                    className="text-white text-decoration-none cursor-pointer opacity-75" 
-                    onClick={() => navigate('/login')}
-                    style={{ cursor: 'pointer', transition: 'opacity 0.2s' }}
-                    onMouseOver={(e) => e.target.style.opacity = 1}
-                    onMouseOut={(e) => e.target.style.opacity = 0.75}
-                  >
-                    Discover Trips
-                  </span>
-                </li>
-                <li>
-                  <span 
-                    className="text-white text-decoration-none cursor-pointer opacity-75" 
-                    onClick={() => navigate('/login')}
-                    style={{ cursor: 'pointer', transition: 'opacity 0.2s' }}
-                    onMouseOver={(e) => e.target.style.opacity = 1}
-                    onMouseOut={(e) => e.target.style.opacity = 0.75}
-                  >
-                    Dashboard
-                  </span>
-                </li>
-                <li>
-                  <span 
-                    className="text-white text-decoration-none cursor-pointer opacity-75" 
-                    onClick={() => navigate('/login')}
-                    style={{ cursor: 'pointer', transition: 'opacity 0.2s' }}
-                    onMouseOver={(e) => e.target.style.opacity = 1}
-                    onMouseOut={(e) => e.target.style.opacity = 0.75}
-                  >
-                    Create Trip
-                  </span>
-                </li>
+            <div className="col-6 col-md-2 offset-md-2 reveal reveal-left delay-1">
+              <h6 className="text-white fw-bold mb-4 text-uppercase small tracking-wider opacity-75">Platform</h6>
+              <ul className="list-unstyled d-flex flex-column gap-3 small">
+                <li><span className="text-white text-decoration-none opacity-50 hover-lift" onClick={() => navigate('/login')} style={{ cursor: 'pointer' }}>Discover Trips</span></li>
+                <li><span className="text-white text-decoration-none opacity-50 hover-lift" onClick={() => navigate('/login')} style={{ cursor: 'pointer' }}>My Dashboard</span></li>
+                <li><span className="text-white text-decoration-none opacity-50 hover-lift" onClick={() => navigate('/login')} style={{ cursor: 'pointer' }}>Create a Trip</span></li>
               </ul>
             </div>
-
-            <div className="col-6 col-md-3">
-              <h6 className="text-white fw-bold mb-3 text-uppercase small tracking-wider">Company</h6>
-              <ul className="list-unstyled d-flex flex-column gap-2 small">
-                <li><span className="text-white opacity-75" style={{ cursor: 'pointer' }}>About Us</span></li>
-                <li><span className="text-white opacity-75" style={{ cursor: 'pointer' }}>Contact</span></li>
-                <li><span className="text-white opacity-75" style={{ cursor: 'pointer' }}>Careers</span></li>
+            <div className="col-6 col-md-2 reveal reveal-left delay-2">
+              <h6 className="text-white fw-bold mb-4 text-uppercase small tracking-wider opacity-75">Company</h6>
+              <ul className="list-unstyled d-flex flex-column gap-3 small">
+                <li><span className="text-white opacity-50 hover-lift" style={{ cursor: 'pointer' }}>About Us</span></li>
+                <li><span className="text-white opacity-50 hover-lift" style={{ cursor: 'pointer' }}>Contact Support</span></li>
+                <li><span className="text-white opacity-50 hover-lift" style={{ cursor: 'pointer' }}>Careers</span></li>
               </ul>
             </div>
-
-            <div className="col-12 col-md-3">
-              <h6 className="text-white fw-bold mb-3 text-uppercase small tracking-wider">Legal</h6>
-              <ul className="list-unstyled d-flex flex-column gap-2 small">
-                <li><span className="text-white opacity-75" style={{ cursor: 'pointer' }}>Privacy Policy</span></li>
-                <li><span className="text-white opacity-75" style={{ cursor: 'pointer' }}>Terms of Service</span></li>
+            <div className="col-12 col-md-2 reveal reveal-left delay-3">
+              <h6 className="text-white fw-bold mb-4 text-uppercase small tracking-wider opacity-75">Legal</h6>
+              <ul className="list-unstyled d-flex flex-column gap-3 small">
+                <li><span className="text-white opacity-50 hover-lift" style={{ cursor: 'pointer' }}>Privacy Policy</span></li>
+                <li><span className="text-white opacity-50 hover-lift" style={{ cursor: 'pointer' }}>Terms of Service</span></li>
               </ul>
             </div>
-
           </div>
-
-          <hr className="border-white opacity-25 my-4" />
-
-          <div className="text-center small text-white fw-medium opacity-75">
+          <hr className="border-white opacity-10 my-4 reveal reveal-up" />
+          <div className="text-center small text-white opacity-50 reveal reveal-up">
             © 2026 GoOut. All rights reserved.
           </div>
         </div>
       </footer>
 
-      
-
     </div>
   );
 }
-
-export default Home;

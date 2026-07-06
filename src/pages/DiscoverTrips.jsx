@@ -10,25 +10,21 @@ export default function DiscoverTrips({ setActiveTab }) {
   const [searchInput, setSearchInput] = useState('');
   const [viewingTripId, setViewingTripId] = useState(null);
 
-  // 🚀 Fetch trips, dynamically appending the search query if it exists!
   const fetchDiscoverTrips = async (query = '') => {
     setIsLoading(true);
     try {
-      // Use Methsara's new Smart Search Engine endpoint!
       const endpoint = query 
         ? `/api/v1/trips?search=${encodeURIComponent(query)}` 
         : '/api/v1/trips';
         
       const response = await api.get(endpoint);
       
-      // Unwrap the data safely
       let actualTrips = [];
       if (Array.isArray(response.data)) actualTrips = response.data;
       else if (response.data?.data) actualTrips = response.data.data;
       else if (response.data?.content) actualTrips = response.data.content;
       else if (response.data?.trips) actualTrips = response.data.trips;
 
-      // Only show upcoming trips in the Discover feed
       const upcomingTrips = actualTrips.filter(trip => trip.status !== 'COMPLETED');
       
       setTrips(upcomingTrips);
@@ -39,18 +35,15 @@ export default function DiscoverTrips({ setActiveTab }) {
     }
   };
 
-  // Load all trips on initial mount
   useEffect(() => {
     fetchDiscoverTrips();
   }, []);
 
-  // Handle the search form submission
   const handleSearch = (e) => {
     e.preventDefault();
     fetchDiscoverTrips(searchInput);
   };
 
-  // 🚀 Render Trip Details if a user clicks "View Details"
   if (viewingTripId) {
     return (
       <div style={{ width: '100%', maxWidth: '1100px', margin: '0 auto' }}>
@@ -73,7 +66,6 @@ export default function DiscoverTrips({ setActiveTab }) {
   return (
     <div style={{ maxWidth: '1100px', margin: '0 auto', fontFamily: 'sans-serif' }}>
       
-      {/* Header & Search Bar */}
       <div style={{ marginBottom: '40px', textAlign: 'center' }}>
         <h1 style={{ fontSize: '32px', fontWeight: 'bold', color: '#0f172a', marginBottom: '12px' }}>
           Discover New Adventures
@@ -82,7 +74,6 @@ export default function DiscoverTrips({ setActiveTab }) {
           Find amazing trips created by the GoOut community and join the journey.
         </p>
 
-        {/* 🚀 THE SMART SEARCH ENGINE BAR */}
         <form 
           onSubmit={handleSearch} 
           style={{ 
@@ -117,7 +108,6 @@ export default function DiscoverTrips({ setActiveTab }) {
         </form>
       </div>
 
-      {/* Results Grid */}
       {isLoading ? (
         <div style={{ textAlign: 'center', padding: '60px', color: '#64748b' }}>Searching for adventures...</div>
       ) : trips.length === 0 ? (
@@ -130,19 +120,15 @@ export default function DiscoverTrips({ setActiveTab }) {
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '24px' }}>
           {trips.map((trip) => {
             const actualImage = trip.imageUrl || trip.coverImageUrl || 'https://images.unsplash.com/photo-1546708973-b339540b5162?w=600';
-            
+
             return (
               <div key={trip.id || trip._id} style={{ backgroundColor: '#fff', borderRadius: '20px', overflow: 'hidden', border: '1px solid #f1f5f9', boxShadow: '0 2px 4px rgba(0,0,0,0.02)', display: 'flex', flexDirection: 'column' }}>
                 
-                {/* Trip Image */}
                 <div style={{ height: '200px', position: 'relative' }}>
                   <img src={actualImage} alt={trip.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                  <div style={{ position: 'absolute', top: '16px', right: '16px', backgroundColor: 'rgba(255,255,255,0.9)', padding: '6px 12px', borderRadius: '20px', fontSize: '13px', fontWeight: 'bold', color: '#0EA5E9' }}>
-                    {trip.joinedMembers?.length || 0} / {trip.maxParticipants || 10} Joined
-                  </div>
+                  {/* Badge removed for cleaner UI */}
                 </div>
 
-                {/* Trip Details */}
                 <div style={{ padding: '20px', flex: 1, display: 'flex', flexDirection: 'column' }}>
                   <h3 style={{ margin: '0 0 12px 0', fontSize: '18px', fontWeight: 'bold', color: '#0f172a' }}>{trip.title}</h3>
                   
@@ -158,7 +144,6 @@ export default function DiscoverTrips({ setActiveTab }) {
                     </div>
                   </div>
 
-                  {/* View Details Button */}
                   <div style={{ marginTop: 'auto', paddingTop: '16px', borderTop: '1px solid #f1f5f9' }}>
                     <button 
                       onClick={() => setViewingTripId(trip.id || trip._id)}
