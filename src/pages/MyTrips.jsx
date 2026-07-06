@@ -1,10 +1,12 @@
 // src/pages/MyTrips.jsx
 import React, { useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom'; // 🚀 NEW: Import useNavigate
 import { Calendar, MapPin, Users, DollarSign, Plus, Eye, Edit2, UserCheck, Trash2, Check, X, CheckCircle, ChevronDown } from 'lucide-react';
 import TripDetails from './TripDetails'; 
 import API from '../services/api'; 
 
 export default function MyTrips({ setActiveTab }) {
+  const navigate = useNavigate(); // 🚀 NEW: Hook initialized
   const [viewingTripId, setViewingTripId] = useState(null); 
   const [trips, setTrips] = useState([]); 
   const [loading, setLoading] = useState(true);
@@ -14,7 +16,6 @@ export default function MyTrips({ setActiveTab }) {
   const [pendingRequests, setPendingRequests] = useState([]);
   const [loadingRequests, setLoadingRequests] = useState(false);
 
-  // 🚀 NEW: Refs for smooth scrolling
   const organizingRef = useRef(null);
   const joinedRef = useRef(null);
 
@@ -102,7 +103,6 @@ export default function MyTrips({ setActiveTab }) {
     }
   };
 
-  // 🚀 NEW: Helper function to scroll to the sections smoothly
   const scrollToSection = (elementRef) => {
     elementRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };
@@ -162,7 +162,11 @@ export default function MyTrips({ setActiveTab }) {
 
                   {isAdmin && (
                     <>
-                      <button style={{ padding: '10px 16px', borderRadius: '12px', fontSize: '14px', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', backgroundColor: '#ffffff', color: '#334155', border: '1px solid #cbd5e1', transition: 'all 0.2s' }}>
+                      {/* 🚀 THE FIX: Wired the Edit button to navigate to our form and pass the trip data! */}
+                      <button 
+                        onClick={() => navigate('/dashboard/edit-trip', { state: { trip } })}
+                        style={{ padding: '10px 16px', borderRadius: '12px', fontSize: '14px', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', backgroundColor: '#ffffff', color: '#334155', border: '1px solid #cbd5e1', transition: 'all 0.2s' }}
+                      >
                         <Edit2 size={16} /> Edit
                       </button>
                       
@@ -202,7 +206,6 @@ export default function MyTrips({ setActiveTab }) {
   return (
     <div style={{ fontFamily: 'sans-serif', color: '#0f172a', maxWidth: '1100px', margin: '0 auto', position: 'relative' }}>
       
-      {/* HEADER SECTION */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '32px' }}>
         <div>
           <h1 style={{ fontSize: '28px', fontWeight: 'bold', margin: '0 0 6px 0', color: '#0f172a' }}>My Trips</h1>
@@ -216,7 +219,6 @@ export default function MyTrips({ setActiveTab }) {
         </button>
       </div>
 
-      {/* METRICS STATS ROW */}
       <div style={{ display: 'flex', gap: '24px', marginBottom: '32px' }}>
         {stats.map((stat, idx) => (
           <div key={idx} style={{ flex: 1, backgroundColor: '#ffffff', borderRadius: '20px', padding: '24px', display: 'flex', alignItems: 'center', gap: '20px', border: '1px solid #f1f5f9', boxShadow: '0 2px 4px rgba(0,0,0,0.02)' }}>
@@ -231,7 +233,6 @@ export default function MyTrips({ setActiveTab }) {
         ))}
       </div>
 
-      {/* 🚀 NEW: QUICK JUMP NAVIGATION BAR */}
       {!loading && trips.length > 0 && (
         <div style={{ display: 'flex', gap: '16px', marginBottom: '40px', padding: '16px', backgroundColor: '#ffffff', borderRadius: '16px', border: '1px solid #f1f5f9', boxShadow: '0 2px 4px rgba(0,0,0,0.02)' }}>
           <span style={{ fontWeight: '600', color: '#64748b', alignSelf: 'center', marginRight: '8px' }}>Quick Jump:</span>
@@ -256,12 +257,10 @@ export default function MyTrips({ setActiveTab }) {
         </div>
       )}
 
-      {/* TRIP LISTS */}
       {loading ? (
         <div style={{ textAlign: 'center', padding: '40px', color: '#64748b' }}>Loading your adventures from the database...</div>
       ) : (
         <>
-          {/* 🚀 NEW: Added the organizingRef here so the page knows where to scroll! */}
           <div ref={organizingRef} style={{ marginBottom: '48px', scrollMarginTop: '20px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
               <div style={{ width: '4px', height: '24px', backgroundColor: '#10B981', borderRadius: '4px' }}></div>
@@ -270,7 +269,6 @@ export default function MyTrips({ setActiveTab }) {
             {renderTripCards(organizedTrips)}
           </div>
 
-          {/* 🚀 NEW: Added the joinedRef here so the page knows where to scroll! */}
           <div ref={joinedRef} style={{ scrollMarginTop: '20px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
               <div style={{ width: '4px', height: '24px', backgroundColor: '#8b5cf6', borderRadius: '4px' }}></div>
@@ -281,7 +279,6 @@ export default function MyTrips({ setActiveTab }) {
         </>
       )}
 
-      {/* MODAL */}
       {isModalOpen && (
         <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', backgroundColor: 'rgba(0, 0, 0, 0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
           <div style={{ backgroundColor: '#fff', borderRadius: '24px', padding: '32px', width: '90%', maxWidth: '500px', boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1)' }}>

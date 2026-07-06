@@ -1,40 +1,45 @@
 // src/pages/CreateTrip.jsx
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom'; // 🚀 NEW: Import useLocation
 import API from '../services/api';
 import { MapPin, Calendar, Image as ImageIcon, AlignLeft, Users, AlertCircle } from 'lucide-react';
 
-// Hardcoded exchange rate for the converter
 const USD_TO_LKR_RATE = 300; 
 
 export default function CreateTrip() {
   const navigate = useNavigate();
+  const location = useLocation(); // 🚀 Grab the data sent from the Edit button
 
+  // 🚀 Check if we are editing an existing trip
+  const editTripData = location.state?.trip;
+  const isEditing = !!editTripData;
+
+  // Pre-fill the form if we are editing, otherwise start blank!
   const [tripData, setTripData] = useState({
-    title: '',
-    destination: '',
-    startDate: '',
-    endDate: '',
-    budget: '',
-    capacity: '',
-    description: '',
-    imageUrl: '' 
+    title: editTripData?.title || '',
+    destination: editTripData?.destinations || editTripData?.destination || '',
+    startDate: editTripData?.startDate || '',
+    endDate: editTripData?.endDate || '',
+    budget: editTripData?.minBudget || '', 
+    capacity: editTripData?.maxParticipants || '',
+    description: editTripData?.description || '',
+    imageUrl: editTripData?.imageUrl || editTripData?.coverImageUrl || '' 
   });
 
-  const [currency, setCurrency] = useState('LKR');
+  // Default to USD if editing (since backend normalizes everything to USD)
+  const [currency, setCurrency] = useState(isEditing ? 'USD' : 'LKR');
+  
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formErrors, setFormErrors] = useState({});
-  
-  // State for location autocomplete
   const [suggestions, setSuggestions] = useState([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [isSearchingLocation, setIsSearchingLocation] = useState(false);
 
-  // Get today's date in YYYY-MM-DD format to lock the calendar
+  // If editing, we shouldn't lock the start date to "today" because the trip might have started in the past!
   const todayDate = new Date().toISOString().split('T')[0];
+  const minStartDate = isEditing ? undefined : todayDate;
 
   const handleChange = (e) => {
-    // Clear the specific error when the user starts typing again
     setFormErrors({ ...formErrors, [e.target.name]: null });
     setTripData({ ...tripData, [e.target.name]: e.target.value });
   };
@@ -67,13 +72,12 @@ export default function CreateTrip() {
     }
   };
 
-  const handleSelectLocation = (location) => {
-    const locationString = `${location.name}${location.admin1 ? `, ${location.admin1}` : ''}, ${location.country}`;
+  const handleSelectLocation = (loc) => {
+    const locationString = `${loc.name}${loc.admin1 ? `, ${loc.admin1}` : ''}, ${loc.country}`;
     setTripData({ ...tripData, destination: locationString });
     setShowSuggestions(false); 
   };
 
-  // 🚀 THE CURRENCY CONVERTER FUNCTION
   const getConvertedBudgetDisplay = () => {
     if (!tripData.budget) return null;
     const amount = parseFloat(tripData.budget);
@@ -88,17 +92,15 @@ export default function CreateTrip() {
     }
   };
 
-  // 🚀 THE VALIDATION ENGINE
   const validateForm = () => {
     const errors = {};
-    
     if (!tripData.title.trim()) errors.title = "Trip title is required.";
     if (!tripData.destination.trim()) errors.destination = "Destination is required.";
     if (!tripData.imageUrl.trim()) errors.imageUrl = "Cover image URL is required.";
     
     if (!tripData.startDate) {
       errors.startDate = "Start date is required.";
-    } else if (tripData.startDate < todayDate) {
+    } else if (!isEditing && tripData.startDate < todayDate) {
       errors.startDate = "Start date cannot be in the past.";
     }
 
@@ -121,22 +123,16 @@ export default function CreateTrip() {
     }
 
     setFormErrors(errors);
-    return Object.keys(errors).length === 0; // Returns true if no errors!
+    return Object.keys(errors).length === 0;
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
-    // 1. Stop if validation fails
     if (!validateForm()) return;
-    
-    // 2. Stop if already submitting
     if (isSubmitting) return;
-    
     setIsSubmitting(true); 
     
     try {
-      // Normalize budget to USD for the backend
       let finalUsdBudget = parseFloat(tripData.budget);
       if (currency === 'LKR') {
         finalUsdBudget = finalUsdBudget / USD_TO_LKR_RATE;
@@ -148,26 +144,30 @@ export default function CreateTrip() {
         destinations: tripData.destination, 
         startDate: tripData.startDate,
         endDate: tripData.endDate,
-        minBudget: Math.round(finalUsdBudget), // Send normalized USD budget
+        minBudget: Math.round(finalUsdBudget), 
         maxBudget: Math.round(finalUsdBudget), 
         maxParticipants: parseInt(tripData.capacity, 10),
         imageUrl: tripData.imageUrl, 
         isPublic: true,     
         isOrganizer: true,
-        status: 'UPCOMING'
+        status: editTripData?.status || 'UPCOMING' // Keep the existing status if editing
       };
 
-      const response = await API.post('/api/v1/trips', formattedPayload); 
-      console.log("Trip successfully saved to database!", response.data);
+      // 🚀 SMART ROUTING: Decide whether to POST or PUT
+      if (isEditing) {
+        await API.put(`/api/v1/trips/${editTripData.id || editTripData._id}`, formattedPayload);
+        alert("Trip updated successfully!");
+      } else {
+        await API.post('/api/v1/trips', formattedPayload); 
+        alert("Trip created successfully!");
+      }
       
       window.dispatchEvent(new CustomEvent('trip-created'));
-      
-      alert("Successfully created trip");
-      navigate('/dashboard'); 
+      navigate('/dashboard/my-trips'); // Send them back to My Trips
       
     } catch (error) {
-      console.error("Error creating trip:", error);
-      alert("Failed to publish the trip. Check the console to see what the backend said.");
+      console.error("Error saving trip:", error);
+      alert("Failed to save the trip. Check the console.");
       setIsSubmitting(false); 
     }
   };
@@ -175,13 +175,16 @@ export default function CreateTrip() {
   return (
     <div style={{ padding: '24px', fontFamily: 'sans-serif', maxWidth: '800px', margin: '0 auto' }}>
       <div style={{ marginBottom: '32px' }}>
-        <h2 style={{ fontSize: '28px', fontWeight: 'bold', marginBottom: '8px', color: '#0f172a' }}>Plan a New Adventure</h2>
-        <p style={{ color: '#64748b', fontSize: '15px' }}>Fill in the details below to publish your trip to the GoOut community.</p>
+        <h2 style={{ fontSize: '28px', fontWeight: 'bold', marginBottom: '8px', color: '#0f172a' }}>
+          {isEditing ? 'Edit Your Adventure' : 'Plan a New Adventure'}
+        </h2>
+        <p style={{ color: '#64748b', fontSize: '15px' }}>
+          {isEditing ? 'Update the details below to modify your trip.' : 'Fill in the details below to publish your trip to the GoOut community.'}
+        </p>
       </div>
 
       <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
         
-        {/* Basic Info Section */}
         <div style={{ backgroundColor: '#fff', padding: '24px', borderRadius: '20px', border: '1px solid #f1f5f9', boxShadow: '0 2px 4px rgba(0,0,0,0.02)' }}>
           <h3 style={{ fontSize: '18px', fontWeight: '600', marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '8px' }}>
             <AlignLeft size={20} color="#0EA5E9" /> Trip Basics
@@ -189,7 +192,6 @@ export default function CreateTrip() {
           
           <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
             
-            {/* Title */}
             <div>
               <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: '500', color: '#475569' }}>Trip Title *</label>
               <input 
@@ -204,7 +206,6 @@ export default function CreateTrip() {
               {formErrors.title && <span style={{ color: '#ef4444', fontSize: '12px', marginTop: '4px', display: 'flex', alignItems: 'center', gap: '4px' }}><AlertCircle size={12}/> {formErrors.title}</span>}
             </div>
 
-            {/* Destination */}
             <div style={{ position: 'relative' }}>
               <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: '500', color: '#475569' }}>Destination *</label>
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px 16px', borderRadius: '12px', border: `1px solid ${formErrors.destination ? '#ef4444' : '#e2e8f0'}` }}>
@@ -243,7 +244,6 @@ export default function CreateTrip() {
               )}
             </div>
 
-            {/* Cover Image */}
             <div>
               <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: '500', color: '#475569' }}>Cover Image URL *</label>
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px 16px', borderRadius: '12px', border: `1px solid ${formErrors.imageUrl ? '#ef4444' : '#e2e8f0'}` }}>
@@ -264,33 +264,27 @@ export default function CreateTrip() {
           </div>
         </div>
 
-        {/* Details Section */}
         <div style={{ backgroundColor: '#fff', padding: '24px', borderRadius: '20px', border: '1px solid #f1f5f9', boxShadow: '0 2px 4px rgba(0,0,0,0.02)' }}>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '20px' }}>
             
-            {/* Start Date */}
             <div>
               <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: '500', color: '#475569' }}>Start Date *</label>
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px 16px', borderRadius: '12px', border: `1px solid ${formErrors.startDate ? '#ef4444' : '#e2e8f0'}` }}>
                 <Calendar size={18} color={formErrors.startDate ? '#ef4444' : '#94a3b8'} />
-                {/* Native Browser Lock: min={todayDate} */}
-                <input type="date" name="startDate" value={tripData.startDate} min={todayDate} onChange={handleChange} disabled={isSubmitting} style={{ border: 'none', outline: 'none', width: '100%', color: '#475569', backgroundColor: 'transparent' }} />
+                <input type="date" name="startDate" value={tripData.startDate} min={minStartDate} onChange={handleChange} disabled={isSubmitting} style={{ border: 'none', outline: 'none', width: '100%', color: '#475569', backgroundColor: 'transparent' }} />
               </div>
               {formErrors.startDate && <span style={{ color: '#ef4444', fontSize: '12px', marginTop: '4px', display: 'flex', alignItems: 'center', gap: '4px' }}><AlertCircle size={12}/> {formErrors.startDate}</span>}
             </div>
 
-            {/* End Date */}
             <div>
               <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: '500', color: '#475569' }}>End Date *</label>
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px 16px', borderRadius: '12px', border: `1px solid ${formErrors.endDate ? '#ef4444' : '#e2e8f0'}` }}>
                 <Calendar size={18} color={formErrors.endDate ? '#ef4444' : '#94a3b8'} />
-                {/* Native Browser Lock: min={tripData.startDate} ensures they can't pick before the start date */}
-                <input type="date" name="endDate" value={tripData.endDate} min={tripData.startDate || todayDate} onChange={handleChange} disabled={isSubmitting} style={{ border: 'none', outline: 'none', width: '100%', color: '#475569', backgroundColor: 'transparent' }} />
+                <input type="date" name="endDate" value={tripData.endDate} min={tripData.startDate || minStartDate} onChange={handleChange} disabled={isSubmitting} style={{ border: 'none', outline: 'none', width: '100%', color: '#475569', backgroundColor: 'transparent' }} />
               </div>
               {formErrors.endDate && <span style={{ color: '#ef4444', fontSize: '12px', marginTop: '4px', display: 'flex', alignItems: 'center', gap: '4px' }}><AlertCircle size={12}/> {formErrors.endDate}</span>}
             </div>
 
-            {/* Budget & Currency Toggle */}
             <div>
               <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: '500', color: '#475569' }}>Estimated Budget *</label>
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px 16px', borderRadius: '12px', border: `1px solid ${formErrors.budget ? '#ef4444' : '#e2e8f0'}` }}>
@@ -311,7 +305,6 @@ export default function CreateTrip() {
               {formErrors.budget && <span style={{ color: '#ef4444', fontSize: '12px', display: 'flex', alignItems: 'center', gap: '4px' }}><AlertCircle size={12}/> {formErrors.budget}</span>}
             </div>
 
-            {/* Max Travelers */}
             <div>
               <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: '500', color: '#475569' }}>Max Travelers *</label>
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px 16px', borderRadius: '12px', border: `1px solid ${formErrors.capacity ? '#ef4444' : '#e2e8f0'}` }}>
@@ -338,7 +331,7 @@ export default function CreateTrip() {
             marginTop: '8px',
             transition: 'background-color 0.2s'
           }}>
-          {isSubmitting ? 'Publishing Adventure...' : 'Publish Trip'}
+          {isSubmitting ? 'Saving...' : (isEditing ? 'Save Changes' : 'Publish Trip')}
         </button>
       </form>
     </div>
