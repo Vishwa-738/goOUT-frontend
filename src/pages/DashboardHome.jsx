@@ -26,8 +26,8 @@ export default function DashboardHome() {
   );
 
   // 🚀 THE FIX: Now it accepts `isTrip` so it knows exactly which endpoint to hit!
-  // 🚀 FIXED: Now accepts isTrip to hit the correct endpoint on the first try!
   const handleLikeToggle = async (postId, isTrip) => {
+    // 1. Optimistically update the UI instantly
     setPosts(currentPosts => 
       currentPosts.map(post => {
         if (post.id === postId) {
@@ -42,15 +42,15 @@ export default function DashboardHome() {
       })
     );
 
+    // 2. Bulletproof Network Request (Added `{}` as the payload body)
     try {
-      // No more guessing! We route it perfectly based on isTrip
       if (isTrip) {
-        await api.post(`/api/v1/trips/${postId}/like`);
+        await api.post(`/api/v1/trips/${postId}/like`, {}); 
       } else {
-        await api.post(`/api/v1/posts/${postId}/like`);
+        await api.post(`/api/v1/posts/${postId}/like`, {});
       }
     } catch (error) {
-      console.error("Failed to sync like with backend:", error);
+      console.error("Failed to sync like with backend:", error.response || error);
     }
   };
 
