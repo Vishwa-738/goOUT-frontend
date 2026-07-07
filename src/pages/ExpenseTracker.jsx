@@ -1,6 +1,6 @@
 // src/pages/ExpenseTracker.jsx
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, Sigma, User, Grid } from 'lucide-react';
+import { ArrowLeft, Sigma, User, Grid, Globe } from 'lucide-react';
 import api from '../services/api';
 
 import bg1 from '../assets/card-bg-1.png';
@@ -17,13 +17,24 @@ export default function ExpenseTracker({ tripId, tripName, setActiveTab }) {
     perPerson: 0
   });
 
-  // 🚀 NEW: State to hold the official trip members
   const [tripMembers, setTripMembers] = useState([]);
 
   const [description, setDescription] = useState('');
   const [amount, setAmount] = useState('');
   const [category, setCategory] = useState('');
-  const [paidBy, setPaidBy] = useState(''); // This will now store the userId!
+  const [paidBy, setPaidBy] = useState(''); 
+
+  // 🚀 NEW: Dynamic Currency State
+  const [currency, setCurrency] = useState('LKR'); // Defaulting to LKR for Sri Lanka!
+  
+  const currencySymbols = {
+    LKR: 'Rs ',
+    USD: '$',
+    EUR: '€',
+    GBP: '£',
+    AUD: 'A$'
+  };
+  const sym = currencySymbols[currency] || '$';
 
   const fetchExpenses = async () => {
     setIsLoading(true);
@@ -51,18 +62,14 @@ export default function ExpenseTracker({ tripId, tripName, setActiveTab }) {
     }
   };
 
-  // 🚀 NEW: Fetch the actual trip members to populate the Dropdown!
   const fetchTripMembers = async () => {
     try {
       const response = await api.get(`/api/v1/trips/${tripId}`);
       const data = response.data;
       
       let membersList = [];
-      
-      // Add the Organizer
       if (data.organizer) membersList.push(data.organizer);
       
-      // Add the Joined Members (excluding the organizer if they are duplicated)
       if (data.joinedMembers) {
         const orgId = data.organizer?.id || data.organizer?._id;
         const others = data.joinedMembers.filter(m => (m.id || m._id) !== orgId);
@@ -79,7 +86,7 @@ export default function ExpenseTracker({ tripId, tripName, setActiveTab }) {
     if (tripId) {
       fetchExpenses();
       fetchDashboardStats(); 
-      fetchTripMembers(); // Call the new function
+      fetchTripMembers(); 
     }
   }, [tripId]);
 
@@ -91,7 +98,7 @@ export default function ExpenseTracker({ tripId, tripName, setActiveTab }) {
         title: description, 
         amount: parseFloat(amount),
         category: category,
-        paidBy: paidBy // 🚀 This is now safely sending the userId!
+        paidBy: paidBy 
       };
       await api.post('/api/v1/expenses', payload);
       setDescription('');
@@ -106,7 +113,6 @@ export default function ExpenseTracker({ tripId, tripName, setActiveTab }) {
     }
   };
 
-  // 🚀 PRO-UI HELPER: Translates the backend ID back into a real name for the table!
   const getMemberName = (idOrName) => {
     const member = tripMembers.find(m => String(m.id || m._id) === String(idOrName));
     return member ? `${member.firstName} ${member.lastName}` : idOrName;
@@ -126,20 +132,40 @@ export default function ExpenseTracker({ tripId, tripName, setActiveTab }) {
 
   return (
     <div className="container-fluid px-0 py-2">
-      <div className="mb-4">
-        <button 
-          onClick={() => setActiveTab('expenses')}
-          style={{ background: 'none', border: 'none', color: '#64748b', display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', marginBottom: '16px', padding: 0, fontWeight: '500' }}
-        >
-          <ArrowLeft size={16} /> Back to Trips
-        </button>
-        
-        <div className="d-flex align-items-center gap-3 mb-1">
-          <h2 className="fw-bold text-dark mb-0" style={{ fontSize: '2.2rem', letterSpacing: '-0.5px' }}>
-            {tripName || 'Expense'} Tracker
-          </h2>
+      {/* 🚀 UPGRADED: Header now includes the Currency Selector */}
+      <div className="d-flex justify-content-between align-items-start mb-4">
+        <div>
+          <button 
+            onClick={() => setActiveTab('expenses')}
+            style={{ background: 'none', border: 'none', color: '#64748b', display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', marginBottom: '16px', padding: 0, fontWeight: '500' }}
+          >
+            <ArrowLeft size={16} /> Back to Trips
+          </button>
+          
+          <div className="d-flex align-items-center gap-3 mb-1">
+            <h2 className="fw-bold text-dark mb-0" style={{ fontSize: '2.2rem', letterSpacing: '-0.5px' }}>
+              {tripName || 'Expense'} Tracker
+            </h2>
+          </div>
+          <p className="text-secondary" style={{ fontSize: '1.05rem', marginTop: '8px' }}>Track and split trip expenses with your travel group</p>
         </div>
-        <p className="text-secondary" style={{ fontSize: '1.05rem', marginTop: '8px' }}>Track and split trip expenses with your travel group</p>
+
+        {/* Currency Dropdown */}
+        <div className="d-flex align-items-center gap-2 bg-white px-3 py-2 rounded-pill shadow-sm border" style={{ borderColor: '#f1f5f9' }}>
+          <Globe size={18} color="#64748b" />
+          <select 
+            className="form-select border-0 shadow-none fw-bold text-dark p-0 pe-4"
+            style={{ cursor: 'pointer', backgroundColor: 'transparent', outline: 'none' }}
+            value={currency}
+            onChange={(e) => setCurrency(e.target.value)}
+          >
+            <option value="LKR">LKR (Rs)</option>
+            <option value="USD">USD ($)</option>
+            <option value="EUR">EUR (€)</option>
+            <option value="GBP">GBP (£)</option>
+            <option value="AUD">AUD (A$)</option>
+          </select>
+        </div>
       </div>
 
       <div className="row g-4 mb-4">
@@ -156,7 +182,8 @@ export default function ExpenseTracker({ tripId, tripName, setActiveTab }) {
               <Sigma size={48} color="#ffffff" />
               <div>
                 <span className="small opacity-90 d-block mb-1">Total Expenses</span>
-                <h3 className="fw-bold mb-0">${(dashboardStats.totalExpenses || 0).toFixed(2)}</h3>
+                {/* 🚀 Injecting the dynamic symbol */}
+                <h3 className="fw-bold mb-0">{sym}{(dashboardStats.totalExpenses || 0).toFixed(2)}</h3>
               </div>
             </div>
           </div>
@@ -175,7 +202,8 @@ export default function ExpenseTracker({ tripId, tripName, setActiveTab }) {
               <User size={48} color="#ffffff" />
               <div>
                 <span className="small opacity-90 d-block mb-1">Per Person (Avg)</span>
-                <h3 className="fw-bold mb-0">${(dashboardStats.perPerson || 0).toFixed(2)}</h3>
+                {/* 🚀 Injecting the dynamic symbol */}
+                <h3 className="fw-bold mb-0">{sym}{(dashboardStats.perPerson || 0).toFixed(2)}</h3>
               </div>
             </div>
           </div>
@@ -220,11 +248,12 @@ export default function ExpenseTracker({ tripId, tripName, setActiveTab }) {
               </div>
 
               <div className="mb-3">
-                <label className="form-label small fw-bold text-secondary mb-1">Amount (USD) *</label>
+                {/* 🚀 Dynamic input label */}
+                <label className="form-label small fw-bold text-secondary mb-1">Amount ({currency}) *</label>
                 <input 
                   type="number" 
                   className="form-control bg-light border-0 py-2.5 px-3 text-dark rounded-3 shadow-none" 
-                  placeholder="e.g., 100"
+                  placeholder="e.g., 1500"
                   value={amount}
                   onChange={(e) => setAmount(e.target.value)}
                   required 
@@ -250,8 +279,6 @@ export default function ExpenseTracker({ tripId, tripName, setActiveTab }) {
 
               <div className="mb-4">
                 <label className="form-label small fw-bold text-secondary mb-1">Paid By *</label>
-                
-                {/* 🚀 FIXED: Dynamic Dropdown securely passing member.id! */}
                 <select 
                   className="form-select bg-light border-0 py-2.5 px-3 text-dark rounded-3 shadow-none"
                   value={paidBy}
@@ -283,8 +310,9 @@ export default function ExpenseTracker({ tripId, tripName, setActiveTab }) {
                 <div key={cat}>
                   <div className="d-flex justify-content-between align-items-center mb-1">
                     <span className="fw-semibold text-dark">{cat}</span>
+                    {/* 🚀 Dynamic symbol injected here */}
                     <span className="fw-bold" style={{ color: '#0EA5E9' }}>
-                      ${(categoryTotals[cat] || 0).toFixed(2)}
+                      {sym}{(categoryTotals[cat] || 0).toFixed(2)}
                     </span>
                   </div>
                   <div className="progress rounded-pill" style={{ height: '8px' }}>
@@ -333,13 +361,12 @@ export default function ExpenseTracker({ tripId, tripName, setActiveTab }) {
                             {item.category || 'Other'}
                           </span>
                         </td>
-                        {/* 🚀 PRO-UI: Translates the ID back to the real name! */}
                         <td className="py-3 border-0 text-secondary">{getMemberName(item.paidBy)}</td>
-                        
                         <td className="py-3 border-0 text-secondary">
                           {item.createdAt ? new Date(item.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'Today'}
                         </td>
-                        <td className="py-3 border-0 text-end fw-bold">${(item.amount || 0).toFixed(2)}</td>
+                        {/* 🚀 Dynamic symbol injected here */}
+                        <td className="py-3 border-0 text-end fw-bold">{sym}{(item.amount || 0).toFixed(2)}</td>
                         <td className="py-3 border-0 text-center">
                           <div className="d-flex align-items-center justify-content-center gap-2">
                             <button type="button" className="btn btn-link p-1 text-secondary shadow-none border-0">📝</button>
