@@ -1,11 +1,12 @@
 // src/pages/Home.jsx
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { Heart, Users, Map, Bell, CreditCard } from 'lucide-react'; 
+import { Heart, Users, Map, Bell, CreditCard, Compass } from 'lucide-react'; 
 import api from '../services/api';
 
 import topBarBg from '../assets/Top bar image.svg';
 import logo from '../assets/Full size logo.svg';
+import heroBg from '../assets/hero-bg.jpg';
 
 export default function Home() {
   const navigate = useNavigate();
@@ -13,11 +14,10 @@ export default function Home() {
   const [popularPosts, setPopularPosts] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  // 🚀 FETCH DYNAMIC POPULAR POSTS
+  // 🚀 FETCH DYNAMIC POPULAR POSTS (STRICTLY LIVE DATA)
   useEffect(() => {
     const fetchTopPosts = async () => {
       try {
-        // 🚀 THE FIX: ONLY hit the public trending endpoint! No more fallbacks to private routes!
         const response = await api.get('/api/v1/posts/public/trending');
         
         let rawData = Array.isArray(response.data) ? response.data : (response.data?.data || response.data?.content || []);
@@ -38,18 +38,11 @@ export default function Home() {
           };
         });
 
-        if (mapped.length === 0) {
-          throw new Error("No data"); 
-        } else {
-          setPopularPosts(mapped);
-        }
+        setPopularPosts(mapped);
       } catch (error) {
-        console.warn("Could not load live trending posts, loading defaults.");
-        setPopularPosts([
-          { name: 'Ella Rock, LK', likes: 124, image: 'https://images.unsplash.com/photo-1546708973-b339540b5162?w=600&auto=format&fit=crop&q=80' },
-          { name: 'Sigiriya, LK', likes: 98, image: 'https://images.unsplash.com/photo-1588598126710-53bc7f9273c0?w=600&auto=format&fit=crop&q=80' },
-          { name: 'Mirissa Beach, LK', likes: 85, image: 'https://images.unsplash.com/photo-1544735716-392fe2489ffa?w=600&auto=format&fit=crop&q=80' }
-        ]);
+        // 🚀 THE FIX: Removed all hardcoded fallback data. If it fails, it stays empty!
+        console.error("Failed to load live trending posts:", error);
+        setPopularPosts([]); 
       } finally {
         setIsLoading(false);
       }
@@ -165,11 +158,12 @@ export default function Home() {
       </header>
 
       {/* HERO SECTION */}
+     {/* HERO SECTION (Loads Instantly) */}
       <section style={{ position: 'relative', height: '80vh', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         <div style={{
           position: 'absolute', top: 0, left: 0, width: '100%', height: '100%',
-          // 🚀 RESTORED: Back to the reliable Unsplash image so the page isn't white!
-          backgroundImage: `url('https://images.unsplash.com/photo-1544735716-392fe2489ffa?w=1920&auto=format&fit=crop&q=80')`,
+          // 🚀 CHANGED: Using your local image variable instead of the URL
+          backgroundImage: `url(${heroBg})`, 
           backgroundSize: 'cover',
           backgroundPosition: 'center',
           animation: 'cinematicZoom 25s alternate infinite ease-in-out',
@@ -185,7 +179,7 @@ export default function Home() {
         <div className="container text-center text-white z-2 px-3">
           <div style={{ maxWidth: '900px', margin: '0 auto' }}>
             <span className="badge bg-white text-primary mb-4 px-3 py-2 rounded-pill animate-fade-up fw-bold shadow-sm" style={{ letterSpacing: '1px' }}>
-              🌍 THE #1 TRAVEL APP IN SRI LANKA
+            THE #1 TRAVEL APP IN SRI LANKA
             </span>
             <h1 className="display-2 fw-bold mb-4 animate-fade-up delay-1" style={{ textShadow: '0 4px 12px rgba(0,0,0,0.2)' }}>
               Explore Sri Lanka Together.
@@ -246,6 +240,12 @@ export default function Home() {
           <div className="row g-4">
             {isLoading ? (
               <div className="text-center py-5 text-muted w-100 reveal reveal-up">Loading top destinations...</div>
+            ) : popularPosts.length === 0 ? (
+              <div className="text-center py-5 w-100 reveal reveal-up" style={{ backgroundColor: '#fff', borderRadius: '16px', border: '1px dashed #cbd5e1' }}>
+                <Compass size={48} color="#cbd5e1" style={{ marginBottom: '16px' }} />
+                <h4 className="fw-bold text-dark">No trending trips right now!</h4>
+                <p className="text-muted mb-0">Be the first to share an amazing adventure with the community.</p>
+              </div>
             ) : (
               popularPosts.map((dest, idx) => (
                 <div key={idx} className={`col-12 col-md-4 reveal reveal-scale delay-${idx + 1}`}>
