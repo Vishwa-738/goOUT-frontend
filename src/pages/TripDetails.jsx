@@ -274,17 +274,23 @@ export default function TripDetails({ setActiveTab, tripId }) {
         
         <div style={{ flex: 1 }}>
           <div style={{ backgroundColor: '#fff', padding: '24px', borderRadius: '20px', border: '1px solid #f1f5f9', display: 'flex', gap: '24px', marginBottom: '24px', boxShadow: '0 2px 4px rgba(0,0,0,0.02)' }}>
+            
+            {/* 🚀 CARD 1: RESTORED TRIP DATES */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flex: 1 }}>
-              <div style={{ backgroundColor: '#f0f9ff', padding: '12px', borderRadius: '12px', color: '#0EA5E9' }}><Calendar size={24} /></div>
+              <div style={{ backgroundColor: '#f0f9ff', padding: '12px', borderRadius: '12px', color: '#0EA5E9' }}>
+                <Calendar size={24} />
+              </div>
               <div>
-                <div style={{ fontSize: '13px', color: '#64748b', marginBottom: '2px' }}>Duration</div>
+                <div style={{ fontSize: '13px', color: '#64748b', marginBottom: '2px' }}>Trip Dates</div>
                 <div style={{ fontWeight: 'bold', fontSize: '15px', color: '#0f172a' }}>
-                  {tripData.startDate && tripData.endDate ? `${tripData.startDate} to ${tripData.endDate}` : 'Dates TBD'}
+                  {tripData.startDate && tripData.endDate 
+                    ? `${new Date(tripData.startDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - ${new Date(tripData.endDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}` 
+                    : 'Dates TBD'}
                 </div>
               </div>
             </div>
             
-            {/* 🚀 UPGRADED BUDGET CARD */}
+            {/* 🚀 CARD 2: BUDGET SPENT */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flex: 1, borderLeft: '1px solid #f1f5f9', paddingLeft: '24px' }}>
               <div style={{ 
                 backgroundColor: isOverBudget ? '#fef2f2' : '#f0fdf4', 
@@ -314,8 +320,11 @@ export default function TripDetails({ setActiveTab, tripId }) {
               </div>
             </div>
 
+            {/* 🚀 CARD 3: MEMBERS COUNT */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flex: 1, borderLeft: '1px solid #f1f5f9', paddingLeft: '24px' }}>
-              <div style={{ backgroundColor: '#f5f3ff', padding: '12px', borderRadius: '12px', color: '#8b5cf6' }}><Users size={24} /></div>
+              <div style={{ backgroundColor: '#f5f3ff', padding: '12px', borderRadius: '12px', color: '#8b5cf6' }}>
+                <Users size={24} />
+              </div>
               <div>
                 <div style={{ fontSize: '13px', color: '#64748b', marginBottom: '2px' }}>Members</div>
                 <div style={{ fontWeight: 'bold', fontSize: '15px', color: '#0f172a' }}>
@@ -323,6 +332,7 @@ export default function TripDetails({ setActiveTab, tripId }) {
                 </div>
               </div>
             </div>
+
           </div>
 
           <div style={{ display: 'flex', gap: '16px', marginBottom: '32px' }}>
