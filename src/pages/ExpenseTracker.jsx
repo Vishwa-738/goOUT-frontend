@@ -1,6 +1,6 @@
 // src/pages/ExpenseTracker.jsx
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, Sigma, User, Grid, Globe } from 'lucide-react';
+import { ArrowLeft, Sigma, User, Grid, Globe, AlertCircle } from 'lucide-react'; // 🚀 IMPORTED AlertCircle
 import api from '../services/api';
 
 import bg1 from '../assets/card-bg-1.png';
@@ -18,14 +18,16 @@ export default function ExpenseTracker({ tripId, tripName, setActiveTab }) {
   });
 
   const [tripMembers, setTripMembers] = useState([]);
+  
+  // 🚀 NEW: State to hold the official Trip Budget
+  const [tripBudget, setTripBudget] = useState(0);
 
   const [description, setDescription] = useState('');
   const [amount, setAmount] = useState('');
   const [category, setCategory] = useState('');
   const [paidBy, setPaidBy] = useState(''); 
 
-  // 🚀 NEW: Dynamic Currency State
-  const [currency, setCurrency] = useState('LKR'); // Defaulting to LKR for Sri Lanka!
+  const [currency, setCurrency] = useState('LKR'); 
   
   const currencySymbols = {
     LKR: 'Rs ',
@@ -62,10 +64,14 @@ export default function ExpenseTracker({ tripId, tripName, setActiveTab }) {
     }
   };
 
-  const fetchTripMembers = async () => {
+  // 🚀 UPGRADED: Now fetches the budget alongside the members!
+  const fetchTripDetails = async () => {
     try {
       const response = await api.get(`/api/v1/trips/${tripId}`);
       const data = response.data;
+      
+      // Save the budget to state (checking both potential variable names)
+      setTripBudget(data.minBudget || data.budget || 0);
       
       let membersList = [];
       if (data.organizer) membersList.push(data.organizer);
@@ -78,7 +84,7 @@ export default function ExpenseTracker({ tripId, tripName, setActiveTab }) {
       
       setTripMembers(membersList);
     } catch (error) {
-      console.error("Failed to fetch trip members for dropdown:", error);
+      console.error("Failed to fetch trip details:", error);
     }
   };
 
@@ -86,7 +92,7 @@ export default function ExpenseTracker({ tripId, tripName, setActiveTab }) {
     if (tripId) {
       fetchExpenses();
       fetchDashboardStats(); 
-      fetchTripMembers(); 
+      fetchTripDetails(); // Call the upgraded function
     }
   }, [tripId]);
 
@@ -130,9 +136,12 @@ export default function ExpenseTracker({ tripId, tripName, setActiveTab }) {
     return `${(catAmount / dashboardStats.totalExpenses) * 100}%`;
   };
 
+  // 🚀 NEW: Over-Budget Calculation Logic
+  const isOverBudget = tripBudget > 0 && dashboardStats.totalExpenses > tripBudget;
+  const overBudgetAmount = isOverBudget ? dashboardStats.totalExpenses - tripBudget : 0;
+
   return (
     <div className="container-fluid px-0 py-2">
-      {/* 🚀 UPGRADED: Header now includes the Currency Selector */}
       <div className="d-flex justify-content-between align-items-start mb-4">
         <div>
           <button 
@@ -150,7 +159,6 @@ export default function ExpenseTracker({ tripId, tripName, setActiveTab }) {
           <p className="text-secondary" style={{ fontSize: '1.05rem', marginTop: '8px' }}>Track and split trip expenses with your travel group</p>
         </div>
 
-        {/* Currency Dropdown */}
         <div className="d-flex align-items-center gap-2 bg-white px-3 py-2 rounded-pill shadow-sm border" style={{ borderColor: '#f1f5f9' }}>
           <Globe size={18} color="#64748b" />
           <select 
@@ -169,27 +177,25 @@ export default function ExpenseTracker({ tripId, tripName, setActiveTab }) {
       </div>
 
       <div className="row g-4 mb-4">
-        {/* CARD 1 */}
         <div className="col-12 col-md-4">
           <div className="card border-0 text-white p-4 rounded-4 shadow-sm" style={{ 
-            backgroundColor: '#14a3e4', 
+            backgroundColor: isOverBudget ? '#ef4444' : '#14a3e4', // 🚀 Turns RED if over budget!
             backgroundImage: `url(${bg1})`, 
             backgroundSize: 'cover', 
             backgroundPosition: 'center',
-            minHeight: '120px' 
+            minHeight: '120px',
+            transition: 'background-color 0.3s ease'
           }}>
             <div className="d-flex align-items-center gap-3 h-100">
               <Sigma size={48} color="#ffffff" />
               <div>
                 <span className="small opacity-90 d-block mb-1">Total Expenses</span>
-                {/* 🚀 Injecting the dynamic symbol */}
                 <h3 className="fw-bold mb-0">{sym}{(dashboardStats.totalExpenses || 0).toFixed(2)}</h3>
               </div>
             </div>
           </div>
         </div>
 
-        {/* CARD 2 */}
         <div className="col-12 col-md-4">
           <div className="card border-0 text-white p-4 rounded-4 shadow-sm" style={{ 
             backgroundColor: '#1cbd74', 
@@ -202,14 +208,12 @@ export default function ExpenseTracker({ tripId, tripName, setActiveTab }) {
               <User size={48} color="#ffffff" />
               <div>
                 <span className="small opacity-90 d-block mb-1">Per Person (Avg)</span>
-                {/* 🚀 Injecting the dynamic symbol */}
                 <h3 className="fw-bold mb-0">{sym}{(dashboardStats.perPerson || 0).toFixed(2)}</h3>
               </div>
             </div>
           </div>
         </div>
 
-        {/* CARD 3 */}
         <div className="col-12 col-md-4">
           <div className="card border-0 text-white p-4 rounded-4 shadow-sm" style={{ 
             backgroundColor: '#8a3ffc', 
@@ -228,6 +232,21 @@ export default function ExpenseTracker({ tripId, tripName, setActiveTab }) {
           </div>
         </div>
       </div>
+
+      {/* 🚀 NEW: The Over-Budget Alert Banner */}
+      {isOverBudget && (
+        <div className="alert border-0 rounded-4 mb-4 d-flex align-items-center gap-3 shadow-sm" style={{ backgroundColor: '#fef2f2', color: '#991b1b', border: '1px solid #fecaca' }}>
+          <div className="bg-white rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style={{ width: '48px', height: '48px', boxShadow: '0 2px 4px rgba(220, 38, 38, 0.1)' }}>
+            <AlertCircle size={24} color="#dc2626" />
+          </div>
+          <div>
+            <h6 className="fw-bold mb-1" style={{ fontSize: '1.05rem' }}>Budget Exceeded</h6>
+            <p className="mb-0" style={{ fontSize: '0.95rem' }}>
+              Your group has exceeded the estimated trip budget of <strong>{sym}{tripBudget.toFixed(2)}</strong>. You are currently overspent by <strong>{sym}{overBudgetAmount.toFixed(2)}</strong>.
+            </p>
+          </div>
+        </div>
+      )}
 
       <div className="row g-4">
         <div className="col-12 col-lg-4">
@@ -248,7 +267,6 @@ export default function ExpenseTracker({ tripId, tripName, setActiveTab }) {
               </div>
 
               <div className="mb-3">
-                {/* 🚀 Dynamic input label */}
                 <label className="form-label small fw-bold text-secondary mb-1">Amount ({currency}) *</label>
                 <input 
                   type="number" 
@@ -310,7 +328,6 @@ export default function ExpenseTracker({ tripId, tripName, setActiveTab }) {
                 <div key={cat}>
                   <div className="d-flex justify-content-between align-items-center mb-1">
                     <span className="fw-semibold text-dark">{cat}</span>
-                    {/* 🚀 Dynamic symbol injected here */}
                     <span className="fw-bold" style={{ color: '#0EA5E9' }}>
                       {sym}{(categoryTotals[cat] || 0).toFixed(2)}
                     </span>
@@ -365,7 +382,6 @@ export default function ExpenseTracker({ tripId, tripName, setActiveTab }) {
                         <td className="py-3 border-0 text-secondary">
                           {item.createdAt ? new Date(item.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'Today'}
                         </td>
-                        {/* 🚀 Dynamic symbol injected here */}
                         <td className="py-3 border-0 text-end fw-bold">{sym}{(item.amount || 0).toFixed(2)}</td>
                         <td className="py-3 border-0 text-center">
                           <div className="d-flex align-items-center justify-content-center gap-2">
