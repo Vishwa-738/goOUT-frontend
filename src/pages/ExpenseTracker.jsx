@@ -36,7 +36,7 @@ export default function ExpenseTracker({ tripId, tripName, setActiveTab }) {
   };
   const sym = currencySymbols[currency] || '$';
 
-  // 🚀 1. EXCHANGE RATES (Relative to USD = 1.0 Base)
+  //  1. EXCHANGE RATES (Relative to USD = 1.0 Base)
   const exchangeRates = {
     USD: 1.0,
     LKR: 305.0, // $1 USD = 305 LKR
@@ -45,7 +45,7 @@ export default function ExpenseTracker({ tripId, tripName, setActiveTab }) {
     AUD: 1.52   // $1 USD = 1.52 AUD
   };
 
-  // 🚀 2. HELPER FUNCTION TO SCALE & FORMAT CURRENCY DYNAMICALLY
+  //  2. HELPER FUNCTION TO SCALE & FORMAT CURRENCY DYNAMICALLY
   const formatAmount = (baseAmount) => {
     const rate = exchangeRates[currency] || 1.0;
     const converted = (Number(baseAmount) || 0) * rate;
@@ -88,7 +88,7 @@ export default function ExpenseTracker({ tripId, tripName, setActiveTab }) {
       
       let rawBudget = data.minBudget || data.budget || 0;
       
-      // 🚀 NORMALIZE BUDGET: If the trip budget was saved in LKR (or is a large number > 5000),
+      //  NORMALIZE BUDGET: If the trip budget was saved in LKR (or is a large number > 5000),
       // convert it back to USD Base so our exchange multiplier scales it correctly!
       if (data.budgetCurrency && exchangeRates[data.budgetCurrency]) {
         rawBudget = rawBudget / exchangeRates[data.budgetCurrency];
@@ -125,7 +125,7 @@ export default function ExpenseTracker({ tripId, tripName, setActiveTab }) {
   const handleAddExpense = async (e) => {
     e.preventDefault();
     try {
-      // 🚀 1. NORMALIZE INPUT: Convert whatever currency they typed back to USD Base!
+      //  1. NORMALIZE INPUT: Convert whatever currency they typed back to USD Base!
       const rate = exchangeRates[currency] || 1.0;
       const normalizedAmountInUSD = parseFloat(amount) / rate;
 
@@ -222,7 +222,7 @@ export default function ExpenseTracker({ tripId, tripName, setActiveTab }) {
               <Sigma size={48} color="#ffffff" />
               <div>
                 <span className="small opacity-90 d-block mb-1">Total Expenses</span>
-                {/* 🚀 DYNAMICALLY SCALED TOTAL EXPENSES */}
+                {/*  DYNAMICALLY SCALED TOTAL EXPENSES */}
                 <h3 className="fw-bold mb-0">{formatAmount(dashboardStats.totalExpenses)}</h3>
               </div>
             </div>
@@ -241,7 +241,7 @@ export default function ExpenseTracker({ tripId, tripName, setActiveTab }) {
               <User size={48} color="#ffffff" />
               <div>
                 <span className="small opacity-90 d-block mb-1">Per Person (Avg)</span>
-                {/* 🚀 DYNAMICALLY SCALED PER PERSON AVERAGE */}
+                {/*  DYNAMICALLY SCALED PER PERSON AVERAGE */}
                 <h3 className="fw-bold mb-0">{formatAmount(dashboardStats.perPerson)}</h3>
               </div>
             </div>
@@ -267,7 +267,7 @@ export default function ExpenseTracker({ tripId, tripName, setActiveTab }) {
         </div>
       </div>
 
-      {/* 🚀 DYNAMICALLY SCALED OVER-BUDGET ALERT BANNER */}
+      {/*  DYNAMICALLY SCALED OVER-BUDGET ALERT BANNER */}
       {isOverBudget && (
         <div className="alert border-0 rounded-4 mb-4 d-flex align-items-center gap-3 shadow-sm" style={{ backgroundColor: '#fef2f2', color: '#991b1b', border: '1px solid #fecaca' }}>
           <div className="bg-white rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style={{ width: '48px', height: '48px', boxShadow: '0 2px 4px rgba(220, 38, 38, 0.1)' }}>
@@ -362,7 +362,7 @@ export default function ExpenseTracker({ tripId, tripName, setActiveTab }) {
                 <div key={cat}>
                   <div className="d-flex justify-content-between align-items-center mb-1">
                     <span className="fw-semibold text-dark">{cat}</span>
-                    {/* 🚀 DYNAMICALLY SCALED CATEGORY PROGRESS TEXT */}
+                    {/*  DYNAMICALLY SCALED CATEGORY PROGRESS TEXT */}
                     <span className="fw-bold" style={{ color: '#0EA5E9' }}>
                       {formatAmount(categoryTotals[cat])}
                     </span>

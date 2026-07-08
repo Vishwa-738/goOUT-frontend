@@ -13,7 +13,7 @@ function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         
-        {/* 🚀 THE FIX: Added /* so the Dashboard can handle its own sub-pages! */}
+        {/*  THE FIX: Added /* so the Dashboard can handle its own sub-pages! */}
         <Route path="/dashboard/*" element={<Dashboard />} />
         
       </Routes>

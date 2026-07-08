@@ -36,7 +36,7 @@ export default function ExpenseTripsList({ setActiveTab, setSelectedExpenseTrip 
     setActiveTab('expense-details'); 
   };
 
-  // 🚀 UPGRADED: Instant filtering by both Title AND Location!
+  //  UPGRADED: Instant filtering by both Title AND Location!
   const filteredTrips = trips.filter(trip => {
     const title = (trip.title || trip.name || 'Untitled Trip').toLowerCase();
     const location = (trip.destinations || trip.location || 'Location TBD').toLowerCase();
@@ -91,7 +91,7 @@ export default function ExpenseTripsList({ setActiveTab, setSelectedExpenseTrip 
       ) : (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '20px' }}>
           
-          {/* 🚀 THE FIX: This now maps over 'filteredTrips' instead of 'trips' */}
+          {/*  THE FIX: This now maps over 'filteredTrips' instead of 'trips' */}
           {filteredTrips.map(trip => (
             <div 
               key={trip.id || trip._id || Math.random()} 

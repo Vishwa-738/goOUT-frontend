@@ -1,14 +1,14 @@
 // src/services/api.js
 import axios from 'axios';
 
-// 🚀 NGROK URL: Pointing to Methsara's local Spring Boot backend
+//  NGROK URL: Pointing to Methsara's local Spring Boot backend
 const BASE_URL = 'https://another-freezing-glimmer.ngrok-free.dev/';
 
 const api = axios.create({
   baseURL: BASE_URL,
   headers: {
     'Content-Type': 'application/json',
-    // 🌟 THE MAGIC FIX: This tells Ngrok to skip the HTML warning page!
+    //  THE MAGIC FIX: This tells Ngrok to skip the HTML warning page!
     'ngrok-skip-browser-warning': 'true' 
   },
   withCredentials: true 

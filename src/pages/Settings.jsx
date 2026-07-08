@@ -1,7 +1,7 @@
 // src/pages/Settings.jsx
 import React, { useState } from 'react';
 import { User, Bell, Shield, Globe, Moon, CreditCard, Save, X, AlertTriangle, Key } from 'lucide-react';
-import api from '../services/api'; // 🚀 Import the API service
+import api from '../services/api'; //  Import the API service
 
 export default function Settings() {
   const [activeTab, setActiveTab] = useState('preferences');
@@ -65,7 +65,7 @@ export default function Settings() {
     }
   };
 
-  // 🚀 ACTION: Delete Account
+  //  ACTION: Delete Account
   const handleDeleteAccount = async () => {
     if (deleteConfirmText !== "DELETE") {
       alert("Please type DELETE to confirm.");
@@ -245,7 +245,7 @@ export default function Settings() {
         </div>
       </div>
 
-      {/* 🚀 MODAL: CHANGE PASSWORD */}
+      {/*  MODAL: CHANGE PASSWORD */}
       {isPasswordModalOpen && (
         <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', backgroundColor: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
           <div style={{ backgroundColor: '#fff', padding: '32px', borderRadius: '24px', width: '100%', maxWidth: '400px', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)' }}>
@@ -299,7 +299,7 @@ export default function Settings() {
         </div>
       )}
 
-      {/* 🚀 MODAL: DELETE ACCOUNT */}
+      {/*  MODAL: DELETE ACCOUNT */}
       {isDeleteModalOpen && (
         <div style={{ position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh', backgroundColor: 'rgba(0,0,0,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
           <div style={{ backgroundColor: '#fff', padding: '32px', borderRadius: '24px', width: '100%', maxWidth: '400px', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)' }}>

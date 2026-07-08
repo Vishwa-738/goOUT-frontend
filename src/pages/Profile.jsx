@@ -455,7 +455,7 @@ export default function Profile() {
             </div>
           )}
 
-          {/* 🚀 UPGRADED MY TRIPS TAB: Shows active/upcoming trips! */}
+          {/*  UPGRADED MY TRIPS TAB: Shows active/upcoming trips! */}
           {activeProfileTab === 'my-trips' && (
             <div>
               {isLoadingExperiences ? (
@@ -486,7 +486,7 @@ export default function Profile() {
             </div>
           )}
 
-          {/* 🚀 UPGRADED ACTIVITY TAB: Dynamically builds a timeline from trips! */}
+          {/*  UPGRADED ACTIVITY TAB: Dynamically builds a timeline from trips! */}
           {activeProfileTab === 'activity' && (
             <div>
               {isLoadingExperiences ? (
