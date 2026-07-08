@@ -14,7 +14,7 @@ export default function Home() {
   const [popularPosts, setPopularPosts] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  // 🚀 FETCH DYNAMIC POPULAR POSTS (STRICTLY LIVE DATA)
+  //  FETCH DYNAMIC POPULAR POSTS (STRICTLY LIVE DATA)
   useEffect(() => {
     const fetchTopPosts = async () => {
       try {
@@ -40,7 +40,7 @@ export default function Home() {
 
         setPopularPosts(mapped);
       } catch (error) {
-        // 🚀 THE FIX: Removed all hardcoded fallback data. If it fails, it stays empty!
+        //  THE FIX: Removed all hardcoded fallback data. If it fails, it stays empty!
         console.error("Failed to load live trending posts:", error);
         setPopularPosts([]); 
       } finally {
@@ -50,7 +50,7 @@ export default function Home() {
     fetchTopPosts();
   }, []);
 
-  // 🚀 THE SCROLL REVEAL ENGINE
+  //  THE SCROLL REVEAL ENGINE
   useEffect(() => {
     const observer = new IntersectionObserver((entries) => {
       entries.forEach(entry => {
@@ -72,7 +72,7 @@ export default function Home() {
   return (
     <div className="min-vh-100 d-flex flex-column bg-white" style={{ overflowX: 'hidden' }}>
       
-      {/* 🚀 ANIMATION CSS STYLES */}
+      {/*  ANIMATION CSS STYLES */}
       <style>
         {`
           @keyframes fadeInUp {
@@ -162,7 +162,7 @@ export default function Home() {
       <section style={{ position: 'relative', height: '80vh', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         <div style={{
           position: 'absolute', top: 0, left: 0, width: '100%', height: '100%',
-          // 🚀 CHANGED: Using your local image variable instead of the URL
+          //  CHANGED: Using your local image variable instead of the URL
           backgroundImage: `url(${heroBg})`, 
           backgroundSize: 'cover',
           backgroundPosition: 'center',

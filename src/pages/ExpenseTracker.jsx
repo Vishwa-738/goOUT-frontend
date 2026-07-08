@@ -1,6 +1,6 @@
 // src/pages/ExpenseTracker.jsx
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, Sigma, User, Grid, Globe, AlertCircle } from 'lucide-react'; // 🚀 IMPORTED AlertCircle
+import { ArrowLeft, Sigma, User, Grid, Globe, AlertCircle } from 'lucide-react';
 import api from '../services/api';
 
 import bg1 from '../assets/card-bg-1.png';
@@ -18,8 +18,6 @@ export default function ExpenseTracker({ tripId, tripName, setActiveTab }) {
   });
 
   const [tripMembers, setTripMembers] = useState([]);
-  
-  // 🚀 NEW: State to hold the official Trip Budget
   const [tripBudget, setTripBudget] = useState(0);
 
   const [description, setDescription] = useState('');
@@ -37,6 +35,25 @@ export default function ExpenseTracker({ tripId, tripName, setActiveTab }) {
     AUD: 'A$'
   };
   const sym = currencySymbols[currency] || '$';
+
+  //  1. EXCHANGE RATES (Relative to USD = 1.0 Base)
+  const exchangeRates = {
+    USD: 1.0,
+    LKR: 305.0, // $1 USD = 305 LKR
+    EUR: 0.92,  // $1 USD = 0.92 EUR
+    GBP: 0.79,  // $1 USD = 0.79 GBP
+    AUD: 1.52   // $1 USD = 1.52 AUD
+  };
+
+  //  2. HELPER FUNCTION TO SCALE & FORMAT CURRENCY DYNAMICALLY
+  const formatAmount = (baseAmount) => {
+    const rate = exchangeRates[currency] || 1.0;
+    const converted = (Number(baseAmount) || 0) * rate;
+    return `${sym}${converted.toLocaleString('en-US', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    })}`;
+  };
 
   const fetchExpenses = async () => {
     setIsLoading(true);
@@ -64,14 +81,23 @@ export default function ExpenseTracker({ tripId, tripName, setActiveTab }) {
     }
   };
 
-  // 🚀 UPGRADED: Now fetches the budget alongside the members!
   const fetchTripDetails = async () => {
     try {
       const response = await api.get(`/api/v1/trips/${tripId}`);
       const data = response.data;
       
-      // Save the budget to state (checking both potential variable names)
-      setTripBudget(data.minBudget || data.budget || 0);
+      let rawBudget = data.minBudget || data.budget || 0;
+      
+      //  NORMALIZE BUDGET: If the trip budget was saved in LKR (or is a large number > 5000),
+      // convert it back to USD Base so our exchange multiplier scales it correctly!
+      if (data.budgetCurrency && exchangeRates[data.budgetCurrency]) {
+        rawBudget = rawBudget / exchangeRates[data.budgetCurrency];
+      } else if (rawBudget > 5000 && !data.budgetCurrency) {
+        // Safe fallback: if budget is stored as 12000 without currency metadata, assume LKR -> USD
+        rawBudget = rawBudget / 305.0;
+      }
+      
+      setTripBudget(rawBudget);
       
       let membersList = [];
       if (data.organizer) membersList.push(data.organizer);
@@ -92,20 +118,27 @@ export default function ExpenseTracker({ tripId, tripName, setActiveTab }) {
     if (tripId) {
       fetchExpenses();
       fetchDashboardStats(); 
-      fetchTripDetails(); // Call the upgraded function
+      fetchTripDetails(); 
     }
   }, [tripId]);
 
   const handleAddExpense = async (e) => {
     e.preventDefault();
     try {
+      //  1. NORMALIZE INPUT: Convert whatever currency they typed back to USD Base!
+      const rate = exchangeRates[currency] || 1.0;
+      const normalizedAmountInUSD = parseFloat(amount) / rate;
+
       const payload = {
         tripId: tripId,
         title: description, 
-        amount: parseFloat(amount),
+        amount: normalizedAmountInUSD, // Always save as base USD to DB
         category: category,
-        paidBy: paidBy 
+        paidBy: paidBy,
+        originalCurrency: currency, // Optional: keep track of what they typed
+        originalAmount: parseFloat(amount)
       };
+      
       await api.post('/api/v1/expenses', payload);
       setDescription('');
       setAmount('');
@@ -136,7 +169,6 @@ export default function ExpenseTracker({ tripId, tripName, setActiveTab }) {
     return `${(catAmount / dashboardStats.totalExpenses) * 100}%`;
   };
 
-  // 🚀 NEW: Over-Budget Calculation Logic
   const isOverBudget = tripBudget > 0 && dashboardStats.totalExpenses > tripBudget;
   const overBudgetAmount = isOverBudget ? dashboardStats.totalExpenses - tripBudget : 0;
 
@@ -179,7 +211,7 @@ export default function ExpenseTracker({ tripId, tripName, setActiveTab }) {
       <div className="row g-4 mb-4">
         <div className="col-12 col-md-4">
           <div className="card border-0 text-white p-4 rounded-4 shadow-sm" style={{ 
-            backgroundColor: isOverBudget ? '#ef4444' : '#14a3e4', // 🚀 Turns RED if over budget!
+            backgroundColor: isOverBudget ? '#ef4444' : '#14a3e4', 
             backgroundImage: `url(${bg1})`, 
             backgroundSize: 'cover', 
             backgroundPosition: 'center',
@@ -190,7 +222,8 @@ export default function ExpenseTracker({ tripId, tripName, setActiveTab }) {
               <Sigma size={48} color="#ffffff" />
               <div>
                 <span className="small opacity-90 d-block mb-1">Total Expenses</span>
-                <h3 className="fw-bold mb-0">{sym}{(dashboardStats.totalExpenses || 0).toFixed(2)}</h3>
+                {/*  DYNAMICALLY SCALED TOTAL EXPENSES */}
+                <h3 className="fw-bold mb-0">{formatAmount(dashboardStats.totalExpenses)}</h3>
               </div>
             </div>
           </div>
@@ -208,7 +241,8 @@ export default function ExpenseTracker({ tripId, tripName, setActiveTab }) {
               <User size={48} color="#ffffff" />
               <div>
                 <span className="small opacity-90 d-block mb-1">Per Person (Avg)</span>
-                <h3 className="fw-bold mb-0">{sym}{(dashboardStats.perPerson || 0).toFixed(2)}</h3>
+                {/*  DYNAMICALLY SCALED PER PERSON AVERAGE */}
+                <h3 className="fw-bold mb-0">{formatAmount(dashboardStats.perPerson)}</h3>
               </div>
             </div>
           </div>
@@ -233,7 +267,7 @@ export default function ExpenseTracker({ tripId, tripName, setActiveTab }) {
         </div>
       </div>
 
-      {/* 🚀 NEW: The Over-Budget Alert Banner */}
+      {/*  DYNAMICALLY SCALED OVER-BUDGET ALERT BANNER */}
       {isOverBudget && (
         <div className="alert border-0 rounded-4 mb-4 d-flex align-items-center gap-3 shadow-sm" style={{ backgroundColor: '#fef2f2', color: '#991b1b', border: '1px solid #fecaca' }}>
           <div className="bg-white rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style={{ width: '48px', height: '48px', boxShadow: '0 2px 4px rgba(220, 38, 38, 0.1)' }}>
@@ -242,7 +276,7 @@ export default function ExpenseTracker({ tripId, tripName, setActiveTab }) {
           <div>
             <h6 className="fw-bold mb-1" style={{ fontSize: '1.05rem' }}>Budget Exceeded</h6>
             <p className="mb-0" style={{ fontSize: '0.95rem' }}>
-              Your group has exceeded the estimated trip budget of <strong>{sym}{tripBudget.toFixed(2)}</strong>. You are currently overspent by <strong>{sym}{overBudgetAmount.toFixed(2)}</strong>.
+              Your group has exceeded the estimated trip budget of <strong>{formatAmount(tripBudget)}</strong>. You are currently overspent by <strong>{formatAmount(overBudgetAmount)}</strong>.
             </p>
           </div>
         </div>
@@ -328,8 +362,9 @@ export default function ExpenseTracker({ tripId, tripName, setActiveTab }) {
                 <div key={cat}>
                   <div className="d-flex justify-content-between align-items-center mb-1">
                     <span className="fw-semibold text-dark">{cat}</span>
+                    {/*  DYNAMICALLY SCALED CATEGORY PROGRESS TEXT */}
                     <span className="fw-bold" style={{ color: '#0EA5E9' }}>
-                      {sym}{(categoryTotals[cat] || 0).toFixed(2)}
+                      {formatAmount(categoryTotals[cat])}
                     </span>
                   </div>
                   <div className="progress rounded-pill" style={{ height: '8px' }}>
@@ -382,7 +417,8 @@ export default function ExpenseTracker({ tripId, tripName, setActiveTab }) {
                         <td className="py-3 border-0 text-secondary">
                           {item.createdAt ? new Date(item.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'Today'}
                         </td>
-                        <td className="py-3 border-0 text-end fw-bold">{sym}{(item.amount || 0).toFixed(2)}</td>
+                        {/* 🚀 DYNAMICALLY SCALED TABLE ITEM AMOUNT */}
+                        <td className="py-3 border-0 text-end fw-bold">{formatAmount(item.amount)}</td>
                         <td className="py-3 border-0 text-center">
                           <div className="d-flex align-items-center justify-content-center gap-2">
                             <button type="button" className="btn btn-link p-1 text-secondary shadow-none border-0">📝</button>

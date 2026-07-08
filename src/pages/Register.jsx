@@ -9,7 +9,7 @@ import loginBackdrop from '../assets/login backdrop.svg';
 function Register() {
   const navigate = useNavigate();
   
-  // 🚀 NEW: State to track which step of the registration we are on
+  //  NEW: State to track which step of the registration we are on
   const [step, setStep] = useState(1); // 1 = Details form, 2 = OTP form
   const [otp, setOtp] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -58,7 +58,7 @@ function Register() {
         travelerType: formData.travelerType
       });
 
-      // 🚀 THE FIX: Instead of navigating, switch to the OTP UI!
+      //  THE FIX: Instead of navigating, switch to the OTP UI!
       setStep(2); 
     } catch (err) {
       console.error(err);
@@ -81,7 +81,7 @@ function Register() {
         otp: otp 
       });
       
-      // 🚀 THE UPGRADE: Grab the JWT token from Methsara's response
+      //  THE UPGRADE: Grab the JWT token from Methsara's response
       const token = response.data.token || response.data.jwt; 
       const user = response.data.user; // If he returns the user object too
       
@@ -182,7 +182,7 @@ function Register() {
 
               {error && (
                 <div className="alert alert-danger py-2 text-center small border-0 mb-3" role="alert">
-                  ⚠️ {error}
+                   {error}
                 </div>
               )}
 

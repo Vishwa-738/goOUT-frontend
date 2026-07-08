@@ -1,6 +1,6 @@
 // src/pages/CreateTrip.jsx
 import React, { useState } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom'; // 🚀 NEW: Import useLocation
+import { useNavigate, useLocation } from 'react-router-dom'; //  NEW: Import useLocation
 import API from '../services/api';
 import { MapPin, Calendar, Image as ImageIcon, AlignLeft, Users, AlertCircle } from 'lucide-react';
 
@@ -8,9 +8,9 @@ const USD_TO_LKR_RATE = 300;
 
 export default function CreateTrip() {
   const navigate = useNavigate();
-  const location = useLocation(); // 🚀 Grab the data sent from the Edit button
+  const location = useLocation(); //  Grab the data sent from the Edit button
 
-  // 🚀 Check if we are editing an existing trip
+  //  Check if we are editing an existing trip
   const editTripData = location.state?.trip;
   const isEditing = !!editTripData;
 
@@ -153,7 +153,7 @@ export default function CreateTrip() {
         status: editTripData?.status || 'UPCOMING' // Keep the existing status if editing
       };
 
-      // 🚀 SMART ROUTING: Decide whether to POST or PUT
+      //  SMART ROUTING: Decide whether to POST or PUT
       if (isEditing) {
         await API.put(`/api/v1/trips/${editTripData.id || editTripData._id}`, formattedPayload);
         alert("Trip updated successfully!");

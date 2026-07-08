@@ -25,7 +25,7 @@ export default function DashboardHome() {
     feedTab === 'upcoming' ? post.status === 'UPCOMING' : post.status === 'COMPLETED'
   );
 
-  // 🚀 THE FACEBOOK-STYLE LIKE SYSTEM
+  //  THE FACEBOOK-STYLE LIKE SYSTEM
   const handleLikeToggle = async (postId, isTrip) => {
     if (!postId) {
       console.error("CRITICAL: Tried to like an item but the ID is missing!");
@@ -172,7 +172,7 @@ export default function DashboardHome() {
         };
       });
 
-      // 🚀 BULLETPROOF SORTING: Forces newest items to the very top (Descending Order)
+      //  BULLETPROOF SORTING: Forces newest items to the very top (Descending Order)
       mappedPosts.sort((a, b) => {
         const timeA = new Date(a.createdAt).getTime();
         const timeB = new Date(b.createdAt).getTime();

@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext'; 
-import api from '../services/api'; // 🚀 IMPORTED API FOR DIRECT CALLS
+import api from '../services/api'; //  IMPORTED API FOR DIRECT CALLS
 import logo from '../assets/logo.svg';
 import loginBg from '../assets/login-bg.png';
 import loginBackdrop from '../assets/login backdrop.svg'; 
@@ -11,7 +11,7 @@ function Login() {
   const navigate = useNavigate();
   const { login } = useAuth(); 
   
-  // 🚀 UI State Manager: 'login' | 'forgot_email' | 'forgot_otp'
+  //  UI State Manager: 'login' | 'forgot_email' | 'forgot_otp'
   const [view, setView] = useState('login'); 
   const [isLoading, setIsLoading] = useState(false);
 
@@ -170,12 +170,12 @@ function Login() {
               {/* --- ALERTS --- */}
               {error && (
                 <div className="alert alert-danger py-2 text-center small border-0 mb-3" role="alert">
-                  ⚠️ {error}
+                   {error}
                 </div>
               )}
               {successMsg && (
                 <div className="alert alert-success py-2 text-center small border-0 mb-3" role="alert">
-                  ✅ {successMsg}
+                   {successMsg}
                 </div>
               )}
 

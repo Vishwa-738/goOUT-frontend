@@ -1,12 +1,12 @@
 // src/pages/MyTrips.jsx
 import React, { useState, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom'; // 🚀 NEW: Import useNavigate
+import { useNavigate } from 'react-router-dom'; //  NEW: Import useNavigate
 import { Calendar, MapPin, Users, DollarSign, Plus, Eye, Edit2, UserCheck, Trash2, Check, X, CheckCircle, ChevronDown } from 'lucide-react';
 import TripDetails from './TripDetails'; 
 import API from '../services/api'; 
 
 export default function MyTrips({ setActiveTab }) {
-  const navigate = useNavigate(); // 🚀 NEW: Hook initialized
+  const navigate = useNavigate(); //  NEW: Hook initialized
   const [viewingTripId, setViewingTripId] = useState(null); 
   const [trips, setTrips] = useState([]); 
   const [loading, setLoading] = useState(true);
@@ -162,7 +162,7 @@ export default function MyTrips({ setActiveTab }) {
 
                   {isAdmin && (
                     <>
-                      {/* 🚀 THE FIX: Wired the Edit button to navigate to our form and pass the trip data! */}
+                      {/*  THE FIX: Wired the Edit button to navigate to our form and pass the trip data! */}
                       <button 
                         onClick={() => navigate('/dashboard/edit-trip', { state: { trip } })}
                         style={{ padding: '10px 16px', borderRadius: '12px', fontSize: '14px', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', backgroundColor: '#ffffff', color: '#334155', border: '1px solid #cbd5e1', transition: 'all 0.2s' }}

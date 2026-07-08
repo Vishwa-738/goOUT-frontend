@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Routes, Route, useNavigate, useLocation, Navigate } from 'react-router-dom'; 
 import CreateTrip from './CreateTrip';
-import { User, Settings, LogOut, Bell, CheckCircle } from 'lucide-react'; // 🚀 Added CheckCircle
+import { User, Settings, LogOut, Bell, CheckCircle } from 'lucide-react'; //  Added CheckCircle
 import Discover from './DiscoverTrips';
 import Sidebar from '../components/Sidebar';
 import ExpenseTracker from './ExpenseTracker';
@@ -16,7 +16,7 @@ import logo from '../assets/Full size logo.svg';
 import topBarBg from '../assets/Top bar image.svg';
 import pageBg from '../assets/page-background.svg';
 import SettingsPage from './Settings'; 
-import api from '../services/api'; // 🚀 Needed to fetch notifications
+import api from '../services/api'; //  Needed to fetch notifications
 
 export default function Dashboard() {
   const navigate = useNavigate();
@@ -32,7 +32,7 @@ export default function Dashboard() {
 
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   
-  // 🚀 NEW: Notification State
+  //  NEW: Notification State
   const [isNotifOpen, setIsNotifOpen] = useState(false);
   const [notifications, setNotifications] = useState([]);
   
@@ -45,7 +45,7 @@ export default function Dashboard() {
   const displayEmail = currentUser?.email || "No email found";
   const displayPic = currentUser?.profilePic || currentUser?.avatar || "https://ui-avatars.com/api/?name=" + displayName + "&background=0EA5E9&color=fff";
 
-  // 🚀 NEW: Click Outside Listener to close dropdowns
+  //  NEW: Click Outside Listener to close dropdowns
   const profileRef = useRef(null);
   const notifRef = useRef(null);
 
@@ -62,7 +62,7 @@ export default function Dashboard() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // 🚀 NEW: Fetch Notifications from Backend
+  //  NEW: Fetch Notifications from Backend
   const fetchNotifications = async () => {
     try {
       // NOTE: This will 404 until the backend team creates the endpoint!
@@ -134,7 +134,7 @@ export default function Dashboard() {
         
         <div style={{ display: 'flex', alignItems: 'center', gap: '24px' }}>
           
-          {/* 🚀 UPGRADED: NOTIFICATION BELL DROPDOWN */}
+          {/*  UPGRADED: NOTIFICATION BELL DROPDOWN */}
           <div ref={notifRef} style={{ position: 'relative' }}>
             <div 
               style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', padding: '8px', borderRadius: '50%', backgroundColor: isNotifOpen ? 'rgba(255,255,255,0.2)' : 'transparent', transition: 'all 0.2s' }}
