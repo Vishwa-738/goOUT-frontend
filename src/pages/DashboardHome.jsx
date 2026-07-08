@@ -105,7 +105,7 @@ export default function DashboardHome() {
         let calculatedStatus = item.status;
         const isCompleted = calculatedStatus === 'COMPLETED' || (item.status && item.status.toUpperCase() === 'COMPLETED');
         
-        const postContent = item.content || (item.title ? `${item.title} 🌍 ✈️` : '');
+        const postContent = item.content || (item.title ? `${item.title} ` : '');
         
         if (!calculatedStatus) {
           if (item.content && item.content.includes("Just completed")) {
@@ -172,10 +172,16 @@ export default function DashboardHome() {
         };
       });
 
+      // 🚀 BULLETPROOF SORTING: Forces newest items to the very top (Descending Order)
       mappedPosts.sort((a, b) => {
-        if (!a.createdAt) return 1;
-        if (!b.createdAt) return -1;
-        return new Date(b.createdAt) - new Date(a.createdAt);
+        const timeA = new Date(a.createdAt).getTime();
+        const timeB = new Date(b.createdAt).getTime();
+        
+        // If a date is missing or invalid, default it to "Right Now" so it goes to the top
+        const safeA = isNaN(timeA) ? Date.now() : timeA;
+        const safeB = isNaN(timeB) ? Date.now() : timeB;
+        
+        return safeB - safeA; 
       });
       setPosts(mappedPosts);
     } catch (error) {
