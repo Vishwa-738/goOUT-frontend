@@ -4,7 +4,7 @@ import {
   MapPin, Calendar, DollarSign, Users, Wind, Droplets, 
   MessageCircle, Cloud, Wallet, CheckCircle, Shield, Check, 
   Utensils, Car, Home, Ticket, Map, Coffee, Info, X, Clock,
-  Edit, Plus, Trash2, Sun, CloudRain, CloudLightning
+  Edit, Plus, Trash2, Sun, CloudRain, CloudLightning, AlertCircle // 🚀 IMPORTED AlertCircle
 } from 'lucide-react';
 import api from '../services/api'; 
 
@@ -31,7 +31,6 @@ export default function TripDetails({ setActiveTab, tripId }) {
   const [newImageUrl, setNewImageUrl] = useState('');
   const [isSavingOverview, setIsSavingOverview] = useState(false);
 
-  // 🚀 NEW: Dynamic Weather State
   const [weather, setWeather] = useState({
     temp: '--', condition: 'Fetching...', humidity: '--', wind: '--'
   });
@@ -59,16 +58,13 @@ export default function TripDetails({ setActiveTab, tripId }) {
     fetchTripDetails();
   }, [tripId]);
 
-  // 🚀 NEW: Dynamic Weather Fetching Engine
   useEffect(() => {
     if (tripData?.destinations || tripData?.destination) {
       const fetchWeather = async () => {
         try {
           const locationString = tripData.destinations || tripData.destination;
-          // Extract just the city name (e.g., "Galle" from "Galle, Sri Lanka") for better search results
           const city = locationString.split(',')[0].trim();
 
-          // 1. Geocode the city name to get Latitude and Longitude
           const geoRes = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(city)}&count=1&language=en&format=json`);
           const geoData = await geoRes.json();
 
@@ -79,12 +75,10 @@ export default function TripDetails({ setActiveTab, tripId }) {
 
           const { latitude, longitude } = geoData.results[0];
 
-          // 2. Fetch the live weather using those coordinates
           const weatherRes = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current=temperature_2m,relative_humidity_2m,wind_speed_10m,weather_code`);
           const weatherData = await weatherRes.json();
           const current = weatherData.current;
 
-          // 3. Translate the weather code into readable text
           const code = current.weather_code;
           let condition = 'Clear';
           if (code >= 1 && code <= 3) condition = 'Partly Cloudy';
@@ -109,9 +103,8 @@ export default function TripDetails({ setActiveTab, tripId }) {
     }
   }, [tripData]);
 
-  // Fetch Expenses
   useEffect(() => {
-    if (activeSegment === 'expenses' && tripId) {
+    if (tripId) {
       const fetchTripExpenses = async () => {
         setIsLoadingExpenses(true);
         try {
@@ -126,9 +119,8 @@ export default function TripDetails({ setActiveTab, tripId }) {
       };
       fetchTripExpenses();
     }
-  }, [activeSegment, tripId]);
+  }, [tripId]); // 🚀 Removed activeSegment from dependency array so totalSpent calculates instantly!
 
-  // Fetch Places
   useEffect(() => {
     if (activeSegment === 'places' && tripId) {
       const fetchTripPlaces = async () => {
@@ -230,7 +222,11 @@ export default function TripDetails({ setActiveTab, tripId }) {
     return acc;
   }, {});
 
+  // 🚀 BUDGET CALCULATION LOGIC
   const totalSpent = tripExpenses.reduce((sum, exp) => sum + (exp.amount || 0), 0);
+  const budget = tripData.minBudget || 0;
+  const isOverBudget = budget > 0 && totalSpent > budget;
+  const overBudgetAmount = isOverBudget ? totalSpent - budget : 0;
 
   const getCategoryIcon = (cat) => {
     if (cat.includes('Food')) return <Utensils size={20} color="#ea580c" />;
@@ -247,7 +243,6 @@ export default function TripDetails({ setActiveTab, tripId }) {
     return <Info size={24} color="#8b5cf6" />;
   };
 
-  // Helper to get a dynamic icon based on the weather condition
   const getWeatherIcon = (condition) => {
     if (condition.includes('Rain')) return <CloudRain size={28} color="#fff" />;
     if (condition.includes('Thunderstorm')) return <CloudLightning size={28} color="#fff" />;
@@ -289,12 +284,32 @@ export default function TripDetails({ setActiveTab, tripId }) {
               </div>
             </div>
             
+            {/* 🚀 UPGRADED BUDGET CARD */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flex: 1, borderLeft: '1px solid #f1f5f9', paddingLeft: '24px' }}>
-              <div style={{ backgroundColor: '#f0fdf4', padding: '12px', borderRadius: '12px', color: '#10B981' }}><DollarSign size={24} /></div>
+              <div style={{ 
+                backgroundColor: isOverBudget ? '#fef2f2' : '#f0fdf4', 
+                padding: '12px', 
+                borderRadius: '12px', 
+                color: isOverBudget ? '#ef4444' : '#10B981',
+                transition: 'all 0.3s ease'
+              }}>
+                {isOverBudget ? <AlertCircle size={24} /> : <DollarSign size={24} />}
+              </div>
               <div>
-                <div style={{ fontSize: '13px', color: '#64748b', marginBottom: '2px' }}>Budget</div>
-                <div style={{ fontWeight: 'bold', fontSize: '15px', color: '#0f172a' }}>
-                  {tripData.minBudget ? `$${tripData.minBudget}` : 'TBD'}
+                <div style={{ 
+                  fontSize: '13px', 
+                  color: isOverBudget ? '#ef4444' : '#64748b', 
+                  marginBottom: '2px',
+                  fontWeight: isOverBudget ? 'bold' : 'normal'
+                }}>
+                  {isOverBudget ? 'Over Budget!' : 'Budget Spent'}
+                </div>
+                <div style={{ 
+                  fontWeight: 'bold', 
+                  fontSize: '15px', 
+                  color: isOverBudget ? '#ef4444' : '#0f172a' 
+                }}>
+                  {budget ? `$${totalSpent.toFixed(0)} / $${budget}` : 'TBD'}
                 </div>
               </div>
             </div>
@@ -546,10 +561,32 @@ export default function TripDetails({ setActiveTab, tripId }) {
               <div style={{ padding: '32px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
                   <h3 style={{ margin: 0, fontSize: '20px', color: '#0f172a' }}>Financial Breakdown</h3>
-                  <div style={{ backgroundColor: '#f0fdf4', color: '#10B981', padding: '8px 16px', borderRadius: '12px', fontWeight: 'bold', fontSize: '15px' }}>
+                  <div style={{ 
+                    backgroundColor: isOverBudget ? '#fef2f2' : '#f0fdf4', 
+                    color: isOverBudget ? '#ef4444' : '#10B981', 
+                    padding: '8px 16px', 
+                    borderRadius: '12px', 
+                    fontWeight: 'bold', 
+                    fontSize: '15px' 
+                  }}>
                     Total Logged: ${totalSpent.toFixed(2)}
                   </div>
                 </div>
+
+                {/* 🚀 NEW: Over-Budget Alert Banner Injected Here! */}
+                {isOverBudget && (
+                  <div style={{ backgroundColor: '#fef2f2', color: '#991b1b', border: '1px solid #fecaca', padding: '16px', borderRadius: '16px', marginBottom: '24px', display: 'flex', alignItems: 'center', gap: '16px', boxShadow: '0 2px 4px rgba(220, 38, 38, 0.05)' }}>
+                    <div style={{ backgroundColor: '#fff', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', width: '48px', height: '48px', flexShrink: 0, boxShadow: '0 2px 4px rgba(220, 38, 38, 0.1)' }}>
+                      <AlertCircle size={24} color="#dc2626" />
+                    </div>
+                    <div>
+                      <h6 style={{ margin: '0 0 4px 0', fontWeight: 'bold', fontSize: '16px' }}>Budget Exceeded</h6>
+                      <p style={{ margin: 0, fontSize: '14px' }}>
+                        This trip has exceeded its estimated budget of <strong>${budget.toFixed(2)}</strong>. You are currently overspent by <strong>${overBudgetAmount.toFixed(2)}</strong>.
+                      </p>
+                    </div>
+                  </div>
+                )}
                 
                 {isLoadingExpenses ? (
                   <p style={{ color: '#64748b', textAlign: 'center', padding: '20px 0' }}>Loading trip expenses...</p>
@@ -641,11 +678,9 @@ export default function TripDetails({ setActiveTab, tripId }) {
               <div>
                 <div style={{ fontSize: '13px', opacity: 0.9, marginBottom: '4px' }}>{tripData.destinations || tripData.destination || 'Location TBD'}</div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                  {/* 🚀 NEW: Dynamic Temperature & Icon injected here */}
                   <span style={{ fontSize: '48px', fontWeight: 'bold', lineHeight: 1 }}>{weather.temp}°</span>
                   {getWeatherIcon(weather.condition)}
                 </div>
-                {/* 🚀 NEW: Dynamic Condition injected here */}
                 <div style={{ fontSize: '14px', marginTop: '8px', opacity: 0.9 }}>{weather.condition}</div>
               </div>
             </div>
@@ -655,7 +690,6 @@ export default function TripDetails({ setActiveTab, tripId }) {
                 <Wind size={18} style={{ opacity: 0.8 }} />
                 <div>
                   <div style={{ fontSize: '11px', opacity: 0.8 }}>Wind</div>
-                  {/* 🚀 NEW: Dynamic Wind injected here */}
                   <div style={{ fontSize: '13px', fontWeight: 'bold' }}>{weather.wind} km/h</div>
                 </div>
               </div>
@@ -663,7 +697,6 @@ export default function TripDetails({ setActiveTab, tripId }) {
                 <Droplets size={18} style={{ opacity: 0.8 }} />
                 <div>
                   <div style={{ fontSize: '11px', opacity: 0.8 }}>Humidity</div>
-                  {/* 🚀 NEW: Dynamic Humidity injected here */}
                   <div style={{ fontSize: '13px', fontWeight: 'bold' }}>{weather.humidity}%</div>
                 </div>
               </div>
