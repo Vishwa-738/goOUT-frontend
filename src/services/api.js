@@ -1,13 +1,15 @@
 // src/services/api.js
 import axios from 'axios';
 
-// 🚀 STRICTLY LOCAL: Pointing directly to your local Spring Boot backend on port 8080
-const BASE_URL = 'https://uneatable-viewable-suitable.ngrok-free.dev/';
+// 🚀 NGROK URL: Pointing to Methsara's local Spring Boot backend
+const BASE_URL = 'https://another-freezing-glimmer.ngrok-free.dev/';
 
 const api = axios.create({
   baseURL: BASE_URL,
   headers: {
-    'Content-Type': 'application/json'
+    'Content-Type': 'application/json',
+    // 🌟 THE MAGIC FIX: This tells Ngrok to skip the HTML warning page!
+    'ngrok-skip-browser-warning': 'true' 
   },
   withCredentials: true 
 });
